@@ -7,6 +7,24 @@
 - Status: [Draft | Ready | Deprecated]
 - Source: [Path to the corresponding collection entry in the collection directory; can be omitted if none]
 
+## Source Control
+- Repository: [Git repository URL or local path, e.g., https://github.com/org/repo or ./src]
+- Branch Convention:
+  - Feature: [Feature branch naming pattern, e.g., feature/{ticket-id}-{short-description}]
+  - Bugfix: [Bugfix branch naming pattern, e.g., bugfix/{ticket-id}-{short-description}]
+  - Release: [Release branch naming pattern, e.g., release/v{version}]
+- Pull Request Process:
+  1. [Step 1: e.g., Create feature branch from main]
+  2. [Step 2: e.g., Implement changes with atomic commits]
+  3. [Step 3: e.g., Ensure all tests pass locally]
+  4. [Step 4: e.g., Push branch and create pull request]
+  5. [Step 5: e.g., Request review from designated approvers]
+  6. [Step 6: e.g., Address feedback and squash commits]
+  7. [Step 7: e.g., Merge after approval]
+- PR Requirements:
+  - Required Approvals: [Number of required approvals]
+  - Required Checks: [CI checks that must pass before merge, e.g., tests, lint, build]
+
 ## Applicability
 - Applicable: [When this skill should be used]
 - Not Applicable: [When this skill should not be used; especially note scenarios where it could be misused]
@@ -57,6 +75,19 @@
 ## Implementation Strategy
 - Test First: [Yes | No] — Whether to generate test cases based on the "Verification" section first, then write implementation code
 - Behavior Driven: [Yes | No] — Whether to describe core scenarios in Given/When/Then format before implementation
+
+## Changes
+### Created
+- [File Path]: [Description of what this new file contains]
+- [File Path]: [Description of what this new file contains]
+
+### Modified
+- [File Path]: [Description of changes made]
+- [File Path]: [Description of changes made]
+
+### Deleted
+- [File Path]: [Description of why this file is removed]
+- [File Path]: [Description of why this file is removed]
 
 ## Verification
 - [Scenario Description]: Expected [Expected Result]

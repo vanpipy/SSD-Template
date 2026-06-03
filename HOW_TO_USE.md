@@ -70,13 +70,18 @@ How to use:
 
 Input is an Implementation file with status "Draft". Output is the same file with status changed to "Ready".
 
-After AI generates the Implementation draft, you need to review it. Focus on: complete interface parameters, accurate hard constraints, verification cases covering core paths. After approval, change status from Draft to Ready, and change the corresponding Collection's status from "Converged" to "Completed". Also backfill the Implementation file path into the Collection's Related Implementation field.
+After AI generates the Implementation draft, you need to review it. Focus on: complete interface parameters, accurate hard constraints, verification cases covering core paths. After approval, change status from "Draft" to "Ready", and change the corresponding Collection's status from "Converged" to "Completed". Also backfill the Implementation file path into the Collection's Related Implementation field.
 
-### 5. Step 5 - Execute Implementation Plan
+### 5. Step 5 - Execute Implementation
 
-Input is an Implementation file with status "Ready". May attach current project context such as codebase path, tech stack description. Output is concrete implementation code and related tests, placed in the batch folder. After developer reviews and approves, update Implementation status to "Completed".
+Input is an Implementation file with status "Ready", plus current project context such as codebase path and tech stack description.
 
-How to use: Use prompt [Prompt 5: Execute Implementation Plan]
+**Trigger command:**
+```
+/execute implementation {path-to-impl-file}
+```
+
+Agent will read the Implementation file and execute according to the guidance within.
 
 ### Supplementary: Modify Existing Implementation Plan
 
@@ -92,7 +97,7 @@ Step 1 Create Collection. Input: raw requirement, output: Collection file with s
 Step 2 Convergence. Input: Collection file with status "Collecting", output: same file with status "Converged".
 Step 3 Generate Plan. Input: Collection file with status "Converged", output: Implementation file with status "Draft" (in batch folder).
 Step 4 Review. Input: Implementation file with status "Draft", output: same file with status "Ready".
-Step 5 Execute. Input: Implementation file with status "Ready", output: implementation code and tests.
+Step 5 Execute. Input: Implementation file with status "Ready", output: implementation code.
 
 Scenario B: Meeting summary entry.
 Step 0 Split. Input: meeting summary, output: multiple Collection files with status "Collecting" (in same batch folder).
@@ -102,7 +107,6 @@ Related Files
 
 - Collection template: schema/collection.md
 - Implementation template: schema/implementation.md
-- AI behavior specification: AGENTS.md
 
 ---
 
@@ -219,29 +223,3 @@ Constraints:
 - Do not add rules not present in the Collection.
 - Interface parameters must have corresponding evidence in the Converged Rules scenarios.
 - Verification cases must correspond one-to-one with Converged Rules scenarios.
-
----
-
-## Prompt 5: Execute Implementation Plan
-
-Input: An Implementation file with status "Ready". May attach current project context such as codebase path, tech stack description.
-Output: Concrete implementation code and related tests, placed in the Implementation file's batch folder.
-
-Prompt content:
-
-Task: Generate implementation code based on the Implementation file in the specified project context.
-
-Steps:
-1. Read specification. Read all fields of the Implementation file.
-2. Analyze context. Scan current project structure, identify tech stack, existing code style, directory conventions, existing interface specifications.
-3. Generate code. Generate type declarations and function signatures based on interface definitions. Generate core logic code based on hard constraints. Apply concurrency strategy, transaction boundary, idempotency guarantee, retry and degradation logic based on development constraints. Add permission validation, data masking, and audit logging based on security requirements. Generate invocation code for other Skills or external systems based on dependencies.
-4. Generate tests. Generate corresponding test cases based on Verification field. If test-first is "Yes" in implementation strategy, generate test code before implementation code. If behavior-driven is "Yes", organize test cases using Given/When/Then format.
-5. Verify consistency. Check if generated code satisfies all hard constraints in the Implementation. Check if generated tests cover all cases in the Verification field.
-6. Mark complete. After code generation, remind developer to review code. After developer approves, update Implementation status to "Completed".
-
-Constraints:
-- Output code must be placed in the Implementation file's batch folder.
-- All hard constraints must be satisfied, without exception.
-- Concurrency strategy, transaction boundary, and idempotency in development constraints must be explicitly reflected in code.
-- Security requirements must not be omitted.
-- Generated code must conform to current project's existing code style and directory conventions.
