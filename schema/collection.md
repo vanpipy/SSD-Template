@@ -16,9 +16,7 @@
 > - You are not rewriting — you are verifying and deciding. If a draft is wrong, correct it. If it's right, remove the `⚠`. If it's missing something, add it.
 > - Don't add facts that weren't discussed. If something is unclear, add a Pending Convergence Point rather than inventing an answer.
 >
-> This template is divided into **Required Section** and **Supplementary Section**.
-> - **Required Section**: Must be filled when creating a collection (by agent draft + participant review). This is the core content.
-> - **Supplementary Section**: Filled progressively during convergence discussions. Not required at creation time.
+> This template is a single required section. All fields should be filled when creating a collection (by agent draft + participant review).
 
 ---
 
@@ -72,54 +70,19 @@
 - [ ] Major scenarios within scope are covered (normal path + at least one exception path)
 - [ ] All Pending Convergence Points have been resolved (decisions made and converted to rules, or explicitly marked as deferred)
 - [ ] No logical contradictions between Converged Rules
-- [ ] Dependencies are confirmed (filled in or explicitly marked "None")
-
----
-
-## Supplementary Section
-
-> The following sections are filled progressively during convergence discussions. They may be pre-filled if information is already available at creation time, but this is not required.
-
-### Discussion & Decision Log
-
-#### Clarification Q&A
-- Q: [Key question]
-- A: [Clear answer]
-- Impact: [Which rule or direction this answer influences]
-
-#### Rejected Options
-- [Option discussed but decided against] — Rejection Reason: [Why not]
-
-#### Deferred Decisions
-- [Item not processed now, deferred to future versions] — Reason: [Why deferred]
-
-### Dependencies
-- Dependencies on Other Features: [Preceding or follow-up dependencies mentioned in discussion, e.g., "requires C01 login binding to be completed first"]
-- Dependencies on External Systems: [External interfaces or services mentioned in discussion, e.g., "payment gateway"]
-
-### Technical Constraints
-- [Technical limitations, performance requirements, security requirements mentioned in discussion]
-
-### Reference Documents
-- [Document Name]: [Link or path] — [Brief description of what this document provides]
 
 ---
 
 ## Identification & Association
 
-> Administrative information. Fill the first four items at creation time; the rest are backfilled in subsequent workflow steps.
+> Administrative information. Fill at creation time.
 
 - Topic: [One-sentence description of the core issue for this collection]
-- Status: [Draft | Collecting | Converged | Completed]
-  - **Draft**: Agent has drafted; awaiting participant review.
-  - **Collecting**: Participant has reviewed the draft; convergence discussion in progress.
+- Status: [Collecting | Converged | Completed]
+  - **Collecting**: Agent has drafted; participant is reviewing / convergence discussion in progress.
   - **Converged**: All rules verifiable, all pending points resolved.
   - **Completed**: Downstream artifacts (Tech Design / Implementation) have consumed this Collection.
-- Draft Origin: [agent-prompt1 | agent-prompt2 | participant-written] — how this Collection was initially produced
 - Created Date: [YYYY-MM-DD]
-- Participants: [List of participants in the discussion]
-- Related Tech Design: [Backfill path after Tech Design is generated]
-- Related Implementation: [Backfill path after Implementation is generated]
 - Target Repository: [Git repository URL or local path; fill if known, otherwise confirmed during tech design generation]
 
 ---
@@ -129,7 +92,6 @@
 > When a batch contains **≤ 4 independent requirements AND no cross-role / cross-system coupling**, the agent may produce a simplified Collection:
 > - Merge related scenarios into a single Collection rather than splitting by capability.
 > - Pending Convergence Points may be a flat bullet list without per-rule "Blocks" annotation (still encouraged but not required).
-> - Supplementary Section may be omitted entirely if nothing applies.
 >
 > The batch-level BATCH-OVERVIEW is still produced, but in simplified form (inventory table + relationship diagram only, no theme grouping or global pending list).
 > The agent must explicitly state "Using lightweight mode because: [reason]" at the top of the BATCH-OVERVIEW when this applies.

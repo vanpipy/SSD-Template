@@ -67,23 +67,14 @@
 > Define measurable technical targets. Don't write "high performance" or "low latency" — provide specific numbers.
 > Metrics serve as both design decision constraints and post-Implementation acceptance criteria.
 
-### Performance Metrics
-| Metric | Target | Measurement Method | Related Scenarios |
-|--------|--------|-------------------|-------------------|
-| [e.g., API response time P99] | [e.g., < 200ms] | [e.g., APM monitoring] | [Related Collection scenario] |
-| [e.g., Concurrent capacity] | [e.g., 100 QPS] | [e.g., Load testing tool] | [...] |
-
-### Quality Metrics
-| Metric | Target | Measurement Method |
-|--------|--------|-------------------|
-| [e.g., API availability] | [e.g., 99.9%] | [e.g., Health check + monitoring alerts] |
-| [e.g., Data consistency] | [e.g., Eventually consistent, delay < 5s] | [e.g., Reconciliation script] |
-
-### Capacity Metrics
-| Metric | Target | Notes |
-|--------|--------|-------|
-| [e.g., Max hold orders per device] | [e.g., 5] | [Business constraint source] |
-| [e.g., Order retention period] | [e.g., 90 days] | [Storage capacity estimation basis] |
+| Dimension | Metric | Target | Measurement Method | Related Scenarios |
+|-----------|--------|--------|-------------------|-------------------|
+| Performance | [e.g., API response time P99] | [e.g., < 200ms] | [e.g., APM monitoring] | [Related Collection scenario] |
+| Performance | [e.g., Concurrent capacity] | [e.g., 100 QPS] | [e.g., Load testing tool] | [...] |
+| Quality | [e.g., API availability] | [e.g., 99.9%] | [e.g., Health check + monitoring alerts] | [...] |
+| Quality | [e.g., Data consistency] | [e.g., Eventually consistent, delay < 5s] | [e.g., Reconciliation script] | [...] |
+| Capacity | [e.g., Max hold orders per device] | [e.g., 5] | [Business constraint source] | [...] |
+| Capacity | [e.g., Order retention period] | [e.g., 90 days] | [Storage capacity estimation basis] | [...] |
 
 ## Data Models
 
@@ -208,53 +199,6 @@
 > Record potential gaps identified during design, preventing them from surfacing only at implementation time.
 
 - [Risk, e.g., "Real-time member pricing queries may timeout under high concurrency"] — Current Mitigation: [How the design addresses it] — Residual Risk: [What may still happen]
-
-## Solution-Level Full Investigation
-
-> Conduct a comprehensive investigation of the entire process at the solution level.
-> Not just verifying "the main flow works", but expanding every step to an auditable level of detail, ensuring the solution has no blind spots.
-
-### End-to-End Flow Investigation
-
-> Select the most critical business flow (from user trigger to final result), expand step by step.
-
-#### Flow: [Core flow name, e.g., "Complete Checkout Process"]
-
-| Step | Input | Processing Logic | Output | Failure Condition | Failure Impact | Components Involved |
-|------|-------|-----------------|--------|-------------------|----------------|-------------------|
-| [1. Member identification] | [Phone/member card] | [Query member system, match identity] | [Member tier + pricing] | [Timeout / no match] | [Degrade to non-member pricing] | [Member system] |
-| [2. Product addition] | [Scan/search/select] | [Query product catalog, add to settlement] | [Product + price + qty] | [Invalid barcode / out of stock] | [Notify and skip item] | [Product service] |
-| [3. Amount calculation] | [Settlement list] | [Apply discount rules, calculate total] | [Payable amount] | [Discount engine error] | [Settle at original price] | [Discount engine] |
-| [4. Payment] | [Amount + payment method] | [Call payment channel / record cash] | [Payment result] | [Timeout / channel error] | [Enter dispute flow] | [Payment gateway] |
-| [5. Order creation] | [Payment result + settlement] | [Create online order, update status] | [Order ID + e-receipt] | [Create order API failure] | [Local buffer + retry] | [Order service] |
-
-### Component Interaction Investigation
-
-> List all components involved (internal modules + external systems), specify the protocol, data format, and failure boundary for each interaction pair.
-
-| Caller | Callee | Protocol | Data Format | Timeout | Failure Handling | Existing Implementation |
-|--------|--------|----------|-------------|---------|-----------------|----------------------|
-| [Mobile POS client] | [Product service] | [REST] | [JSON] | [3s] | [Use local cache] | [Yes/No] |
-| [...] | [...] | [...] | [...] | [...] | [...] | [...] |
-
-### Data Flow Investigation
-
-> Trace core business objects through the entire process, ensuring data integrity and consistency.
-
-#### Data Object: [e.g., "Settlement List"]
-- Created: [Which step, which API]
-- Modified: [Which steps modify it, what changes each time]
-- Read: [Which steps need to read it]
-- Archived/Deleted: [Final state and retention policy]
-- Consistency Risk: [Which concurrency or failure scenarios could cause data inconsistency]
-
-### Investigation Conclusions
-
-> Based on the investigation above, summarize the solution's completeness and risks.
-
-- Coverage Completeness: [The solution covers all known steps / The following steps are not yet clear: ...]
-- Key Risks: [High-risk points found during investigation, e.g., single point of failure, data inconsistency, performance bottleneck]
-- Requires Deep Dive: [Technical questions needing POC validation or further discussion]
 
 ## External System Integration
 
