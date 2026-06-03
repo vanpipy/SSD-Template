@@ -151,31 +151,36 @@ Related Files
 ## Prompt 1: Split Meeting Summary
 
 Input: Meeting summary, can be pasted full text or local file path.
-Output: Multiple Collection files and dependency matrix, placed in batch folder `collection/{date}-{short-topic}/`.
+Output: Multiple Collection files and a batch overview file, placed in batch folder `collection/{date}-{short-topic}/`.
 
 Prompt content:
 
-Task: Analyze meeting summary, identify independent requirements, generate Collection files.
+Task: Analyze meeting summary, identify independent requirements, generate Collection files and batch overview. The batch overview is your (the Agent's) splitting artifact — downstream Agents will treat it as global context for understanding cross-Collection relationships.
 
 Steps:
-1. Extract requirements. Scan the summary text, find all independent functional or capability requirements. Each requirement must have clear boundaries, non-overlapping and complete.
-2. Determine granularity. If a requirement involves multiple different business scenarios or has excessive complexity product, split it into multiple sub-requirements.
-3. Fill template. For each requirement, generate a Collection file following schema/collection.md format:
+1. **Split decision**. First list all requirements mentioned in the summary, then decide granularity per the following principles:
+   - **Split when**: business capability boundaries are clear (login vs settlement vs return), lifecycles are independent (create/modify/archive are not in the same flow), operated by different roles (clerk vs customer vs admin).
+   - **Merge when**: end-to-end flow that hangs together (add item → pay → receipt), shares most data models and external systems, always mentioned together in discussion, would yield a thin Collection on its own (fewer than 2 rules).
+   - **Prefer fewer Collections over more**: a merged Collection can host multiple Scenario sub-sections; the cross-Collection management cost of splitting is higher than the reading cost.
+2. Extract requirements. Per the split decision, list all requirements — each with a clear boundary, non-overlapping and complete.
+3. Fill template. For each requirement, generate a Collection file following `schema/collection.md` format:
    - Required Section:
      - Original Request: Preserve original text from the summary without rewriting.
-     - Discussion Scope: Infer Focus from summary content; Not Applicable must be explicitly stated — extract from exclusions in the summary or common-sense boundaries, at least one entry.
-     - Converged Rules: Only fill scenarios with explicit conclusions in the summary, using Given/When/Then format. Then must contain verifiable specific conditions — vague descriptions like "complete XX" are not accepted. Leave empty if no conclusion.
-     - Pending Convergence Points: Beyond explicitly unresolved issues in the summary, also extract implicit ambiguities — vague verbs (handle, optimize, improve), undefined business terms, implied exception scenarios, operations with unspecified roles or permissions. Each point must state what it blocks.
+     - Discussion Scope: Infer Focus from summary content; Out of Scope must be explicitly stated, at least one entry.
+     - Converged Rules: Choose format by content type — Scenarios use Given/When/Then, Architecture Decisions use "Decision/Options/Choice/Rationale", Business Constraints use natural language + impact scope. Only fill content with explicit conclusions; leave empty if no conclusions.
+     - Pending Convergence Points: Beyond explicitly unresolved issues in the summary, also extract implicit ambiguities (vague verbs, undefined terms, implied exceptions, unspecified roles or permissions). Each point must state what it blocks.
    - Supplementary Section: Fill Discussion & Decision Log, Dependencies, Technical Constraints from whatever can be extracted from the summary; leave empty if nothing is extractable.
-4. Annotate dependencies. Analyze invocation and dependency relationships between requirements, annotate in each Collection's Dependencies field.
-5. Generate matrix. Generate DEPENDENCY-MATRIX.md in the batch folder, format: RequirementA → depends on → RequirementB, list each line clearly.
+4. Generate batch overview. After creating all Collections, generate `BATCH-OVERVIEW.md` (following `schema/batch-overview.md` format) as the batch entry point, containing: batch metadata, Collection inventory, cross-Collection relationship diagram, global pending convergence list, external dependency summary, architecture decision summary.
+5. Backfill relationships. Per the relationship diagram in the batch overview, backfill cross-Collection dependencies into each Collection's Dependencies supplementary field.
 
 Constraints:
-- All output files must be placed in the batch folder.
+- All output files must be placed in the batch folder; the batch overview file must be named `BATCH-OVERVIEW.md`.
 - Each Collection's status field must be set to "Collecting".
 - Do not add business content not present in the summary.
 - If a requirement has absolutely no details in the summary, still generate a Collection but only fill Original Request, leave others empty.
 - All four Required Section fields must not be left empty (except Converged Rules, which may be empty if no conclusions exist).
+- Split decision must have rationale; when in doubt, prefer merging and hosting multiple Scenario sub-sections within a single Collection.
+- The batch overview must be derived from the Collections already generated; no fabricated content.
 
 ---
 
@@ -194,7 +199,7 @@ Steps:
 3. **Discussion Scope**:
    - In Scope: Infer business domain and functional boundaries from requirement content.
    - Out of Scope: If the requirement or meeting explicitly excludes certain features (e.g., "not in phase 1", "not our responsibility"), they must be listed here. If no explicit exclusions, write "No explicit exclusions yet".
-4. **Converged Rules**: Only fill scenarios with explicit conclusions, using Given/When/Then format. The "Then" must contain verifiable concrete conditions. If a rule's "Then" can only be written as a vague description like "complete XX" or "support XX", it has not converged — do not add it to Converged Rules, move it to Pending Convergence Points instead.
+4. **Converged Rules**: Choose format by content type — Scenarios use Given/When/Then, Architecture Decisions use "Decision/Options/Choice/Rationale", Business Constraints use natural language + impact scope. Only fill content with explicit conclusions. If a rule's "Then" can only be written as a vague description like "complete XX" or "support XX", it has not converged — do not add it to Converged Rules, move it to Pending Convergence Points instead.
 5. **Pending Convergence Points**: Fill in two categories, each point noting which rule it blocks.
    - Explicit ambiguities: Uncertainties explicitly mentioned in the requirement (e.g., "to be decided later", "not yet confirmed").
    - Implicit ambiguities: For each written "Then", check whether there are implied technical or business details not yet clarified. For example:
@@ -216,7 +221,7 @@ Constraints:
 ## Prompt 3: Convergence Discussion
 
 Input: A Collection file with status "Collecting" or previously existed but needs further convergence.
-Output: Updated same Collection file. If cross-Collection dependency changes are involved, update the batch-level DEPENDENCY-MATRIX.md.
+Output: Updated same Collection file. If cross-Collection dependency changes are involved, update the batch-level BATCH-OVERVIEW.md.
 
 Prompt content:
 

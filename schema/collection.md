@@ -24,28 +24,31 @@
 
 ### Converged Rules
 
-> Each rule describes a specific business scenario. The "Then" must contain verifiable concrete conditions — vague descriptions like "complete XX" or "support XX" are not allowed.
-> If you cannot write concrete conditions, the rule has not yet converged — move it to Pending Convergence Points instead.
+> Each rule describes an agreed-upon business/technical fact. Choose the format based on content type:
+> - **Scenario** (user interaction / business flow) → Given/When/Then. The "Then" must contain verifiable concrete conditions — vague descriptions like "complete XX" or "support XX" are not allowed. If you cannot write concrete conditions, the rule has not yet converged — move it to Pending Convergence Points instead.
+> - **Architecture Decision** (tech selection / pattern choice) → Decision/Options/Choice/Rationale.
+> - **Business Constraint** (hard requirement that is not a scenario) → Natural language + scope of impact.
 
 #### Scenario: [Scenario Name]
 - Given [Precondition — what triggers this]
 - When [Trigger action — who did what]
 - Then [Expected result — what specific change does the system produce, verifiable]
 
-#### Scenario: [Scenario Name]
-- Given [...]
-- When [...]
-- Then [...]
+#### Architecture Decision: [Decision Name]
+- Decision: [The core question being decided]
+- Options: [Alternatives that were discussed]
+- Choice: [Final decision]
+- Rationale: [Why this was chosen]
+
+#### Business Constraint: [Constraint Name]
+- Constraint: [Hard requirement that must be satisfied, described in natural language]
+- Impact: [Which downstream rules/scenarios this constraint affects]
 
 ### Pending Convergence Points
 
 > Record all unresolved ambiguities. Each point must state what it blocks — which rule cannot converge until this is resolved.
 
-#### Requires Human Decision
-- [Question] — Blocks: [which rule's convergence is blocked by this question]
-
-#### AI Can Attempt Convergence
-- [Question] — Blocks: [which rule's convergence is blocked by this question] — AI Suggestion: [AI's suggested approach based on existing context, marked as "AI Suggestion"]
+- [Question] — Blocks: [which rule's convergence is blocked by this question] — Notes: [any existing clues or possible directions, optional]
 
 ---
 
@@ -53,7 +56,9 @@
 
 > Before changing status to "Converged", verify each item. Status may only change when all items are satisfied.
 
-- [ ] Every "Then" contains verifiable concrete conditions (no vague descriptions like "complete XX" or "support XX")
+- [ ] Every Scenario "Then" contains verifiable concrete conditions (no vague descriptions like "complete XX" or "support XX")
+- [ ] Every Architecture Decision has options and a rationale
+- [ ] Every Business Constraint states its impact scope
 - [ ] Major scenarios within scope are covered (normal path + at least one exception path)
 - [ ] All Pending Convergence Points have been resolved (decisions made and converted to rules, or explicitly marked as deferred)
 - [ ] No logical contradictions between Converged Rules
