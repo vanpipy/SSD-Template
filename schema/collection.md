@@ -1,65 +1,97 @@
 # Collection: [Topic]
 
-## Identification
-- Topic: [One-sentence description of the core issue for this collection]
-- Status: [Collecting | Converged | Escalated]
-- Participants: [List of participants in the discussion]
-- Created Date: [YYYY-MM-DD]
-- Related Implementation: [Fill in the corresponding Implementation path after escalation; initially empty]
-- Target Repository: [Git repository URL or local path; optional — if known, fill it in; otherwise will be confirmed when generating implementation plan]
+> This template is divided into **Required Section** and **Supplementary Section**.
+> - **Required Section**: Must be filled when creating a collection. This is the core content of the Collection.
+> - **Supplementary Section**: Filled progressively during convergence discussions. Not required at creation time.
 
-## Reference Documents
-### Business References
-- [Document Name]: [Link or path] — [Brief description of what this document provides]
-- [Document Name]: [Link or path] — [Brief description of what this document provides]
+---
 
-### Technical References
-- [Document Name]: [Link or path] — [Brief description of what this document provides]
-- [Document Name]: [Link or path] — [Brief description of what this document provides]
+## Required Section
 
-### Historical References
-- [Document Name]: [Link or path] — [Brief description of what this document provides]
-- [Document Name]: [Link or path] — [Brief description of what this document provides]
+### Original Request
 
-## Discussion Scope
+[The original statement from the user or the initial description from the requirement source. Preserve original context and wording — no rewriting. Can be a paragraph, a sentence, or even a complaint.]
+
+### Discussion Scope
 - In Scope: [Business domains and functional boundaries covered by this discussion]
-- Out of Scope: [Explicitly excluded content to prevent scope creep]
+- Out of Scope: [Explicitly excluded content. If the meeting or requirement explicitly states "we won't do this", "not in phase 1", "not our responsibility", it must be written here]
 
-## Original Request
-[The original statement from the user or the initial description from the requirement source, preserving original context and wording]
+### Converged Rules
 
-## Applicability
-- Applicable: [Scenarios initially identified as appropriate]
-- Not Applicable: [Scenarios explicitly identified as out of scope]
+> Each rule describes a specific business scenario. The "Then" must contain verifiable concrete conditions — vague descriptions like "complete XX" or "support XX" are not allowed.
+> If you cannot write concrete conditions, the rule has not yet converged — move it to Pending Convergence Points instead.
 
-## Discussion & Decision Log
-### Clarification Q&A
+#### Scenario: [Scenario Name]
+- Given [Precondition — what triggers this]
+- When [Trigger action — who did what]
+- Then [Expected result — what specific change does the system produce, verifiable]
+
+#### Scenario: [Scenario Name]
+- Given [...]
+- When [...]
+- Then [...]
+
+### Pending Convergence Points
+
+> Record all unresolved ambiguities. Each point must state what it blocks — which rule cannot converge until this is resolved.
+
+#### Requires Human Decision
+- [Question] — Blocks: [which rule's convergence is blocked by this question]
+
+#### AI Can Attempt Convergence
+- [Question] — Blocks: [which rule's convergence is blocked by this question] — AI Suggestion: [AI's suggested approach based on existing context, marked as "AI Suggestion"]
+
+---
+
+## Convergence Checklist
+
+> Before changing status to "Converged", verify each item. Status may only change when all items are satisfied.
+
+- [ ] Every "Then" contains verifiable concrete conditions (no vague descriptions like "complete XX" or "support XX")
+- [ ] Major scenarios within scope are covered (normal path + at least one exception path)
+- [ ] All Pending Convergence Points have been resolved (decisions made and converted to rules, or explicitly marked as deferred)
+- [ ] No logical contradictions between Converged Rules
+- [ ] Dependencies are confirmed (filled in or explicitly marked "None")
+
+---
+
+## Supplementary Section
+
+> The following sections are filled progressively during convergence discussions. They may be pre-filled if information is already available at creation time, but this is not required.
+
+### Discussion & Decision Log
+
+#### Clarification Q&A
 - Q: [Key question]
 - A: [Clear answer]
 - Impact: [Which rule or direction this answer influences]
 
-### Rejected Options
-- [Options that were discussed but decided against, along with rejection reasons]
+#### Rejected Options
+- [Option discussed but decided against] — Rejection Reason: [Why not]
 
-### Deferred Decisions
-- [Items not processed now, deferred to future versions for discussion]
+#### Deferred Decisions
+- [Item not processed now, deferred to future versions] — Reason: [Why deferred]
 
-## Converged Rules
-### Scenario: [Scenario Name]
-- Given [Precondition]
-- When [Trigger Action]
-- Then [Expected Result]
+### Dependencies
+- Dependencies on Other Features: [Preceding or follow-up dependencies mentioned in discussion, e.g., "requires C01 login binding to be completed first"]
+- Dependencies on External Systems: [External interfaces or services mentioned in discussion, e.g., "payment gateway"]
 
-## Dependencies
-- Potential Dependencies on Other Skills: [Preceding or follow-up dependencies mentioned in discussion]
-- Potential Dependencies on External Systems: [External interfaces or services mentioned in discussion]
+### Technical Constraints
+- [Technical limitations, performance requirements, security requirements mentioned in discussion]
 
-## Technical Constraints
-- [Technical limitations, performance requirements, security requirements mentioned in discussion; unrefined items can be noted here initially]
+### Reference Documents
+- [Document Name]: [Link or path] — [Brief description of what this document provides]
 
-## Pending Convergence Points
-### Requires Human Decision
-- [Questions that must be explicitly answered by humans before convergence can proceed]
+---
 
-### AI Can Attempt Convergence
-- [Questions AI can try to resolve based on existing context, but require human confirmation]
+## Identification & Association
+
+> Administrative information. Fill the first three items at creation time; the rest are backfilled in subsequent workflow steps.
+
+- Topic: [One-sentence description of the core issue for this collection]
+- Status: [Collecting | Converged | Completed]
+- Created Date: [YYYY-MM-DD]
+- Participants: [List of participants in the discussion]
+- Related Tech Design: [Backfill path after Tech Design is generated]
+- Related Implementation: [Backfill path after Implementation is generated]
+- Target Repository: [Git repository URL or local path; fill if known, otherwise confirmed during tech design generation]
