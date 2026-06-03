@@ -1,13 +1,23 @@
 # Collection: [Topic]
 
-> **Perspective: Participant**
-> Collection is designed for the people who participated in the requirement discussion. Your goal is to capture what was agreed upon and flag what is still unclear.
-> - Write what you actually know. Don't fabricate content just to fill a field.
-> - Given/When/Then is a tool to help you discover "did I actually think this through", not a formatting requirement. If you can't write a concrete Then, put it in Pending Convergence Points instead.
-> - Low barrier to create: four required fields, fill as much as you can, complete the rest during convergence.
-
+> **Perspective: Reviewer (Participant) + Drafter (Agent)**
+> A Collection is a shared artifact between two roles:
+> - **Agent (Drafter)**: Extracts facts from input (meeting summary, raw requirement, code), drafts the Collection with as much structure as possible, and marks anything uncertain with `⚠ Needs confirmation` so the participant knows where judgment is required.
+> - **Participant (Reviewer + Decider)**: Verifies the draft against what was actually discussed, resolves the `⚠` markers, fills gaps the agent couldn't infer, and makes final calls on ambiguous points.
+>
+> This separation exists because the agent is good at structure and exhaustive extraction, but bad at knowing what was *actually agreed*. The participant is the source of truth for consensus.
+>
+> **Drafting principles (for the Agent)**:
+> - Draft what you can ground in input. Mark anything you inferred but wasn't stated with `⚠`.
+> - Given/When/Then is a tool to expose "did I think this through", not a formatting checkbox. If you can't write a concrete Then, put it in Pending Convergence Points.
+> - Prefer more Pending Convergence Points over unverified Converged Rules.
+>
+> **Review principles (for the Participant)**:
+> - You are not rewriting — you are verifying and deciding. If a draft is wrong, correct it. If it's right, remove the `⚠`. If it's missing something, add it.
+> - Don't add facts that weren't discussed. If something is unclear, add a Pending Convergence Point rather than inventing an answer.
+>
 > This template is divided into **Required Section** and **Supplementary Section**.
-> - **Required Section**: Must be filled when creating a collection. This is the core content of the Collection.
+> - **Required Section**: Must be filled when creating a collection (by agent draft + participant review). This is the core content.
 > - **Supplementary Section**: Filled progressively during convergence discussions. Not required at creation time.
 
 ---
@@ -97,12 +107,29 @@
 
 ## Identification & Association
 
-> Administrative information. Fill the first three items at creation time; the rest are backfilled in subsequent workflow steps.
+> Administrative information. Fill the first four items at creation time; the rest are backfilled in subsequent workflow steps.
 
 - Topic: [One-sentence description of the core issue for this collection]
-- Status: [Collecting | Converged | Completed]
+- Status: [Draft | Collecting | Converged | Completed]
+  - **Draft**: Agent has drafted; awaiting participant review.
+  - **Collecting**: Participant has reviewed the draft; convergence discussion in progress.
+  - **Converged**: All rules verifiable, all pending points resolved.
+  - **Completed**: Downstream artifacts (Tech Design / Implementation) have consumed this Collection.
+- Draft Origin: [agent-prompt1 | agent-prompt2 | participant-written] — how this Collection was initially produced
 - Created Date: [YYYY-MM-DD]
 - Participants: [List of participants in the discussion]
 - Related Tech Design: [Backfill path after Tech Design is generated]
 - Related Implementation: [Backfill path after Implementation is generated]
 - Target Repository: [Git repository URL or local path; fill if known, otherwise confirmed during tech design generation]
+
+---
+
+## Lightweight Mode (for small batches)
+
+> When a batch contains **≤ 4 independent requirements AND no cross-role / cross-system coupling**, the agent may produce a simplified Collection:
+> - Merge related scenarios into a single Collection rather than splitting by capability.
+> - Pending Convergence Points may be a flat bullet list without per-rule "Blocks" annotation (still encouraged but not required).
+> - Supplementary Section may be omitted entirely if nothing applies.
+>
+> The batch-level BATCH-OVERVIEW is still produced, but in simplified form (inventory table + relationship diagram only, no theme grouping or global pending list).
+> The agent must explicitly state "Using lightweight mode because: [reason]" at the top of the BATCH-OVERVIEW when this applies.

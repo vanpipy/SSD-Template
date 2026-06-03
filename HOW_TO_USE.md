@@ -13,8 +13,7 @@ collection/
 ├── {date}-{short-topic}/           # Batch folder
 │   ├── C01-xxx.md                 # Collection files
 │   ├── C02-xxx.md                 # Collection files
-│   └── DEPENDENCY-MATRIX.md       # Batch-level dependency matrix
-└── DEPENDENCY-MATRIX.md           # Global dependency matrix (optional)
+│   └── BATCH-OVERVIEW.md          # Batch overview (Agent's splitting artifact)
 
 tech-design/
 ├── {date}-{short-topic}/           # Batch folder
@@ -27,8 +26,8 @@ implementation/
 ```
 
 - **Batch folder naming**: `{YYYY-MM-DD}-{short-topic}`
-- **Each batch** contains: all files generated from this input + dependency matrix
-- **Dependency matrix**: batch-level for intra-batch dependencies, global for cross-batch
+- **Each batch** contains: all files generated from this input + batch overview
+- **Batch overview**: the Agent's splitting artifact; downstream Agents read it as global context
 
 ## Use Cases
 
@@ -39,39 +38,51 @@ Scenario B: You have a meeting summary containing multiple requirements. Split i
 ## Workflow
 
 > **Perspective Guide**
-> The workflow is divided into two phases, each with a different perspective:
-> - **Requirements phase (Steps 0–2)**: Participant perspective. Goal is to capture what was agreed upon and flag what is still unclear. Collection is for humans — write what you actually know, don't fabricate content just to fill fields.
-> - **Technical phase (Steps 3–6)**: Executing Agent perspective. Goal is to produce technical documents the Agent can directly execute. Tech Design and Implementation are for the Agent — must be precise to field level and function level, no room for ambiguity.
+> The workflow uses a **dual-role collaboration model** across all steps:
+> - **Agent (Drafter / Investigator / Producer)**: Extracts structure from input, drafts artifacts, marks uncertain content with `⚠`, produces technical documents downstream.
+> - **Participant (Reviewer / Decider)**: Verifies drafts against what was actually discussed, resolves `⚠` markers, makes final calls on ambiguous points.
+>
+> Every handoff follows the same pattern: **Agent proposes → Participant decides → Agent records**.
+>
+> The workflow is divided into two phases:
+> - **Requirements phase (Steps 0–2)**: Collection. Agent drafts from input; participant reviews; convergence discussion until all rules are verifiable. Status progression: `Draft → Collecting → Converged`.
+> - **Technical phase (Steps 3–6)**: Tech Design + Implementation. Agent produces technical documents from converged Collections. Participant reviews for correctness; Agent executes. Status progression: `Draft → Ready → Executed`.
 
 ### 0. Scenario B Entry: Step 0 - Split Meeting Summary
 
-> Participant perspective
+> Agent drafts split proposal; Participant reviews; Agent drafts Collections
 
-For Scenario B. Input is a meeting summary, either manually recorded or AI-generated. Output is multiple Collection files, each corresponding to an independent requirement point, placed in `collection/{date}-{short-topic}/`, all with status "Collecting".
+For Scenario B. Input is a meeting summary, either manually recorded or AI-generated. Output is a batch overview with Collection inventory + multiple Collection files in `collection/{date}-{short-topic}/`. Collections start as **Draft** and flip to **Collecting** after participant review.
 
 How to use:
 1. Determine batch folder name based on input source
 2. Use prompt [Prompt 1: Split Meeting Summary]
+3. **Review handoff**: Agent first presents the split proposal (inventory + relationship diagram) for your approval. Only after you confirm does the Agent draft each Collection and the global pending list.
+
+**Lightweight mode**: When the Agent identifies ≤ 4 independent requirements with no cross-role / cross-system coupling, it may propose lightweight mode. In this case the two review rounds collapse into one, and the batch overview is simplified.
 
 ### 1. Scenario A Entry: Step 1 - Create Single Collection
 
-> Participant perspective
+> Agent drafts Collection; Participant reviews
 
-If you only have one requirement, start here. Input is a raw requirement description. Output is a Collection file placed in `collection/{date}-{short-topic}/`, status "Collecting".
+If you only have one requirement, start here. Input is a raw requirement description. Output is a Collection file placed in `collection/{date}-{short-topic}/`, initially in **Draft** status, flipping to **Collecting** after your review.
 
 How to use:
 1. Determine batch folder name based on input source
 2. Use prompt [Prompt 2: Create Single Collection]
+3. **Review handoff**: Agent presents the drafted Collection with `⚠` markers on uncertain fields. Resolve them (accept / correct / add pending point); Agent flips status to Collecting.
 
 ### 2. Step 2 - Convergence Discussion
 
-> Participant perspective
+> Agent proposes convergence suggestions; Participant decides; Agent records
 
-Input is a Collection file created in Step 0 or Step 1 (located in batch folder). Output is the same file with status changed to "Converged", all ambiguity points resolved.
+Input is a Collection file with status "Collecting" (located in batch folder). Output is the same file with status changed to "Converged", all ambiguity points resolved.
 
 How to use: Use prompt [Prompt 3: Convergence Discussion]
 
-For multiple Collections split from Step 0, maintain their dependencies. If converging one Collection affects another, update the other's dependency fields and the batch-level DEPENDENCY-MATRIX.md.
+**Collaboration pattern**: Agent reads the Collection (and BATCH-OVERVIEW if multi-Collection), produces a **Convergence Proposal** listing each pending point with an AI-suggested resolution and a "Needs your decision" section. You decide each item; Agent records your decisions into the Collection and syncs the batch overview.
+
+For multiple Collections split from Step 0, maintain their relationships. If converging one Collection affects another, the Agent updates the other's dependency fields and the batch-level BATCH-OVERVIEW.md (specifically the Cross-Collection Relationships diagram and Global Pending Convergence List).
 
 ### 3. Step 3 - Generate Tech Design
 
@@ -129,7 +140,7 @@ Agent will read the Implementation file and execute according to the guidance wi
 ## Input/Output Quick Reference
 
 Scenario A: Single requirement entry.
-Step 1 Create Collection. Input: raw requirement, output: Collection file with status "Collecting" (in batch folder).
+Step 1 Create Collection. Input: raw requirement, output: Collection file with status "Draft" → "Collecting" after participant review (in batch folder).
 Step 2 Convergence. Input: Collection file with status "Collecting", output: same file with status "Converged".
 Step 3 Generate Tech Design. Input: Collection file with status "Converged", output: Tech Design file with status "Draft" (in batch folder).
 Step 4 Generate Plan. Input: Tech Design file with status "Ready", output: Implementation file with status "Draft" (in batch folder).
@@ -137,12 +148,13 @@ Step 5 Review. Input: Implementation file with status "Draft", output: same file
 Step 6 Execute. Input: Implementation file with status "Ready", output: implementation code.
 
 Scenario B: Meeting summary entry.
-Step 0 Split. Input: meeting summary, output: multiple Collection files with status "Collecting" (in same batch folder).
+Step 0 Split. Input: meeting summary, output: BATCH-OVERVIEW.md + multiple Collection files, all initially "Draft" → "Collecting" after participant review (in same batch folder).
 Each subsequent step executes independently for each Collection, same as Scenario A.
 
 Related Files
 
 - Collection template: schema/collection.md
+- Batch overview template: schema/batch-overview.md
 - Tech Design template: schema/tech-design.md
 - Implementation template: schema/implementation.md
 
@@ -151,106 +163,154 @@ Related Files
 ## Prompt 1: Split Meeting Summary
 
 Input: Meeting summary, can be pasted full text or local file path.
-Output: Multiple Collection files and a batch overview file, placed in batch folder `collection/{date}-{short-topic}/`.
+Output: A batch overview (`BATCH-OVERVIEW.md`) plus multiple Collection files, placed in batch folder `collection/{date}-{short-topic}/`. Collections start as Draft and flip to Collecting after participant review.
 
 Prompt content:
 
-Task: Analyze meeting summary, identify independent requirements, generate Collection files and batch overview. The batch overview is your (the Agent's) splitting artifact — downstream Agents will treat it as global context for understanding cross-Collection relationships.
+Task: Analyze meeting summary, identify independent requirements, generate a batch overview and Collection files using a **two-pass draft-review protocol**. The batch overview is your (the Agent's) splitting artifact — downstream Agents will treat it as global context. You are the drafter; the participant is the reviewer and decider. Do not skip the review checkpoints.
 
 Steps:
-1. **Split decision**. First list all requirements mentioned in the summary, then decide granularity per the following principles:
+
+**Pass 1 — Propose split (status: Draft)**
+
+1. **Split decision**. Read the meeting summary and list every requirement mentioned. Then decide granularity per the following principles:
    - **Split when**: business capability boundaries are clear (login vs settlement vs return), lifecycles are independent (create/modify/archive are not in the same flow), operated by different roles (clerk vs customer vs admin).
    - **Merge when**: end-to-end flow that hangs together (add item → pay → receipt), shares most data models and external systems, always mentioned together in discussion, would yield a thin Collection on its own (fewer than 2 rules).
    - **Prefer fewer Collections over more**: a merged Collection can host multiple Scenario sub-sections; the cross-Collection management cost of splitting is higher than the reading cost.
-2. Extract requirements. Per the split decision, list all requirements — each with a clear boundary, non-overlapping and complete.
-3. Fill template. For each requirement, generate a Collection file following `schema/collection.md` format:
+   - **Soft cap**: if your split produces more than 8 Collections, provide an explicit justification for each beyond the 8th.
+2. **Lightweight-mode check**. If independent requirements ≤ 4 AND no cross-role / cross-system coupling, propose lightweight mode (state reason at the top of the batch overview). In lightweight mode, Pass 1 and Pass 2 may collapse into a single round.
+3. **Draft batch overview (partial)**. Create `BATCH-OVERVIEW.md` following `schema/batch-overview.md` format. Fill in only these sections for now: Batch Metadata, Collection Inventory, Cross-Collection Relationships. Do not yet draft the global pending list or the supplementary section.
+4. **🛑 Pause for participant review**. Present to the participant:
+   - The proposed split count and rationale.
+   - The Collection Inventory table.
+   - The Cross-Collection relationship diagram.
+   - A short list of "Split decisions I'm unsure about" (if any).
+   - The lightweight-mode recommendation (if applicable).
+   Wait for the participant to (a) accept, (b) request merges/splits, or (c) request a lightweight re-split. Adjust the inventory and relationships per feedback before proceeding.
+
+**Pass 2 — Draft Collections + global pending list (status: Draft → Collecting after review)**
+
+5. **Extract requirements**. Per the approved split decision, list all requirements — each with a clear boundary, non-overlapping and complete.
+6. **Draft each Collection**. For each requirement, generate a Collection file following `schema/collection.md` format. Set status to "Draft" and Draft Origin to "agent-prompt1". For uncertain fields, mark with `⚠` so the participant knows where judgment is required:
    - Required Section:
      - Original Request: Preserve original text from the summary without rewriting.
      - Discussion Scope: Infer Focus from summary content; Out of Scope must be explicitly stated, at least one entry.
      - Converged Rules: Choose format by content type — Scenarios use Given/When/Then, Architecture Decisions use "Decision/Options/Choice/Rationale", Business Constraints use natural language + impact scope. Only fill content with explicit conclusions; leave empty if no conclusions.
      - Pending Convergence Points: Beyond explicitly unresolved issues in the summary, also extract implicit ambiguities (vague verbs, undefined terms, implied exceptions, unspecified roles or permissions). Each point must state what it blocks.
    - Supplementary Section: Fill Discussion & Decision Log, Dependencies, Technical Constraints from whatever can be extracted from the summary; leave empty if nothing is extractable.
-4. Generate batch overview. After creating all Collections, generate `BATCH-OVERVIEW.md` (following `schema/batch-overview.md` format) as the batch entry point, containing: batch metadata, Collection inventory, cross-Collection relationship diagram, global pending convergence list, external dependency summary, architecture decision summary.
-5. Backfill relationships. Per the relationship diagram in the batch overview, backfill cross-Collection dependencies into each Collection's Dependencies supplementary field.
+7. **Complete batch overview**. After drafting all Collections, add to `BATCH-OVERVIEW.md`: the Global Pending Convergence List (with Priority column: P0 / P1 / P2), External Dependency Summary, Architecture Decision Summary, and Batch-Level Themes.
+8. **Backfill relationships**. Per the relationship diagram in the batch overview, backfill cross-Collection dependencies into each Collection's Dependencies supplementary field.
+9. **🛑 Pause for participant review (second round)**. Present to the participant:
+   - Each drafted Collection (with `⚠` markers highlighted).
+   - The Global Pending Convergence List grouped by priority.
+   - The supplementary sections (external dependencies, architecture decisions, themes).
+   Wait for the participant to resolve `⚠` markers (accept / correct / add pending point). After each Collection is reviewed, flip its status from "Draft" to "Collecting" and update the inventory in `BATCH-OVERVIEW.md`.
 
 Constraints:
 - All output files must be placed in the batch folder; the batch overview file must be named `BATCH-OVERVIEW.md`.
-- Each Collection's status field must be set to "Collecting".
+- Each Collection starts as "Draft" and flips to "Collecting" only after participant review — never skip the review checkpoints.
 - Do not add business content not present in the summary.
 - If a requirement has absolutely no details in the summary, still generate a Collection but only fill Original Request, leave others empty.
 - All four Required Section fields must not be left empty (except Converged Rules, which may be empty if no conclusions exist).
 - Split decision must have rationale; when in doubt, prefer merging and hosting multiple Scenario sub-sections within a single Collection.
 - The batch overview must be derived from the Collections already generated; no fabricated content.
+- Every entry in the Global Pending Convergence List must have a Priority (P0 / P1 / P2).
 
 ---
 
 ## Prompt 2: Create Single Collection
 
 Input: A raw requirement description, can be natural language.
-Output: A Collection file with status "Collecting", placed in batch folder `collection/{date}-{short-topic}/`.
+Output: A Collection file in batch folder `collection/{date}-{short-topic}/`. Status starts as "Draft" and flips to "Collecting" after participant review.
 
 Prompt content:
 
-Task: Convert raw requirement into a Collection file. Focus on filling the Required Section; pre-fill Supplementary Section as needed.
+Task: Convert raw requirement into a Collection file using a **draft-review protocol**. You are the drafter; the participant is the reviewer and decider. Mark uncertain content with `⚠` so the participant knows where judgment is required.
 
 Steps:
-1. Create file following schema/collection.md format in the batch folder.
-2. **Original Request**: Preserve user's original text without rewriting.
-3. **Discussion Scope**:
+1. **Lightweight-mode check**. If the batch currently has ≤ 4 Collections and no cross-role / cross-system coupling, you may use the lightweight Collection form (see schema/collection.md). State the reason at the top of the batch overview when creating or updating it.
+2. **Create the file** following schema/collection.md format in the batch folder. Set status to "Draft" and Draft Origin to "agent-prompt2".
+3. **Original Request**: Preserve user's original text without rewriting.
+4. **Discussion Scope**:
    - In Scope: Infer business domain and functional boundaries from requirement content.
    - Out of Scope: If the requirement or meeting explicitly excludes certain features (e.g., "not in phase 1", "not our responsibility"), they must be listed here. If no explicit exclusions, write "No explicit exclusions yet".
-4. **Converged Rules**: Choose format by content type — Scenarios use Given/When/Then, Architecture Decisions use "Decision/Options/Choice/Rationale", Business Constraints use natural language + impact scope. Only fill content with explicit conclusions. If a rule's "Then" can only be written as a vague description like "complete XX" or "support XX", it has not converged — do not add it to Converged Rules, move it to Pending Convergence Points instead.
-5. **Pending Convergence Points**: Fill in two categories, each point noting which rule it blocks.
+5. **Converged Rules**: Choose format by content type — Scenarios use Given/When/Then, Architecture Decisions use "Decision/Options/Choice/Rationale", Business Constraints use natural language + impact scope. Only fill content with explicit conclusions. If a rule's "Then" can only be written as a vague description like "complete XX" or "support XX", it has not converged — do not add it to Converged Rules, move it to Pending Convergence Points instead. Mark any inferred-but-unstated rule with `⚠`.
+6. **Pending Convergence Points**: Fill in two categories, each point noting which rule it blocks.
    - Explicit ambiguities: Uncertainties explicitly mentioned in the requirement (e.g., "to be decided later", "not yet confirmed").
    - Implicit ambiguities: For each written "Then", check whether there are implied technical or business details not yet clarified. For example:
      - "Refund via original payment method" — refund time window? partial refund?
      - "Refundable quantity" — initial value? deduction logic?
      - "Bind to store" — where is binding data stored? what login credentials?
      Add these implicit ambiguities to Pending Convergence Points.
-6. **Supplementary Section**: If the requirement already contains discussion records, dependencies, technical constraints, or reference documents, pre-fill the corresponding Supplementary Section fields. Leave empty if none.
-7. **Identification & Association**: Extract core functionality for Topic, name with brief phrase. Set status to "Collecting".
+7. **Supplementary Section**: If the requirement already contains discussion records, dependencies, technical constraints, or reference documents, pre-fill the corresponding Supplementary Section fields. Leave empty if none.
+8. **Identification & Association**: Extract core functionality for Topic, name with brief phrase.
+9. **🛑 Pause for participant review**. Present the drafted Collection to the participant, with `⚠` markers highlighted and a short list of "decisions I need you to make" at the top. Wait for the participant to resolve each marker (accept / correct / add pending point). Then flip status from "Draft" to "Collecting".
+10. **Update or create batch overview**. If a `BATCH-OVERVIEW.md` exists, add this Collection to the inventory. If not, create one following `schema/batch-overview.md` and fill in the sections relevant to a single-Collection batch (metadata, inventory, any cross-system dependencies).
 
 Constraints:
 - File must be placed in the specified batch folder.
+- Status starts as "Draft"; flips to "Collecting" only after participant review.
 - Do not add information not present in the requirement.
 - Do not prematurely converge rules that are not yet confirmed.
 - Prefer writing more Pending Convergence Points over writing uncertain content as Converged Rules.
+- Every inferred-but-unstated field must carry a `⚠` marker so the participant sees it explicitly.
 
 ---
 
 ## Prompt 3: Convergence Discussion
 
-Input: A Collection file with status "Collecting" or previously existed but needs further convergence.
-Output: Updated same Collection file. If cross-Collection dependency changes are involved, update the batch-level BATCH-OVERVIEW.md.
+Input: One or more Collection files with status "Collecting", plus the batch-level `BATCH-OVERVIEW.md` (if the batch has multiple Collections).
+Output: Updated Collection file(s). If cross-Collection dependency changes are involved, updated `BATCH-OVERVIEW.md`. Status may flip from "Collecting" to "Converged" at the end.
 
 Prompt content:
 
-Task: Analyze Collection file, assist in completing requirement convergence. The goal is to bring all Converged Rules to verifiable granularity and clear all Pending Convergence Points.
+Task: Produce a **Convergence Proposal** for the participant, then record the participant's decisions. The goal is to bring all Converged Rules to verifiable granularity and clear all Pending Convergence Points. You propose; the participant decides; you record.
 
 Steps:
+
+**Phase 1 — Produce Convergence Proposal**
+
 1. **Granularity Check**. Review each Converged Rule's "Then":
-   - If "Then" contains vague descriptions like "complete XX", "support XX", "implement XX" without verifiable concrete conditions, this rule is **not qualified**. Demote it to Pending Convergence Points, or split into finer sub-scenarios.
+   - If "Then" contains vague descriptions like "complete XX", "support XX", "implement XX" without verifiable concrete conditions, this rule is **not qualified**. In your proposal, recommend demoting it to Pending Convergence Points or splitting into finer sub-scenarios.
    - Qualified "Then" examples: "System returns 200 status code with order number", "Cart item quantity +1, total price recalculated".
    - Unqualified "Then" examples: "Binding completed", "Aggregate payment supported", "Order query successful".
-2. **Analyze Pending Convergence Points**. Check each issue in "Requires Human Decision" and "AI Can Attempt Convergence". For AI-can-attempt issues, provide suggested solutions with rationale. For human-decision issues, point out blocking points and possible impact scope.
-3. **Implicit Ambiguity Mining**. For each qualified rule, check once more: when implementing this rule, would a developer ask "how exactly?" If yes, add implicit ambiguity points. Common patterns:
+2. **Propose resolutions for Pending Convergence Points**. For each pending point, propose one of:
+   - **Resolve with AI suggestion**: if context allows a reasonable inference, state the inference with rationale (marked as "AI Suggestion").
+   - **Escalate to participant**: if human decision is required, state the blocking impact and 2-3 candidate options for the participant to choose from.
+   - **Defer explicitly**: if the point does not block convergence of any in-scope rule, recommend deferring and state why.
+3. **Priority assessment**. Assign or reconfirm Priority (P0 / P1 / P2) for each pending point, per the definitions in schema/batch-overview.md.
+4. **Implicit Ambiguity Mining**. For each qualified rule, check once more: when implementing this rule, would a developer ask "how exactly?" If yes, add new implicit ambiguity points. Common patterns:
    - Operations involving external systems — how to handle timeout? how to degrade on failure?
    - Operations involving data changes — how to handle concurrent writes? how to ensure idempotency?
    - Operations involving user input — what are the validation rules? how to respond to invalid input?
-4. **Identify Gaps**. Check if Converged Rules cover all major scenarios within scope: at least one normal path + at least one exception path. If gaps found, supplement in Pending Convergence Points.
-5. **Check Consistency**. Check for logical contradictions between Converged Rules. Check consistency between Discussion Scope and Converged Rules.
-6. **Generate Follow-up Questions**. List key questions needing human confirmation, each with context and AI suggestions.
-7. **Update Dependencies**. If convergence involves cross-Collection dependency changes, update the batch-level DEPENDENCY-MATRIX.md.
-8. **Convergence Completion Determination**. Status may be changed to "Converged" if and only if all of the following are satisfied:
-   - Granularity check fully passed (every "Then" is verifiable)
-   - All Pending Convergence Points cleared (converted to rules or marked as deferred decisions)
-   - Convergence Checklist fully checked off
+5. **Identify Gaps**. Check if Converged Rules cover all major scenarios within scope: at least one normal path + at least one exception path. If gaps found, propose new pending points.
+6. **Check Consistency**. Check for logical contradictions between Converged Rules. Check consistency between Discussion Scope and Converged Rules.
+7. **🛑 Present Convergence Proposal to participant**. The proposal has three sections:
+   - **AI Suggestions (accept / reject / edit)**: each pending point with an AI-suggested resolution.
+   - **Needs your decision**: each pending point requiring human choice, with 2-3 candidate options.
+   - **Proposed deferrals**: pending points recommended for deferral, with rationale.
+   Do not write into the Collection yet. Wait for the participant.
+
+**Phase 2 — Record participant decisions**
+
+8. **Record decisions**. For each item in the proposal, apply the participant's decision:
+   - Accept AI suggestion → convert to Converged Rule or mark deferred.
+   - Reject / edit AI suggestion → write the participant's version.
+   - Human-decision item → record the chosen option with rationale.
+   - Deferred item → move to Deferred Decisions in the Discussion & Decision Log.
+9. **Update Dependencies**. If convergence involves cross-Collection relationship changes, update the batch-level `BATCH-OVERVIEW.md` (Cross-Collection Relationships diagram, Global Pending Convergence List, and any affected inventory rows).
+10. **Convergence Completion Determination**. Status may be changed to "Converged" if and only if all of the following are satisfied:
+    - Granularity check fully passed (every "Then" is verifiable)
+    - All Pending Convergence Points cleared (converted to rules or marked as deferred decisions)
+    - Convergence Checklist fully checked off
+11. **Flip status and sync batch overview**. Flip each converged Collection's status to "Converged" and update the corresponding inventory row and Global Pending Convergence List in `BATCH-OVERVIEW.md`.
 
 Constraints:
-- Do not modify content requiring human decision without authorization.
+- Do not write any decision into the Collection until the participant has explicitly decided. AI suggestions remain suggestions until accepted.
 - Do not delete any existing discussion and decision records.
 - Suggested solutions must be marked as "AI Suggestion".
 - Prefer extending the convergence cycle over marking as "Converged" with insufficient granularity.
+- Every change to a Collection must be reflected in the batch overview (inventory status, pending list, relationships) in the same pass.
 
 ---
 
