@@ -6,6 +6,7 @@
 - Participants: [List of participants in the discussion]
 - Created Date: [YYYY-MM-DD]
 - Related Implementation: [Fill in the corresponding Implementation path after escalation; initially empty]
+- Target Repository: [Git repository URL or local path; optional — if known, fill it in; otherwise will be confirmed when generating implementation plan]
 
 ## Reference Documents
 ### Business References

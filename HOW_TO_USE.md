@@ -192,6 +192,7 @@ Prompt content:
 Task: Convert a converged Collection into an Implementation file.
 
 Steps:
+0. Check prerequisites. If the target repository is not specified in the input context, ask the user: "Which repository should this implementation target?" Do not proceed without this information.
 1. Read input. Read all fields of the Collection file.
 2. Fill identification. Extract Skill name from Topic field, summarize one-sentence description from Converged Rules. Set version to 1.0.0, status to "Draft", backfill Collection file path in Source field.
 3. Fill applicability. Map directly from Collection's Applicability field.
