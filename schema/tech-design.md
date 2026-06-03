@@ -12,9 +12,10 @@
 - Description: [One-sentence description of the technical objective]
 - Version: [Semantic version number]
 - Status: [Draft | Ready | Deprecated]
+- Design Mode: [Greenfield | Brownfield]
 - Source: [Path to the corresponding Collection file in the collection directory]
 - Related Implementation: [Backfill path after Implementation is generated; initially empty]
-- Target Repository: [Inherited from Collection, or confirmed here]
+- Target Repository: [Inherited from Collection, or confirmed here; may be left empty for greenfield]
 
 ## Applicability
 - Applicable: [Inherited from Collection, may supplement technical boundaries, e.g., "covers HTTP API layer only, excludes UI"]
@@ -22,13 +23,15 @@
 
 ## Repository Context (Design-Time Scan)
 
-> Fill after interacting with the target repository. If the repository is not yet determined at design time, mark "TBD" — must be completed before generating Implementation.
+> Fill according to design mode:
+> - **Brownfield**: Two-pass scan — first pass reads repo-level AGENTS.md / CLAUDE.md / .cursorrules (the authoritative conventions maintained by repo owners, read first to avoid misinterpreting patterns downstream); second pass scans the codebase against these conventions. For each sub-field, list 1-2 typical/representative file paths — exhaustive enumeration is not required; deeper model and interface exploration happens in the "Scenario Mapping & Solution-Level Full Investigation" step.
+> - **Greenfield**: Replace this section with "Problem Domain Context" — requirement boundaries, candidate tech stack, similar-system references, to feed the technical strategy rationale downstream.
 
 - Tech Stack: [Existing tech stack, used to constrain design choices]
-- Existing Data Models: [Paths to related tables/types/schemas already in the codebase]
-- Existing API Patterns: [API style used by the project, e.g., REST / GraphQL / RPC]
-- Existing Middleware/Infrastructure: [Auth, logging, message queues, caching, etc.]
-- Reference Modules: [Existing modules with similar functionality, used as design reference]
+- Existing Data Models: [Typical paths to related tables/types/schemas, 1-2 representative files]
+- Existing API Patterns: [API style used by the project, e.g., REST / GraphQL / RPC, with 1-2 representative endpoints]
+- Existing Middleware/Infrastructure: [Auth, logging, message queues, caching, etc., with names and typical config paths]
+- Reference Modules: [Existing modules with similar functionality, used as design reference, 1-2 typical modules]
 
 ## Technical Strategy
 

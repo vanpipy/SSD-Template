@@ -79,13 +79,13 @@ For multiple Collections split from Step 0, maintain their dependencies. If conv
 
 Input is a Collection file with status "Converged", plus the target repository's technical context. Output is a Tech Design file placed in `tech-design/{date}-{short-topic}/`, status "Draft".
 
-Tech Design is the bridge between Collection (business rules) and Implementation (code-level instructions). It revolves around four core concerns: **Technical Strategy** (how to build it overall), **Metrics** (what the measurable standards are), **Solution-Level Full Investigation** (whether every part of the end-to-end process has been audited), **Requirement Transformation Fallback** (whether business intent is lost during transformation).
+Tech Design is the bridge between Collection (business rules) and Implementation (code-level instructions). It revolves around four core concerns: **Technical Strategy** (how to build it overall), **Metrics** (what the measurable standards are), **Solution-Level Full Investigation** (whether every part of the end-to-end process has been audited), **Requirement Transformation Fallback** (whether business intent is lost during transformation). The workflow branches by **Design Mode** (Greenfield / Brownfield), with Brownfield as the default.
 
 How to use:
 1. Create a batch folder under `tech-design/` with the same name as the collection batch
 2. Use prompt [Prompt 4: Generate Tech Design]
 
-Review focus: Does the technical strategy clearly define the overall roadmap and key decisions? Do metrics provide specific numbers instead of vague descriptions? Does the solution-level full investigation cover all three dimensions (end-to-end flow, component interaction, data flow) at an auditable level of granularity? Does the coverage matrix in the fallback strategy verify each Collection scenario line by line? Do degradation plans state the business impact? After approval, change status from "Draft" to "Ready", and backfill the Tech Design file path into the Collection's Related Tech Design field.
+Review focus: Does the technical strategy clearly define the overall roadmap and key decisions? Do metrics provide specific numbers instead of vague descriptions? Does the solution-level full investigation cover all three dimensions (end-to-end flow, component interaction, data flow) at an auditable level of granularity? Does the coverage matrix in the fallback strategy verify each Collection scenario line by line? Do degradation plans state the business impact? Do the four pillars pass the cross-cutting consistency review with no internal conflicts? After approval, change status from "Draft" to "Ready", and backfill the Tech Design file path into the Collection's Related Tech Design field.
 
 ### 4. Step 4 - Generate Implementation Plan
 
@@ -259,47 +259,65 @@ Prompt content:
 Task: Convert a converged Collection into a Tech Design file, completing the translation from business rules to technical contracts.
 
 Steps:
-0. Check prerequisites. If the target repository is not specified in the input context, ask the user: "Which repository should this tech design target?" Do not proceed without this information.
-1. Scan repository. Read the target repository's Agent instruction files (AGENTS.md / CLAUDE.md / .cursorrules), tech stack, existing data models, API patterns, middleware, etc. Fill in the Repository Context.
-2. Fill identification. Name consistent with Collection topic, version set to 1.0.0, status set to "Draft", source backfilled with Collection path.
+0. Check prerequisites.
+   - First ask the design mode: "Is this a greenfield design (no existing repository) or a brownfield design (based on an existing repository)?" Do not proceed until confirmed.
+   - If **brownfield**: Ask for the target repository address. Do not proceed until provided.
+   - If **greenfield**: Target repository is optional and may be left empty.
+1. Context gathering (branches by design mode):
+   - **Brownfield**: Two-pass repository scan — first pass reads repo-level AGENTS.md / CLAUDE.md / .cursorrules (the authoritative conventions maintained by repo owners, read first to avoid misinterpreting patterns downstream); second pass scans the codebase against these conventions and fills in the Repository Context. For each sub-field, list 1-2 typical/representative file paths — exhaustive enumeration is not required.
+   - **Greenfield**: Problem-domain investigation — requirement boundaries, candidate tech stack, similar-system references. Fill in the Problem Domain Context to feed the rationale for technical strategy decisions downstream.
+2. Fill identification. Name consistent with Collection topic, version set to 1.0.0, status set to "Draft", **Design Mode** filled per Step 0 conclusion, source backfilled with Collection path.
 3. Fill applicability. Inherit from Collection, supplement with technical boundaries (e.g., "covers API layer only, excludes UI").
-4. Define technical strategy. First establish the overall technical roadmap (architecture style, integration pattern, data management strategy, deployment approach), then list alternatives, selection, and rationale for key design questions. Each decision must have at least two alternatives.
-5. Define metrics. Set measurable target values across performance, quality, and capacity dimensions, with measurement methods. No vague descriptions like "high performance" — specific numbers required.
-6. Define data models. Define data structures for each business entity down to field level, annotate field constraints and storage. Link back to Collection scenarios.
-7. Define API contracts. Define interfaces for each user operation, including endpoint, request/response fields, pre/postconditions, side effects. Each API must link to a specific Collection scenario.
-8. Map scenarios to technical paths. Map each Collection Given/When/Then scenario to concrete technical steps: which API is triggered → what is validated → which model is read/written → which external system is called → what is returned.
-9. Solution-level full investigation. Based on the mapped technical paths, conduct a thorough investigation across three dimensions: end-to-end flow investigation (input, processing logic, output, failure conditions, failure impact, and involved components for each step), component interaction investigation (caller, callee, protocol, data format, timeout, failure handling, and whether an existing implementation exists), data flow investigation (create, modify, read, archive/delete paths and consistency risks for each data object). Output investigation conclusions: coverage completeness, key risks, and points requiring further investigation.
-10. Build requirement transformation fallback strategy. Verify the coverage matrix line by line (every Collection scenario has a corresponding technical path), define degradation plans (trigger condition, degraded behavior, business impact, recovery condition), record omission risks. The fallback strategy must be grounded in the full investigation conclusions; skipping the investigation and writing fallback directly is not allowed.
-11. Define external system integrations. List all external systems requiring interaction with integration specifications.
-12. Define error handling strategy. Unified error code system and degradation plans.
-13. Plan implementation order. Order by dependency: foundation before application, data before interfaces.
+4. Scenario mapping & solution-level full investigation (merged step).
+   For each Collection scenario, unfold the complete technical execution path, covering three dimensions:
+   - End-to-end flow investigation (input, processing logic, output, failure conditions, failure impact, and involved components for each step)
+   - Component interaction investigation (caller, callee, protocol, data format, timeout, failure handling, and whether an existing implementation exists)
+   - Data flow investigation (create, modify, read, archive/delete paths and consistency risks for each data object)
+   Brownfield must additionally tag each step as "reuse existing / modify existing / add new" and point to the corresponding existing code location; greenfield focuses on candidate technical paths and similar-system references.
+   Output investigation conclusions: coverage completeness, key risks, and points requiring further investigation.
+5. Define technical strategy (grounded in investigation conclusions). First establish the overall technical roadmap (architecture style, integration pattern, data management strategy, deployment approach), then list alternatives, selection, and rationale for key design questions. Each decision must have at least two alternatives. **Greenfield** decisions must be fully reasoned from first principles; relying on "follow existing" to skip reasoning is not allowed.
+6. Define metrics (grounded in investigation conclusions). Set measurable target values across performance, quality, and capacity dimensions, with measurement methods. No vague descriptions like "high performance" — specific numbers required.
+7. Define data models (grounded in the data-flow investigation). Define data structures for each business entity down to field level, annotate field constraints and storage. Brownfield distinguishes new fields from extensions of existing models; greenfield defines end-to-end. Link back to Collection scenarios.
+8. Define API contracts (grounded in the component-interaction investigation). Define interfaces for each user operation, including endpoint, request/response fields, pre/postconditions, side effects. Brownfield distinguishes new endpoints from modifications of existing endpoints; greenfield defines end-to-end. Each API must link to a specific Collection scenario.
+9. Define external system integrations (grounded in investigation conclusions). List all external systems requiring interaction with integration specifications.
+10. Define error handling strategy. Unified error code system and degradation plans.
+11. Build requirement transformation fallback strategy. Verify the coverage matrix line by line (every Collection scenario has a corresponding technical path), define degradation plans (trigger condition, degraded behavior, business impact, recovery condition), record omission risks. The fallback strategy must be grounded in the full investigation conclusions; skipping the investigation and writing fallback directly is not allowed.
+12. Plan implementation order. Order by dependency: foundation before application, data before interfaces.
+13. Cross-cutting consistency review. Verify internal consistency across all decisions from Steps 5-12:
+    - Are technical strategy and metrics compatible (can the chosen strategy support the metric targets)?
+    - Do data models support the read/write needs of all API contracts?
+    - Does the scenario mapping fully cover every Collection scenario (cross-check with the fallback coverage matrix)?
+    - Are external system integrations, error handling, and implementation order mutually consistent?
+    - If inconsistencies are found, revise the relevant fields and record the revision rationale.
 14. Fill change log. Add initial version record.
 15. Backfill association. Backfill Tech Design path into Collection's Related Tech Design field.
 
 Mapping table (Collection → Tech Design):
 - Topic → Name
 - Applicability → Applicability (supplement technical boundaries)
-- Converged Rules.Scenario → API Contracts (at least one endpoint per scenario)
+- Converged Rules.Scenario → Scenario Mapping & Solution-Level Full Investigation (at least one complete technical path per scenario)
 - Converged Rules.Given → API preconditions, request parameters
 - Converged Rules.When → API endpoint trigger
 - Converged Rules.Then → API response, postconditions, side effects
+- Converged Rules.Scenario → API Contracts (at least one endpoint per scenario, derived from Step 4 investigation conclusions)
 - Dependencies.External Systems → External System Integration
 - Technical Constraints → Technical Constraints (inherited & supplemented)
-- Converged Rules.Scenario → Scenario-to-Technical-Path Mapping
-- Scenario-to-Technical-Path Mapping → Solution-Level Full Investigation (end-to-end flow, component interaction, data flow dimensions)
-- Solution-Level Full Investigation.Conclusions → Fallback Strategy.Degradation Plans and Omission Risks
+- Scenario Mapping & Solution-Level Full Investigation.Conclusions → Technical Strategy, Metrics, Data Models, API Contracts, External System Integration
+- Scenario Mapping & Solution-Level Full Investigation.Conclusions → Fallback Strategy.Degradation Plans and Omission Risks
 - All Converged Rules → Fallback Strategy.Coverage Matrix (line-by-line verification)
-- Technical Constraints + business scenario characteristics → Metrics (performance, quality, capacity)
+- Technical Constraints + business scenario characteristics + investigation conclusions → Metrics (performance, quality, capacity)
 
 Constraints:
 - Output file must be placed in the tech-design subfolder with the same name as the collection batch.
-- Every Collection scenario must have a corresponding entry in API Contracts, Scenario Mapping, and Coverage Matrix.
+- Design mode must be confirmed in Step 0; greenfield and brownfield Step 1 contents differ and must not be mixed.
+- Every Collection scenario must have a corresponding entry in Scenario Mapping, API Contracts, and Coverage Matrix.
 - Do not add business rules not present in the Collection, but technical-level decisions are allowed.
 - Data models must be specified down to field level; API contracts must be specified down to request/response field level.
-- Technical strategy must include overall roadmap and key decisions, each with alternatives and rationale.
+- Technical strategy must include overall roadmap and key decisions, each with alternatives and rationale; greenfield decisions must be fully reasoned from first principles.
 - Metrics must provide specific numbers; vague descriptions are not accepted.
-- Solution-level full investigation must cover all three dimensions (end-to-end flow, component interaction, data flow); every step must be at an auditable level of granularity (with input/output/failure conditions/involved components).
+- Scenario mapping & solution-level full investigation must cover all three dimensions (end-to-end flow, component interaction, data flow); every step must be at an auditable level of granularity (with input/output/failure conditions/involved components); brownfield must tag each step as "reuse / modify / add new".
 - The fallback strategy coverage matrix must be verified line by line; skipping is not allowed. Degradation plans and omission risks must be grounded in the full investigation conclusions; skipping the investigation and writing fallback directly is not allowed.
+- Step 13 cross-cutting consistency review must be executed; any inconsistency found must be revised and the revision rationale recorded; skipping is not allowed.
 
 ---
 
