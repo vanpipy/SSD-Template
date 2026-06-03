@@ -1,215 +1,247 @@
-# Skill-Driven 使用指南
+# Skill-Driven Usage Guide
 
-## 这个指南解决什么问题
+## What This Guide Solves
 
-你有一个需求，可能是用户的一句抱怨、产品的一句话、一段模糊的讨论，或者一场需求会议的完整纪要。你需要把它们变成 AI 可以直接编译成代码的实施计划。这个指南告诉你一步步怎么做。
+You have a requirement — it could be a user's complaint, a product statement, a vague discussion, or a complete meeting minutes. You need to turn it into an actionable implementation plan that AI can directly compile into code. This guide tells you how to do it step by step.
 
-## 使用场景
+## Directory Organization
 
-场景A：你手头只有一个需求，直接创建一个 Collection。走第一至五步。
+Each input creates a **batch subfolder** that consolidates all outputs from that batch:
 
-场景B：你手头有一份会议摘要，包含多个需求，先拆分成多个 Collection，再逐个收敛。走第零至五步。
+```
+collection/
+├── {date}-{short-topic}/           # Batch folder
+│   ├── C01-xxx.md                 # Collection files
+│   ├── C02-xxx.md                 # Collection files
+│   └── DEPENDENCY-MATRIX.md       # Batch-level dependency matrix
+└── DEPENDENCY-MATRIX.md           # Global dependency matrix (optional)
 
-## 操作流程
+implementation/
+├── {date}-{short-topic}/           # Batch folder
+│   ├── impl-01-xxx.md             # Implementation files
+│   └── code/                      # Generated code (optional)
+```
 
-### 零、场景B入口：第零步 - 会议摘要拆分
+- **Batch folder naming**: `{YYYY-MM-DD}-{short-topic}`
+- **Each batch** contains: all files generated from this input + dependency matrix
+- **Dependency matrix**: batch-level for intra-batch dependencies, global for cross-batch
 
-适用场景B。输入是一份会议摘要，可能由人记录或 AI 生成。输出是多个 Collection 文件，每个对应一个独立的需求点，放在 collection 目录下，状态均为采集中。
+## Use Cases
 
-操作方法：使用提示词 [提示词一：会议摘要拆分]
+Scenario A: You have a single requirement, create a Collection directly. Go through steps 1-5.
 
-### 一、场景A入口：第一步 - 创建单个采集
+Scenario B: You have a meeting summary containing multiple requirements. Split it into multiple Collections first, then converge individually. Go through steps 0-5.
 
-如果你只有一个需求，直接从这一步开始。输入是一段原始需求。输出是一个 Collection 文件，放在 collection 目录下，状态为采集中。
+## Workflow
 
-操作方法：使用提示词 [提示词二：创建单个采集]
+### 0. Scenario B Entry: Step 0 - Split Meeting Summary
 
-### 二、第二步 - 收敛讨论
+For Scenario B. Input is a meeting summary, either manually recorded or AI-generated. Output is multiple Collection files, each corresponding to an independent requirement point, placed in `collection/{date}-{short-topic}/`, all with status "Collecting".
 
-输入是第一步或第零步创建的 Collection 文件。输出是状态变为已收敛的同一文件，所有模糊点清零。
+How to use:
+1. Determine batch folder name based on input source
+2. Use prompt [Prompt 1: Split Meeting Summary]
 
-操作方法：使用提示词 [提示词三：收敛讨论]
+### 1. Scenario A Entry: Step 1 - Create Single Collection
 
-如果是从第零步拆分出来的多个 Collection，注意维护它们之间的依赖关系。一个 Collection 收敛过程中如果影响到另一个 Collection，需要同步更新对方的依赖关系字段。
+If you only have one requirement, start here. Input is a raw requirement description. Output is a Collection file placed in `collection/{date}-{short-topic}/`, status "Collecting".
 
-### 三、第三步 - 生成实施计划
+How to use:
+1. Determine batch folder name based on input source
+2. Use prompt [Prompt 2: Create Single Collection]
 
-输入是状态为已收敛的 Collection 文件。输出是一个 Implementation 文件，放在 implementation 目录下，状态为草稿。
+### 2. Step 2 - Convergence Discussion
 
-操作方法：使用提示词 [提示词四：生成实施计划]
+Input is a Collection file created in Step 0 or Step 1 (located in batch folder). Output is the same file with status changed to "Converged", all ambiguity points resolved.
 
-### 四、第四步 - 审核实施计划
+How to use: Use prompt [Prompt 3: Convergence Discussion]
 
-输入是草稿状态的 Implementation 文件。输出是状态为就绪的同一文件。
+For multiple Collections split from Step 0, maintain their dependencies. If converging one Collection affects another, update the other's dependency fields and the batch-level DEPENDENCY-MATRIX.md.
 
-AI 生成 Implementation 初稿后，你需要审核。重点检查接口参数是否完整、硬约束是否准确、验证用例是否覆盖核心路径。审核通过后，把状态从草稿改为就绪，同时把对应 Collection 的状态从已收敛改为已完成。
+### 3. Step 3 - Generate Implementation Plan
 
-### 五、第五步 - 执行实施计划
+Input is a Collection file with status "Converged". Output is an Implementation file placed in `implementation/{date}-{short-topic}/`, status "Draft".
 
-输入是状态为就绪的 Implementation 文件，可附带当前项目上下文，如代码库路径、技术栈说明。输出是具体的实现代码和相关测试。完成后由开发者审核代码，通过后将 Implementation 状态更新为已完成。
+How to use:
+1. Create a batch folder under `implementation/` with the same name as the collection batch
+2. Use prompt [Prompt 4: Generate Implementation Plan]
 
-操作方法：使用提示词 [提示词五：执行实施计划]
+### 4. Step 4 - Review Implementation Plan
 
-### 补充流程：修改已有实施计划
+Input is an Implementation file with status "Draft". Output is the same file with status changed to "Ready".
 
-1. 如果一个状态为草稿的 Implementation 需要修改，直接编辑即可。
-2. 如果一个状态为就绪或已完成的 Implementation 需要修改，不要直接编辑它。回到第一步，新建一个 Collection。在关联实现字段里填上要修改的 Implementation 路径，主题写清楚要改什么。收敛完毕后，把新 Collection 和旧 Implementation 一起发给 AI，使用提示词四生成新版本。审核通过后，新版本状态变为就绪，旧版本保留在变更记录里。
+After AI generates the Implementation draft, you need to review it. Focus on: complete interface parameters, accurate hard constraints, verification cases covering core paths. After approval, change status from Draft to Ready, and change the corresponding Collection's status from "Converged" to "Completed". Also backfill the Implementation file path into the Collection's Related Implementation field.
 
----
+### 5. Step 5 - Execute Implementation Plan
 
-## 输入输出速查
+Input is an Implementation file with status "Ready". May attach current project context such as codebase path, tech stack description. Output is concrete implementation code and related tests, placed in the batch folder. After developer reviews and approves, update Implementation status to "Completed".
 
-场景A：单个需求入口。
-第一步创建采集。输入是原始需求，输出是状态为采集中的 Collection 文件。
-第二步收敛讨论。输入是采集中的 Collection 文件，输出是状态为已收敛的同一文件。
-第三步生成实施计划。输入是已收敛的 Collection 文件，输出是状态为草稿的 Implementation 文件。
-第四步审核实施计划。输入是草稿状态的 Implementation 文件，输出是状态为就绪的同一文件。
-第五步执行实施计划。输入是就绪状态的 Implementation 文件，输出是实现代码和测试。
+How to use: Use prompt [Prompt 5: Execute Implementation Plan]
 
-场景B：会议摘要入口。
-第零步拆分。输入是会议摘要，输出是多个状态为采集中的 Collection 文件。
-后续每一步针对每个 Collection 独立执行，流程同场景A。
+### Supplementary: Modify Existing Implementation Plan
 
-相关文件
-
-- Collection 模板：schema/collection-template.md
-- Implementation 模板：schema/implementation-template.md
-- AI 行为规范：AGENTS.md
-
----
-
-## 提示词一：会议摘要拆分
-
-输入：会议摘要，可以是粘贴的全文或本地文件路径。
-输出：多个 Collection 文件及依赖关系矩阵。
-
-提示词内容：
-
-任务：分析会议摘要，识别独立需求点，生成 Collection 文件。
-
-步骤：
-1. 提取需求点。扫描摘要全文，找出所有独立的功能或能力需求。每个需求点必须有清晰的边界，不重叠不遗漏。
-2. 判定粒度。如果某个需求点涉及多个不同的业务场景，或者复杂度乘积过高，将其拆分为多个子需求点。
-3. 填充模板。对每个需求点，按照 schema/collection-template.md 的格式生成一个 Collection 文件。原始诉求字段保留摘要中的原文，不自行改写。已收敛规则字段根据摘要中的明确结论填写场景，没有结论则留空。待收敛模糊点字段填写摘要中提到但未解决的问题。
-4. 标注依赖。分析需求点之间的调用和依赖关系，在每个 Collection 的依赖关系字段中标注。
-5. 输出矩阵。生成完成后，输出一个依赖关系矩阵，格式为：需求点A → 依赖 → 需求点B，逐行列明。
-
-约束：
-- 每个 Collection 的状态字段必须设为采集中。
-- 不要自行补充摘要中没有的内容。
-- 如果一个需求点在摘要中完全没有细节，仍要生成 Collection，但只填主题和原始诉求，其余留空。
+1. If an Implementation with status "Draft" needs modification, edit it directly.
+2. If an Implementation with status "Ready" or "Completed" needs modification, do not edit it directly. Go back to Step 1, create a new Collection. Fill in the Related Implementation field with the path to the Implementation to be modified, and clearly state the topic of what needs changing. After convergence, send the new Collection and old Implementation together to AI, use Prompt 4 to generate a new version. After approval, the new version status becomes "Ready", and the old version is kept in the change log.
 
 ---
 
-## 提示词二：创建单个采集
+## Input/Output Quick Reference
 
-输入：一段原始需求描述，可以是自然语言。
-输出：一个 Collection 文件，状态为采集中。
+Scenario A: Single requirement entry.
+Step 1 Create Collection. Input: raw requirement, output: Collection file with status "Collecting" (in batch folder).
+Step 2 Convergence. Input: Collection file with status "Collecting", output: same file with status "Converged".
+Step 3 Generate Plan. Input: Collection file with status "Converged", output: Implementation file with status "Draft" (in batch folder).
+Step 4 Review. Input: Implementation file with status "Draft", output: same file with status "Ready".
+Step 5 Execute. Input: Implementation file with status "Ready", output: implementation code and tests.
 
-提示词内容：
+Scenario B: Meeting summary entry.
+Step 0 Split. Input: meeting summary, output: multiple Collection files with status "Collecting" (in same batch folder).
+Each subsequent step executes independently for each Collection, same as Scenario A.
 
-任务：将原始需求转化为 Collection 文件。
+Related Files
 
-步骤：
-1. 按照 schema/collection-template.md 的格式创建文件。
-2. 主题字段从需求中提取核心功能点，用简短短语命名。
-3. 原始诉求字段保留用户原文，不做改写。
-4. 讨论范围字段基于需求内容推断聚焦范围和不涉及内容。
-5. 已收敛规则字段仅填写需求中已有明确结论的场景，使用 Given/When/Then 格式。没有结论则留空。
-6. 待收敛模糊点字段提取需求中模糊、不确定、待确认的内容，分为需要人决策和 AI 可尝试收敛两类。
-7. 状态设为采集中。
-
-约束：
-- 不添加需求中没有的信息。
-- 不擅自收敛尚未确定的规则。
+- Collection template: schema/collection.md
+- Implementation template: schema/implementation.md
+- AI behavior specification: AGENTS.md
 
 ---
 
-## 提示词三：收敛讨论
+## Prompt 1: Split Meeting Summary
 
-输入：一个 Collection 文件，状态为采集中或之前已存在但需要继续收敛。
-输出：更新后的同一 Collection 文件。
+Input: Meeting summary, can be pasted full text or local file path.
+Output: Multiple Collection files and dependency matrix, placed in batch folder `collection/{date}-{short-topic}/`.
 
-提示词内容：
+Prompt content:
 
-任务：分析 Collection 文件，辅助完成需求收敛。
+Task: Analyze meeting summary, identify independent requirements, generate Collection files.
 
-步骤：
-1. 分析待收敛模糊点。逐一检查需要人决策和 AI 可尝试收敛中的问题。对于 AI 可尝试收敛的问题，给出建议方案并说明理由。对于需要人决策的问题，指出决策的阻塞点和可能的影响范围。
-2. 识别遗漏。检查已收敛规则是否覆盖了适用范围内的所有主要场景，包括正常路径、边界条件和异常路径。如果发现遗漏，在待收敛模糊点中补充。
-3. 检查一致性。检查已收敛规则之间是否存在逻辑矛盾。检查适用范围和已收敛规则是否一致。
-4. 生成追问。列出需要人确认的关键问题，每个问题附带上下文和 AI 的建议。
+Steps:
+1. Extract requirements. Scan the summary text, find all independent functional or capability requirements. Each requirement must have clear boundaries, non-overlapping and complete.
+2. Determine granularity. If a requirement involves multiple different business scenarios or has excessive complexity product, split it into multiple sub-requirements.
+3. Fill template. For each requirement, generate a Collection file following schema/collection.md format. Preserve original text in Original Request field without rewriting. Fill Converged Rules based on explicit conclusions in the summary, leave empty if no conclusion. Fill Pending Convergence Points with issues mentioned but not resolved in the summary.
+4. Annotate dependencies. Analyze invocation and dependency relationships between requirements, annotate in each Collection's Dependencies field.
+5. Generate matrix. Generate DEPENDENCY-MATRIX.md in the batch folder, format: RequirementA → depends on → RequirementB, list each line clearly.
 
-约束：
-- 不自行修改需要人决策的内容。
-- 不删除任何已有的讨论与决策记录。
-- 给出的建议方案必须标注为 AI 建议。
-
----
-
-## 提示词四：生成实施计划
-
-输入：一个 Collection 文件，状态为已收敛。
-输出：一个 Implementation 文件，状态为草稿。
-
-提示词内容：
-
-任务：将已收敛的 Collection 转化为 Implementation 文件。
-
-步骤：
-1. 读取输入。读取 Collection 文件的全部字段。
-2. 填充标识。从主题字段提取 Skill 名称，从已收敛规则中归纳一句话描述。版本号设为 1.0.0，状态设为草稿，来源字段回填 Collection 的文件路径。
-3. 填充适用范围。从 Collection 的适用范围字段直接映射。
-4. 推断接口。从已收敛规则的 Given/When/Then 中提取输入参数和输出结果。Given 中的条件是输入的一部分，When 中的动作触发输入，Then 中的结果是输出。
-5. 映射业务约束。Given 对应前置条件，Then 对应后置条件，多条场景中的共同约束归纳为不变式，Then 中描述的状态变更和外部操作对应副作用。
-6. 映射依赖。从 Collection 的依赖关系字段直接映射。如 Collection 中为空，根据业务约束推断可能的依赖。
-7. 映射开发约束。从 Collection 的技术约束字段直接映射。如为空，根据业务约束推断必要的并发策略、事务边界和幂等性要求。
-8. 填充验证。为每个已收敛规则中的场景生成一条验证用例。场景名称对应验证描述，Then 对应预期结果。额外补充边界和异常场景的验证。
-9. 填充实现策略。默认测试先行为否，行为驱动为是。
-10. 填充变更记录。添加初始版本记录。
-11. 回填关联。生成完成后，将 Implementation 的文件路径回填到 Collection 的关联实现字段。
-
-映射表（Collection → Implementation）：
-- 主题 → 名称
-- 已收敛规则归纳 → 描述
-- 适用范围.适用 → 适用范围.适用
-- 适用范围.不适用 → 适用范围.不适用
-- Given → 前置条件
-- When → 接口输入参数推断来源
-- Then → 后置条件、副作用、输出推断来源
-- 多条场景共同约束 → 不变式
-- 依赖关系.其他 Skill → 前置Skill、后置Skill
-- 依赖关系.外部系统 → 外部系统
-- 技术约束 → 开发约束
-- 已收敛规则.场景名称 → 验证
-
-约束：
-- 不添加 Collection 中没有的规则。
-- 接口参数必须在已收敛规则的场景中有对应依据。
-- 验证用例必须一一对应已收敛规则中的场景。
+Constraints:
+- All output files must be placed in the batch folder.
+- Each Collection's status field must be set to "Collecting".
+- Do not add content not present in the summary.
+- If a requirement has absolutely no details in the summary, still generate a Collection but only fill Topic and Original Request, leave others empty.
 
 ---
 
-## 提示词五：执行实施计划
+## Prompt 2: Create Single Collection
 
-输入：一个 Implementation 文件，状态为就绪。可附带当前项目上下文，如代码库路径、技术栈说明。
-输出：具体的实现代码和相关测试。
+Input: A raw requirement description, can be natural language.
+Output: A Collection file with status "Collecting", placed in batch folder `collection/{date}-{short-topic}/`.
 
-提示词内容：
+Prompt content:
 
-任务：根据 Implementation 文件，在指定的项目上下文中生成实现代码。
+Task: Convert raw requirement into a Collection file.
 
-步骤：
-1. 读取规范。读取 Implementation 文件的全部字段。
-2. 分析上下文。扫描当前项目结构，识别技术栈、现有代码风格、目录约定、已有接口规范。
-3. 生成代码。根据接口定义生成类型声明和函数签名。根据硬约束生成核心逻辑代码。根据开发约束应用并发策略、事务边界、幂等性保证、重试与降级逻辑。根据安全要求添加权限校验、数据脱敏和审计日志。根据依赖关系生成对其他 Skill 或外部系统的调用代码。
-4. 生成测试。根据验证字段生成对应的测试用例。如果实现策略中测试先行为是，则先生成测试代码再生成实现代码。如果行为驱动为是，则使用 Given/When/Then 格式组织测试用例。
-5. 校验一致性。检查生成的代码是否满足 Implementation 中的所有硬约束。检查生成的测试是否覆盖了验证字段中的所有用例。
-6. 完成标记。代码生成完成后，提醒开发者审核代码。开发者审核通过后，将 Implementation 状态更新为已完成。
+Steps:
+1. Create file following schema/collection.md format in the batch folder.
+2. Extract core functionality from requirement for Topic field, name with brief phrase.
+3. Preserve user's original text in Original Request field without rewriting.
+4. Infer scope based on requirement content for Discussion Scope field (in scope and out of scope).
+5. Fill Converged Rules field only with scenarios that have explicit conclusions in the requirement, using Given/When/Then format. Leave empty if no conclusion.
+6. Extract ambiguous, uncertain, pending confirmation content into Pending Convergence Points, divided into "Requires Human Decision" and "AI Can Attempt Convergence" categories.
+7. Set status to "Collecting".
 
-约束：
-- 硬约束必须全部满足，缺一不可。
-- 开发约束中的并发策略、事务边界和幂等性必须在代码中显式体现。
-- 安全要求不得遗漏。
-- 生成的代码必须符合当前项目的现有代码风格和目录约定。
+Constraints:
+- File must be placed in the specified batch folder.
+- Do not add information not present in the requirement.
+- Do not prematurely converge rules that are not yet confirmed.
 
+---
+
+## Prompt 3: Convergence Discussion
+
+Input: A Collection file with status "Collecting" or previously existed but needs further convergence.
+Output: Updated same Collection file. If cross-Collection dependency changes are involved, update the batch-level DEPENDENCY-MATRIX.md.
+
+Prompt content:
+
+Task: Analyze Collection file, assist in completing requirement convergence.
+
+Steps:
+1. Analyze pending convergence points. Check each issue in "Requires Human Decision" and "AI Can Attempt Convergence". For AI-can-attempt issues, provide suggested solutions with rationale. For human-decision issues, point out blocking points and possible impact scope.
+2. Identify gaps. Check if Converged Rules cover all major scenarios within the applicable scope, including normal paths, boundary conditions, and exception paths. If gaps found, supplement in Pending Convergence Points.
+3. Check consistency. Check for logical contradictions between Converged Rules. Check consistency between Applicability and Converged Rules.
+4. Generate follow-up questions. List key questions needing human confirmation, each with context and AI suggestions.
+5. Update dependencies. If convergence involves cross-Collection dependency changes, update the batch-level DEPENDENCY-MATRIX.md.
+
+Constraints:
+- Do not modify content requiring human decision without authorization.
+- Do not delete any existing discussion and decision records.
+- Suggested solutions must be marked as "AI Suggestion".
+
+---
+
+## Prompt 4: Generate Implementation Plan
+
+Input: A Collection file with status "Converged".
+Output: An Implementation file with status "Draft", placed in `implementation/{date}-{short-topic}/`.
+
+Prompt content:
+
+Task: Convert a converged Collection into an Implementation file.
+
+Steps:
+1. Read input. Read all fields of the Collection file.
+2. Fill identification. Extract Skill name from Topic field, summarize one-sentence description from Converged Rules. Set version to 1.0.0, status to "Draft", backfill Collection file path in Source field.
+3. Fill applicability. Map directly from Collection's Applicability field.
+4. Infer interfaces. Extract input parameters and output results from Converged Rules' Given/When/Then. Conditions in Given are part of input, actions in When trigger input, results in Then are output.
+5. Map business constraints. Given corresponds to preconditions, Then corresponds to postconditions, common constraints across multiple scenarios generalize to invariants, state changes and external operations in Then correspond to side effects.
+6. Map dependencies. Map directly from Collection's Dependencies field. If empty, infer possible dependencies based on business constraints.
+7. Map development constraints. Map directly from Collection's Technical Constraints field. If empty, infer necessary concurrency strategy, transaction boundary, and idempotency requirements based on business constraints.
+8. Fill verification. Generate one verification case for each scenario in Converged Rules. Scenario name corresponds to verification description, Then corresponds to expected result. Add additional boundary and exception scenario verifications.
+9. Fill implementation strategy. Default test-first is "No", behavior-driven is "Yes".
+10. Fill change log. Add initial version record.
+11. Backfill association. After generation, backfill Implementation file path into Collection's Related Implementation field.
+
+Mapping table (Collection → Implementation):
+- Topic → Name
+- Converged Rules summary → Description
+- Applicability.Applicable → Applicability.Applicable
+- Applicability.Not Applicable → Applicability.Not Applicable
+- Given → Preconditions
+- When → Interface input parameter source
+- Then → Postconditions, side effects, output inference source
+- Common constraints across scenarios → Invariants
+- Dependencies.Other Skills → Preceding Skill, Follow-up Skill
+- Dependencies.External Systems → External Systems
+- Technical Constraints → Development Constraints
+- Converged Rules.Scenario Name → Verification
+
+Constraints:
+- Output file must be placed in the implementation subfolder with the same name as the collection batch.
+- Do not add rules not present in the Collection.
+- Interface parameters must have corresponding evidence in the Converged Rules scenarios.
+- Verification cases must correspond one-to-one with Converged Rules scenarios.
+
+---
+
+## Prompt 5: Execute Implementation Plan
+
+Input: An Implementation file with status "Ready". May attach current project context such as codebase path, tech stack description.
+Output: Concrete implementation code and related tests, placed in the Implementation file's batch folder.
+
+Prompt content:
+
+Task: Generate implementation code based on the Implementation file in the specified project context.
+
+Steps:
+1. Read specification. Read all fields of the Implementation file.
+2. Analyze context. Scan current project structure, identify tech stack, existing code style, directory conventions, existing interface specifications.
+3. Generate code. Generate type declarations and function signatures based on interface definitions. Generate core logic code based on hard constraints. Apply concurrency strategy, transaction boundary, idempotency guarantee, retry and degradation logic based on development constraints. Add permission validation, data masking, and audit logging based on security requirements. Generate invocation code for other Skills or external systems based on dependencies.
+4. Generate tests. Generate corresponding test cases based on Verification field. If test-first is "Yes" in implementation strategy, generate test code before implementation code. If behavior-driven is "Yes", organize test cases using Given/When/Then format.
+5. Verify consistency. Check if generated code satisfies all hard constraints in the Implementation. Check if generated tests cover all cases in the Verification field.
+6. Mark complete. After code generation, remind developer to review code. After developer approves, update Implementation status to "Completed".
+
+Constraints:
+- Output code must be placed in the Implementation file's batch folder.
+- All hard constraints must be satisfied, without exception.
+- Concurrency strategy, transaction boundary, and idempotency in development constraints must be explicitly reflected in code.
+- Security requirements must not be omitted.
+- Generated code must conform to current project's existing code style and directory conventions.
