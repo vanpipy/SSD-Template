@@ -1,5 +1,12 @@
 # Tech Design: [Topic]
 
+> **Perspective: Executing Agent — Focus on Strategy, Metrics, Investigation, Fallback**
+> Tech Design is the bridge between business rules and code implementation. Its core responsibilities are:
+> - **Strategy**: Define the technical roadmap and architectural direction. Not just "what to pick", but "how to build the whole thing" — including tech roadmap, integration patterns, data management strategy, deployment and scaling approach. Every strategic decision must have alternatives and rationale.
+> - **Metrics**: Define measurable technical targets. Don't write "high performance", write specific latency, throughput, availability, and capacity numbers. Metrics are both acceptance criteria and constraints for design decisions.
+> - **Investigation**: Conduct a comprehensive investigation of the entire process at the solution level. Not just "the main flow works", but expand every step to an auditable level of detail — where does input come from, what is the processing logic, where does output go, under what conditions does it fail, what does failure impact. The Agent uses the investigation to understand the full picture, not just the main trunk.
+> - **Fallback**: Ensure business intent is preserved after requirement transformation. Every Collection scenario must have a corresponding technical path; if technical constraints prevent full implementation, the degradation plan must be explicit with stated business impact. The Agent uses the fallback strategy to know when to take the normal path vs. the degraded path.
+
 ## Identification
 - Name: [Tech design name, usually consistent with Collection topic]
 - Description: [One-sentence description of the technical objective]
@@ -23,11 +30,20 @@
 - Existing Middleware/Infrastructure: [Auth, logging, message queues, caching, etc.]
 - Reference Modules: [Existing modules with similar functionality, used as design reference]
 
-## Architecture Decisions
+## Technical Strategy
 
-> Record key technical decisions. Each decision must include alternatives and rationale; conclusions-only entries are not allowed.
+> Define the overall technical roadmap and architectural direction. Not just recording "what was picked", but answering "how to build it overall and why".
+> Every strategic decision must include alternatives and rationale; conclusions-only entries are not allowed.
 
-### AD-1: [Decision Name, e.g., "Data Storage Selection"]
+### Overall Technical Roadmap
+- Architecture Style: [e.g., Monolith / Microservices / Serverless / Hybrid] — Rationale: [Why this style]
+- Integration Pattern: [e.g., Synchronous API / Event-driven / Message Queue] — Rationale: [...]
+- Data Management Strategy: [e.g., Single database / Read-write split / Local cache + remote sync] — Rationale: [...]
+- Deployment Approach: [e.g., Containerized / Cloud functions / Edge computing] — Rationale: [...]
+
+### Key Decisions
+
+#### AD-1: [Decision Name, e.g., "Data Storage Selection"]
 - Context: [Why this decision is needed]
 - Alternatives:
   1. [Option A] — [Pros and cons]
@@ -36,12 +52,35 @@
 - Rationale: [Why this was chosen, what was sacrificed]
 - Impact: [Constraints this decision imposes on subsequent design]
 
-### AD-2: [Decision Name]
+#### AD-2: [Decision Name]
 - Context: [...]
 - Alternatives: [...]
 - Choice: [...]
 - Rationale: [...]
 - Impact: [...]
+
+## Metrics
+
+> Define measurable technical targets. Don't write "high performance" or "low latency" — provide specific numbers.
+> Metrics serve as both design decision constraints and post-Implementation acceptance criteria.
+
+### Performance Metrics
+| Metric | Target | Measurement Method | Related Scenarios |
+|--------|--------|-------------------|-------------------|
+| [e.g., API response time P99] | [e.g., < 200ms] | [e.g., APM monitoring] | [Related Collection scenario] |
+| [e.g., Concurrent capacity] | [e.g., 100 QPS] | [e.g., Load testing tool] | [...] |
+
+### Quality Metrics
+| Metric | Target | Measurement Method |
+|--------|--------|-------------------|
+| [e.g., API availability] | [e.g., 99.9%] | [e.g., Health check + monitoring alerts] |
+| [e.g., Data consistency] | [e.g., Eventually consistent, delay < 5s] | [e.g., Reconciliation script] |
+
+### Capacity Metrics
+| Metric | Target | Notes |
+|--------|--------|-------|
+| [e.g., Max hold orders per device] | [e.g., 5] | [Business constraint source] |
+| [e.g., Order retention period] | [e.g., 90 days] | [Storage capacity estimation basis] |
 
 ## Data Models
 
@@ -134,6 +173,85 @@
 - Trigger: [...]
 - Execution Path: [...]
 - Exception Path: [...]
+
+## Requirement Transformation Fallback Strategy
+
+> Ensure Collection business intent is not lost or distorted after transformation to technical paths.
+> This is the core safety net of Tech Design.
+
+### Coverage Matrix
+
+> Line-by-line verification: does every Collection scenario have a corresponding technical path?
+
+| Collection Scenario | Technical Path | Coverage Status | Notes |
+|--------------------|---------------|-----------------|-------|
+| [Scenario name] | [Corresponding mapping number] | ✅ Fully covered | — |
+| [Scenario name] | [Corresponding mapping number] | ⚠️ Partially covered | [What's missing and why] |
+| [Scenario name] | — | ❌ Not covered | [Reason and alternative approach] |
+
+### Degradation Plans
+
+> When technical constraints prevent full fulfillment of business requirements, specify the degradation plan and business impact.
+
+#### [Degradation scenario, e.g., "Payment channel unavailable"]
+- Trigger Condition: [When does degradation activate]
+- Degraded Behavior: [How the system behaves — e.g., prompt user to retry, switch to backup channel]
+- Business Impact: [User experience change after degradation — e.g., cannot complete payment, but browsing and cart still work]
+- Recovery Condition: [When to exit degradation and resume normal path]
+- Related Collection Scenarios: [Affected original scenarios]
+
+### Omission Risks
+
+> Record potential gaps identified during design, preventing them from surfacing only at implementation time.
+
+- [Risk, e.g., "Real-time member pricing queries may timeout under high concurrency"] — Current Mitigation: [How the design addresses it] — Residual Risk: [What may still happen]
+
+## Solution-Level Full Investigation
+
+> Conduct a comprehensive investigation of the entire process at the solution level.
+> Not just verifying "the main flow works", but expanding every step to an auditable level of detail, ensuring the solution has no blind spots.
+
+### End-to-End Flow Investigation
+
+> Select the most critical business flow (from user trigger to final result), expand step by step.
+
+#### Flow: [Core flow name, e.g., "Complete Checkout Process"]
+
+| Step | Input | Processing Logic | Output | Failure Condition | Failure Impact | Components Involved |
+|------|-------|-----------------|--------|-------------------|----------------|-------------------|
+| [1. Member identification] | [Phone/member card] | [Query member system, match identity] | [Member tier + pricing] | [Timeout / no match] | [Degrade to non-member pricing] | [Member system] |
+| [2. Product addition] | [Scan/search/select] | [Query product catalog, add to settlement] | [Product + price + qty] | [Invalid barcode / out of stock] | [Notify and skip item] | [Product service] |
+| [3. Amount calculation] | [Settlement list] | [Apply discount rules, calculate total] | [Payable amount] | [Discount engine error] | [Settle at original price] | [Discount engine] |
+| [4. Payment] | [Amount + payment method] | [Call payment channel / record cash] | [Payment result] | [Timeout / channel error] | [Enter dispute flow] | [Payment gateway] |
+| [5. Order creation] | [Payment result + settlement] | [Create online order, update status] | [Order ID + e-receipt] | [Create order API failure] | [Local buffer + retry] | [Order service] |
+
+### Component Interaction Investigation
+
+> List all components involved (internal modules + external systems), specify the protocol, data format, and failure boundary for each interaction pair.
+
+| Caller | Callee | Protocol | Data Format | Timeout | Failure Handling | Existing Implementation |
+|--------|--------|----------|-------------|---------|-----------------|----------------------|
+| [Mobile POS client] | [Product service] | [REST] | [JSON] | [3s] | [Use local cache] | [Yes/No] |
+| [...] | [...] | [...] | [...] | [...] | [...] | [...] |
+
+### Data Flow Investigation
+
+> Trace core business objects through the entire process, ensuring data integrity and consistency.
+
+#### Data Object: [e.g., "Settlement List"]
+- Created: [Which step, which API]
+- Modified: [Which steps modify it, what changes each time]
+- Read: [Which steps need to read it]
+- Archived/Deleted: [Final state and retention policy]
+- Consistency Risk: [Which concurrency or failure scenarios could cause data inconsistency]
+
+### Investigation Conclusions
+
+> Based on the investigation above, summarize the solution's completeness and risks.
+
+- Coverage Completeness: [The solution covers all known steps / The following steps are not yet clear: ...]
+- Key Risks: [High-risk points found during investigation, e.g., single point of failure, data inconsistency, performance bottleneck]
+- Requires Deep Dive: [Technical questions needing POC validation or further discussion]
 
 ## External System Integration
 

@@ -1,5 +1,12 @@
 # Skill: [Skill Name]
 
+> **Perspective: Executing Agent**
+> Implementation is designed for the executing Agent. The Agent will execute each item in the change list sequentially, without guessing or supplementing.
+> - Every structural requirement in the change list must include function/type signatures (in code blocks). Pure natural language descriptions are not accepted.
+> - Verification cases must be linked to specific change items and functions. The Agent verifies against these after execution.
+> - Repository context must be fully populated during the design phase. The Agent should encounter no "TBD" information at execution time.
+> - The completion checklist is the Agent's delivery standard — all items must pass.
+
 ## Identification
 - Name: [Skill Name]
 - Description: [One-sentence description of what this skill does]

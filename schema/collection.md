@@ -1,5 +1,11 @@
 # Collection: [Topic]
 
+> **Perspective: Participant**
+> Collection is designed for the people who participated in the requirement discussion. Your goal is to capture what was agreed upon and flag what is still unclear.
+> - Write what you actually know. Don't fabricate content just to fill a field.
+> - Given/When/Then is a tool to help you discover "did I actually think this through", not a formatting requirement. If you can't write a concrete Then, put it in Pending Convergence Points instead.
+> - Low barrier to create: four required fields, fill as much as you can, complete the rest during convergence.
+
 > This template is divided into **Required Section** and **Supplementary Section**.
 > - **Required Section**: Must be filled when creating a collection. This is the core content of the Collection.
 > - **Supplementary Section**: Filled progressively during convergence discussions. Not required at creation time.

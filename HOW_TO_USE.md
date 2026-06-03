@@ -38,7 +38,14 @@ Scenario B: You have a meeting summary containing multiple requirements. Split i
 
 ## Workflow
 
+> **Perspective Guide**
+> The workflow is divided into two phases, each with a different perspective:
+> - **Requirements phase (Steps 0–2)**: Participant perspective. Goal is to capture what was agreed upon and flag what is still unclear. Collection is for humans — write what you actually know, don't fabricate content just to fill fields.
+> - **Technical phase (Steps 3–6)**: Executing Agent perspective. Goal is to produce technical documents the Agent can directly execute. Tech Design and Implementation are for the Agent — must be precise to field level and function level, no room for ambiguity.
+
 ### 0. Scenario B Entry: Step 0 - Split Meeting Summary
+
+> Participant perspective
 
 For Scenario B. Input is a meeting summary, either manually recorded or AI-generated. Output is multiple Collection files, each corresponding to an independent requirement point, placed in `collection/{date}-{short-topic}/`, all with status "Collecting".
 
@@ -48,6 +55,8 @@ How to use:
 
 ### 1. Scenario A Entry: Step 1 - Create Single Collection
 
+> Participant perspective
+
 If you only have one requirement, start here. Input is a raw requirement description. Output is a Collection file placed in `collection/{date}-{short-topic}/`, status "Collecting".
 
 How to use:
@@ -55,6 +64,8 @@ How to use:
 2. Use prompt [Prompt 2: Create Single Collection]
 
 ### 2. Step 2 - Convergence Discussion
+
+> Participant perspective
 
 Input is a Collection file created in Step 0 or Step 1 (located in batch folder). Output is the same file with status changed to "Converged", all ambiguity points resolved.
 
@@ -64,17 +75,21 @@ For multiple Collections split from Step 0, maintain their dependencies. If conv
 
 ### 3. Step 3 - Generate Tech Design
 
+> Executing Agent perspective
+
 Input is a Collection file with status "Converged", plus the target repository's technical context. Output is a Tech Design file placed in `tech-design/{date}-{short-topic}/`, status "Draft".
 
-Tech Design is the bridge between Collection (business rules) and Implementation (code-level instructions). It translates Given/When/Then business scenarios into concrete API contracts, data models, and technical execution paths, providing direct input for the Implementation change list.
+Tech Design is the bridge between Collection (business rules) and Implementation (code-level instructions). It revolves around four core concerns: **Technical Strategy** (how to build it overall), **Metrics** (what the measurable standards are), **Solution-Level Full Investigation** (whether every part of the end-to-end process has been audited), **Requirement Transformation Fallback** (whether business intent is lost during transformation).
 
 How to use:
 1. Create a batch folder under `tech-design/` with the same name as the collection batch
 2. Use prompt [Prompt 4: Generate Tech Design]
 
-Review focus: Do API contracts cover all business scenarios? Are data model fields complete? Do architecture decisions have alternatives and rationale? Is the scenario-to-technical-path mapping complete? After approval, change status from "Draft" to "Ready", and backfill the Tech Design file path into the Collection's Related Tech Design field.
+Review focus: Does the technical strategy clearly define the overall roadmap and key decisions? Do metrics provide specific numbers instead of vague descriptions? Does the solution-level full investigation cover all three dimensions (end-to-end flow, component interaction, data flow) at an auditable level of granularity? Does the coverage matrix in the fallback strategy verify each Collection scenario line by line? Do degradation plans state the business impact? After approval, change status from "Draft" to "Ready", and backfill the Tech Design file path into the Collection's Related Tech Design field.
 
 ### 4. Step 4 - Generate Implementation Plan
+
+> Executing Agent perspective
 
 Input is a Tech Design file with status "Ready". Output is an Implementation file placed in `implementation/{date}-{short-topic}/`, status "Draft".
 
@@ -84,11 +99,15 @@ How to use:
 
 ### 5. Step 5 - Review Implementation Plan
 
+> Executing Agent perspective (human review)
+
 Input is an Implementation file with status "Draft". Output is the same file with status changed to "Ready".
 
 After AI generates the Implementation draft, you need to review it. Focus on: whether the change list's structural requirements are consistent with the Tech Design's API contracts and data models, and whether verification cases cover core paths. After approval, change status from "Draft" to "Ready", change the corresponding Collection's status from "Converged" to "Completed", and backfill the Implementation file path into the Collection's Related Implementation field.
 
 ### 6. Step 6 - Execute Implementation
+
+> Executing Agent perspective
 
 Input is an Implementation file with status "Ready", plus current project context such as codebase path and tech stack description.
 
@@ -244,15 +263,18 @@ Steps:
 1. Scan repository. Read the target repository's Agent instruction files (AGENTS.md / CLAUDE.md / .cursorrules), tech stack, existing data models, API patterns, middleware, etc. Fill in the Repository Context.
 2. Fill identification. Name consistent with Collection topic, version set to 1.0.0, status set to "Draft", source backfilled with Collection path.
 3. Fill applicability. Inherit from Collection, supplement with technical boundaries (e.g., "covers API layer only, excludes UI").
-4. Architecture decisions. For key design questions (storage, protocol, layering, etc.), list alternatives, selection, and rationale. Each decision must have at least two alternatives.
-5. Define data models. Define data structures for each business entity down to field level, annotate field constraints and storage. Link back to Collection scenarios.
-6. Define API contracts. Define interfaces for each user operation, including endpoint, request/response fields, pre/postconditions, side effects. Each API must link to a specific Collection scenario.
-7. Map scenarios to technical paths. Map each Collection Given/When/Then scenario to concrete technical steps: which API is triggered → what is validated → which model is read/written → which external system is called → what is returned.
-8. Define external system integrations. List all external systems requiring interaction with integration specifications.
-9. Define error handling strategy. Unified error code system and degradation plans.
-10. Plan implementation order. Order by dependency: foundation before application, data before interfaces.
-11. Fill change log. Add initial version record.
-12. Backfill association. Backfill Tech Design path into Collection's Related Tech Design field.
+4. Define technical strategy. First establish the overall technical roadmap (architecture style, integration pattern, data management strategy, deployment approach), then list alternatives, selection, and rationale for key design questions. Each decision must have at least two alternatives.
+5. Define metrics. Set measurable target values across performance, quality, and capacity dimensions, with measurement methods. No vague descriptions like "high performance" — specific numbers required.
+6. Define data models. Define data structures for each business entity down to field level, annotate field constraints and storage. Link back to Collection scenarios.
+7. Define API contracts. Define interfaces for each user operation, including endpoint, request/response fields, pre/postconditions, side effects. Each API must link to a specific Collection scenario.
+8. Map scenarios to technical paths. Map each Collection Given/When/Then scenario to concrete technical steps: which API is triggered → what is validated → which model is read/written → which external system is called → what is returned.
+9. Solution-level full investigation. Based on the mapped technical paths, conduct a thorough investigation across three dimensions: end-to-end flow investigation (input, processing logic, output, failure conditions, failure impact, and involved components for each step), component interaction investigation (caller, callee, protocol, data format, timeout, failure handling, and whether an existing implementation exists), data flow investigation (create, modify, read, archive/delete paths and consistency risks for each data object). Output investigation conclusions: coverage completeness, key risks, and points requiring further investigation.
+10. Build requirement transformation fallback strategy. Verify the coverage matrix line by line (every Collection scenario has a corresponding technical path), define degradation plans (trigger condition, degraded behavior, business impact, recovery condition), record omission risks. The fallback strategy must be grounded in the full investigation conclusions; skipping the investigation and writing fallback directly is not allowed.
+11. Define external system integrations. List all external systems requiring interaction with integration specifications.
+12. Define error handling strategy. Unified error code system and degradation plans.
+13. Plan implementation order. Order by dependency: foundation before application, data before interfaces.
+14. Fill change log. Add initial version record.
+15. Backfill association. Backfill Tech Design path into Collection's Related Tech Design field.
 
 Mapping table (Collection → Tech Design):
 - Topic → Name
@@ -264,13 +286,20 @@ Mapping table (Collection → Tech Design):
 - Dependencies.External Systems → External System Integration
 - Technical Constraints → Technical Constraints (inherited & supplemented)
 - Converged Rules.Scenario → Scenario-to-Technical-Path Mapping
+- Scenario-to-Technical-Path Mapping → Solution-Level Full Investigation (end-to-end flow, component interaction, data flow dimensions)
+- Solution-Level Full Investigation.Conclusions → Fallback Strategy.Degradation Plans and Omission Risks
+- All Converged Rules → Fallback Strategy.Coverage Matrix (line-by-line verification)
+- Technical Constraints + business scenario characteristics → Metrics (performance, quality, capacity)
 
 Constraints:
 - Output file must be placed in the tech-design subfolder with the same name as the collection batch.
-- Every Collection scenario must have a corresponding entry in API Contracts and Scenario Mapping.
+- Every Collection scenario must have a corresponding entry in API Contracts, Scenario Mapping, and Coverage Matrix.
 - Do not add business rules not present in the Collection, but technical-level decisions are allowed.
 - Data models must be specified down to field level; API contracts must be specified down to request/response field level.
-- Architecture decisions must include alternatives and rationale.
+- Technical strategy must include overall roadmap and key decisions, each with alternatives and rationale.
+- Metrics must provide specific numbers; vague descriptions are not accepted.
+- Solution-level full investigation must cover all three dimensions (end-to-end flow, component interaction, data flow); every step must be at an auditable level of granularity (with input/output/failure conditions/involved components).
+- The fallback strategy coverage matrix must be verified line by line; skipping is not allowed. Degradation plans and omission risks must be grounded in the full investigation conclusions; skipping the investigation and writing fallback directly is not allowed.
 
 ---
 
