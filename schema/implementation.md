@@ -25,6 +25,13 @@
   - Required Approvals: [Number of required approvals]
   - Required Checks: [CI checks that must pass before merge, e.g., tests, lint, build]
 
+## Repository Context (To be filled by agent before execution)
+> ⚠️ The "Repository" field above only specifies the target. Before execution, clone the repository and scan the codebase. Fill in the context below.
+- Tech Stack: [Identified from package.json, go.mod, requirements.txt, etc.]
+- Code Style: [Naming conventions, comment patterns, directory organization]
+- Existing Interfaces: [Route definitions, type definitions, API specs location]
+- Conflict Check: [Do the files in "Changes" conflict with existing code? If yes, describe resolution]
+
 ## Applicability
 - Applicable: [When this skill should be used]
 - Not Applicable: [When this skill should not be used; especially note scenarios where it could be misused]
