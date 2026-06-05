@@ -35,10 +35,11 @@
 
 ### Cross-Collection Relationships
 
-> Describe invocation / dependency / sharing relationships between Collections. Prefer a simple diagram; add textual explanation only for complex cases.
+> Describe invocation / dependency / sharing relationships between Collections. Use Mermaid diagram; add textual explanation only for complex cases.
 
-```
-[C01] --[relationship type]--> [C02]
+```mermaid
+flowchart LR
+    C01 -->|relationship| C02
 ```
 
 #### Relationship Type Key
