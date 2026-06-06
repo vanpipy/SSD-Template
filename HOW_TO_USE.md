@@ -1,15 +1,67 @@
 # SSD-Template 使用指南
 
-## 核心理念:Why-First
+## 核心理念
 
-在写任何代码前回答四个问题:
+### Why-First
+
+在写任何代码前,回答四个问题:
 
 1. **为什么有这个流程?** — 它解决什么问题?
 2. **具体解决什么问题?** — 问题是什么?
 3. **代码为什么这样设计?** — 决策依据是什么?
 4. **这应该放在哪里?** — 哪个组件负责?
 
-> 详细概念见 [new-factors.md](new-factors.md)
+### Given/When/Then
+
+用自然语言描述行为:
+
+- **Given** — 前置条件
+- **When** — 触发动作
+- **Then** — 预期结果
+
+### 复审机制
+
+每个 PRD 定期复审,防止 feature rot:
+
+- **仍然重要?** — Yes / No / 重新定义
+- **应当保留?** — Yes / No
+- **可以删除?** — Yes / No
+
+### Harness 原则
+
+工作流是固定的 harness,不是灵活的建议:
+
+- 5 步必须走完,不简化
+- 每步有明确的"完成门"
+- 违反则失败,不跳过
+
+## 如何使用本指南
+
+### 谁来读
+
+本指南面向 AI agent 和开发者,用于规范从需求到代码的完整流程。
+
+### 从哪里开始
+
+当有新的需求时:
+
+1. **创建 raw** — 将原始描述或文件引用放入 `raw/{date}-{topic}.md`
+2. **创建 prd** — 在 `prd/{date}-{topic}/{topic}.md` 产出 PRD
+3. **创建 tech_design** — 在 `tech_design/{date}-{topic}/{topic}.md` 产出 Tech Design
+4. **创建 plan** — 在 `plan/{date}-{topic}/{topic}.md` 产出 Plan
+5. **执行 TDD** — 按 Plan 的验证用例进入 Red → Green → Refactor
+
+### 遇到问题时
+
+- **不确定填什么?** → 查看对应 schema 模板 [schema/prd.md](schema/prd.md)
+- **不知道覆盖哪些场景?** → 参考下方完成检查清单
+- **不确定一个需求走多深?** → 默认走完 5 步,不简化
+
+### 状态流转
+
+```
+raw (Collected) → prd (Draft → Active) → tech_design (Draft → Ready) → plan (Draft → Ready) → code → prd (Implemented)
+```
 
 ## 目录组织(5 个文件夹)
 
@@ -132,5 +184,5 @@ flowchart LR
 | [schema/prd.md](schema/prd.md) | PRD 模板 |
 | [schema/tech_design.md](schema/tech_design.md) | Tech Design 模板 |
 | [schema/plan.md](schema/plan.md) | Plan 模板 |
-| [new-factors.md](new-factors.md) | 概念参考(Why-First、四问、BDD/ADR) |
+| [new-factors.md](new-factors.md) | 深度概念参考 |
 | [legacy/](legacy/) | 历史参考(旧 7-schema 设计) |
