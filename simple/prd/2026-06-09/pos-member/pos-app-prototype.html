@@ -1,0 +1,1970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>移动收银APP - 版本更新 + 登录 + 门店注册</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #1a1a2e;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px;
+    overflow-y: auto;
+}
+.device-frame {
+    width: 375px; height: 700px; background: #0f0f1a;
+    border-radius: 32px; padding: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative;
+}
+.device-frame::before {
+    content: ""; position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 20px; background: #1a1a2e; border-radius: 0 0 12px 12px; z-index: 10;
+}
+.device-screen {
+    width: 100%; height: 100%; background: #f5f5f5; border-radius: 24px;
+    overflow: hidden; position: relative; display: flex; flex-direction: column;
+}
+.status-bar {
+    height: 28px; background: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; font-size: 12px; color: #1a1a1a; font-weight: 600;
+}
+.status-bar .time { flex:1; text-align:center; }
+.app-header {
+    height: 48px; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+}
+.app-header h1 { font-size: 17px; font-weight: 600; color: #1a1a1a; }
+.app-content {
+    flex:1; position: relative;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.hidden { display:none !important; }
+.fade-in { animation:fadeIn 0.4s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* ===== 更新流程 ===== */
+.modal-overlay {
+    position: absolute; top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; transition: opacity 0.3s;
+}
+.update-card {
+    width: 300px; background: #fff; border-radius: 16px;
+    padding: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    animation: cardEnter 0.4s ease-out;
+}
+@keyframes cardEnter {
+    from { opacity:0; transform:scale(0.9) translateY(20px); }
+    to { opacity:1; transform:scale(1) translateY(0); }
+}
+.card-header { text-align:center; margin-bottom:16px; }
+.card-title { font-size:20px; font-weight:700; color:#1a1a1a; margin-bottom:12px; }
+.version-tag {
+    display:inline-block; background:#FFF3E6; color:#FF6B00;
+    font-size:13px; font-weight:500; padding:4px 12px; border-radius:12px; margin-bottom:6px;
+}
+.current-version { font-size:12px; color:#999; margin-top:4px; }
+.new-version-desc {
+    text-align:center; font-size:14px; color:#666; line-height:1.6; padding:12px 0;
+}
+.new-version-desc span { display:block; margin-bottom:4px; }
+.update-icon {
+    width:80px; height:80px; margin:0 auto 16px;
+    animation: rotate 2s linear infinite;
+}
+@keyframes rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.progress-section { margin-top:14px; }
+.progress-info { display:flex; justify-content:space-between; margin-bottom:6px; }
+.progress-text { font-size:13px; color:#FF6B00; font-weight:500; }
+.progress-bar-bg { width:100%; height:8px; background:#F0F0F0; border-radius:4px; overflow:hidden; }
+.progress-bar-fill {
+    height:100%; background:linear-gradient(90deg,#FF9500,#FF6B00);
+    border-radius:4px; transition:width 0.3s; width:0%;
+}
+.progress-status { text-align:center; margin-top:6px; font-size:12px; color:#999; }
+.success-icon {
+    width:64px; height:64px; background:linear-gradient(135deg,#52C41A,#389E0D);
+    border-radius:50%; display:flex; align-items:center; justify-content:center;
+    margin:0 auto 12px; animation:scaleIn 0.5s ease-out;
+}
+@keyframes scaleIn {
+    0%{transform:scale(0)} 60%{transform:scale(1.1)} 100%{transform:scale(1)}
+}
+.success-icon svg { width:32px; height:32px; fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.complete-text { text-align:center; font-size:13px; color:#666; margin-bottom:12px; }
+.redirect-text { text-align:center; font-size:12px; color:#999; margin-top:12px; }
+.error-icon {
+    width:64px; height:64px; background:linear-gradient(135deg,#FF6B6B,#D94A4A);
+    border-radius:50%; display:flex; align-items:center; justify-content:center;
+    margin:0 auto 12px; animation:shakeIn 0.5s ease-out;
+}
+@keyframes shakeIn {
+    0%{transform:scale(0)} 40%{transform:scale(1.1)}
+    60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
+    100%{transform:translateX(0)}
+}
+.error-icon svg { width:32px; height:32px; fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.error-code {
+    text-align:center; font-size:11px; color:#D94A4A;
+    background:#FFF0F0; display:inline-block;
+    padding:2px 10px; border-radius:4px; margin:0 auto 12px;
+}
+.error-detail { font-size:12px; color:#666; margin-bottom:8px; }
+.error-contact { font-size:12px; color:#999; padding:10px; background:#FAFAFA; border-radius:8px; text-align:center; }
+.error-actions { display:flex; gap:8px; margin-top:12px; }
+.action-btn {
+    height:44px;
+    background:linear-gradient(90deg,#FF9500,#FF6B00);
+    border:none; border-radius:8px; color:#fff; font-size:16px; font-weight:600;
+    cursor:pointer; transition:transform 0.2s,box-shadow 0.2s;
+}
+.action-btn:hover { box-shadow:0 4px 12px rgba(255,107,0,0.35); }
+.action-btn:active { transform:scale(0.98); }
+.action-btn:disabled { opacity:0.5; cursor:not-allowed; }
+.cancel-btn {
+    flex:1; height:44px; padding:0 16px;
+    background:transparent; border:1px solid #DDD; border-radius:8px;
+    color:#999; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.2s;
+}
+.cancel-btn:hover { background:#F5F5F5; }
+.cancel-btn:active { transform:scale(0.98); }
+
+/* ===== 登录页 ===== */
+.login-content {
+    flex:1; display: flex; flex-direction: column; padding: 0 20px;
+    background: linear-gradient(180deg, #fff 0%, #f5f5f5 100%);
+}
+.business-date-card {
+    background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px;
+    padding: 10px 14px; margin-bottom: 20px; display: flex; justify-content:center; align-items:center;
+}
+.business-date-card .bd-label { color: #999; font-size:13px; margin-right:8px; }
+.business-date-card .bd-value { color: #333; font-size:14px; font-weight:500; }
+.input-group { margin-bottom: 16px; }
+.input-group label { display:block; font-size:12px; color:#666; margin-bottom:6px; font-weight:500; }
+.input-wrapper {
+    display:flex; align-items:center;
+    background:#fff; border:1px solid #ddd; border-radius:8px; height:44px; padding:0 12px;
+    transition:border-color 0.2s;
+}
+.input-wrapper:focus-within { border-color:#FF6B00; }
+.input-icon { width:20px; height:20px; margin-right:10px; flex-shrink:0; }
+.input-icon svg { width:20px; height:20px; }
+.input-field {
+    flex:1; border:none; outline:none; font-size:14px; color:#333;
+    background:transparent; height:100%;
+}
+.input-field::placeholder { color:#bbb; }
+.input-toggle {
+    width:24px; height:24px; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+}
+.input-toggle svg { width:20px; height:20px; }
+.remember-row {
+    display:flex; align-items:center; gap:8px; margin-bottom:20px;
+}
+.remember-row input[type="checkbox"] {
+    width:18px; height:18px; accent-color:#FF6B00; cursor:pointer;
+}
+.remember-row label { font-size:13px; color:#666; cursor:pointer; user-select:none; }
+.login-btn {
+    width:100%; height:44px;
+    background:linear-gradient(90deg,#FF9500,#FF6B00);
+    border:none; border-radius:8px; color:#fff; font-size:16px; font-weight:600;
+    cursor:pointer; margin-bottom:12px; transition:transform 0.2s,box-shadow 0.2s;
+}
+.login-btn:hover { box-shadow:0 4px 12px rgba(255,107,0,0.35); }
+.login-btn:active { transform:scale(0.98); }
+.login-btn:disabled { opacity:0.5; cursor:not-allowed; }
+.cancel-login-btn {
+    width:100%; height:44px;
+    background:transparent; border:1px solid #ddd; border-radius:8px;
+    color:#999; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.2s;
+}
+.cancel-login-btn:hover { background:#f5f5f5; }
+.cancel-login-btn:active { transform:scale(0.98); }
+.footer-info { margin-top:auto; padding:20px 0 16px; border-top:1px solid #eee; }
+.footer-row {
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:11px; color:#999; padding:3px 0;
+}
+.footer-row .fr-label { color:#bbb; }
+.footer-row .fr-value { color:#666; }
+
+/* ===== 门店注册 ===== */
+.register-panel {
+    flex:1; display: flex; flex-direction: column; align-items: center;
+    padding: 32px 28px 20px;
+    background: linear-gradient(180deg, #fff 0%, #f5f5f5 100%);
+    overflow-y: auto;
+}
+.guide-icon {
+    width: 80px; height: 80px; background: #E8F4FF; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+}
+.guide-icon svg { width: 44px; height: 44px; }
+.guide-title { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+.guide-subtitle { font-size: 14px; color: #999; text-align:center; line-height: 1.6; margin-bottom: 36px; }
+.guide-subtitle span { display: block; }
+.primary-btn {
+    width: 100%; height: 44px;
+    background: linear-gradient(90deg, #FF9500, #FF6B00);
+    border: none; border-radius: 8px; color: #fff; font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+}
+.primary-btn:hover { box-shadow: 0 4px 12px rgba(255,107,0,0.35); }
+.primary-btn:active { transform: scale(0.98); }
+.primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.code-title { text-align:center; font-size: 18px; font-weight: 600; color: #1a1a1a; margin-bottom: 24px; }
+.code-input-area {
+    width: 100%; margin-bottom: 28px;
+}
+.code-input {
+    width: 100%; height: 48px;
+    border: 2px solid #ddd; border-radius: 10px;
+    font-size: 18px; color: #1a1a1a;
+    text-align: center; outline: none; transition: border-color 0.2s;
+    caret-color: #FF6B00; letter-spacing: 4px;
+}
+.code-input:focus { border-color: #FF6B00; }
+.code-input.error { border-color: #D94A4A; background: #FFF0F0; animation: shakeX 0.3s; }
+@keyframes shakeX {
+    0%,100%{transform:translateX(0)}
+    25%{transform:translateX(-4px)}
+    75%{transform:translateX(4px)}
+}
+.code-error-msg {
+    color: #D94A4A; font-size: 13px; text-align: center;
+    min-height: 24px; margin-bottom: 8px;
+}
+.back-link {
+    color: #999; font-size: 14px; cursor: pointer;
+    margin-top: 16px; text-decoration: none;
+}
+.back-link:hover { color: #666; }
+.store-card {
+    width: 100%; background: #fff; border-radius: 12px;
+    padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+}
+.store-card-header {
+    display: flex; align-items: center; gap: 12px;
+    padding-bottom: 16px; border-bottom: 1px solid #f0f0f0; margin-bottom: 16px;
+}
+.store-icon-wrap {
+    width: 48px; height: 48px; background: #E8F4FF; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+}
+.store-icon-wrap svg { width: 28px; height: 28px; }
+.store-confirm-badge {
+    position: absolute; top: -4px; right: -4px;
+    width: 18px; height: 18px; background: #52C41A; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+}
+.store-confirm-badge svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 2.5; }
+.store-name { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+.store-info-row {
+    display: flex; margin-bottom: 10px; font-size: 13px;
+}
+.store-info-row .label { color: #999; width: 70px; flex-shrink: 0; }
+.store-info-row .value { color: #333; flex: 1; }
+.confirm-hint {
+    font-size: 13px; color: #666; text-align: center;
+    margin-bottom: 20px; padding: 10px; background: #FAFAFA;
+    border-radius: 8px;
+}
+.confirm-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.secondary-btn {
+    width: 100%; height: 44px;
+    background: transparent; border: 1px solid #ddd; border-radius: 8px;
+    color: #999; font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s;
+}
+.secondary-btn:hover { background: #f5f5f5; }
+.secondary-btn:active { transform: scale(0.98); }
+.store-summary {
+    width: 100%; background:#fff; border-radius:12px; padding:16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom:4px;
+}
+.summary-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0; font-size:13px;
+}
+.summary-row:not(:last-child) { border-bottom:1px solid #f0f0f0; }
+.summary-row .label { color:#999; }
+.summary-row .value { color:#333; font-weight:500; }
+.success-hint { text-align:center; font-size:12px; color:#999; margin-top:12px; margin-bottom:20px; }
+.fail-title { text-align:center; font-size:20px; font-weight:700; color:#1a1a1a; margin-bottom:12px; }
+.fail-reason { font-size:14px; color:#666; text-align:center; margin-bottom:24px; }
+.fail-actions { display:flex; flex-direction:column; gap:12px; width:100%; }
+
+/* ===== 主页 ===== */
+.main-panel {
+    flex:1; display: flex; flex-direction: column; background: linear-gradient(180deg, #F5F5F5 0%, #fff 100%);
+}
+.main-header {
+    background: linear-gradient(180deg, #F08A4B 0%, #F5A66C 60%, #F8B88A 100%);
+    padding: 24px 20px 80px; position: relative;
+}
+.main-header-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 16px;
+}
+.main-welcome { color: #fff; font-size: 24px; font-weight: 600; line-height: 1.3; }
+.main-welcome-sub { color: #fff; font-size: 24px; font-weight: 600; }
+.main-brand-logo {
+    width: 48px; height: 48px; background: rgba(255,255,255,0.2);
+    border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.main-brand-logo svg { width: 28px; height: 28px; }
+.main-search-wrap {
+    position: relative; z-index: 2; margin-top: -60px; padding: 0 16px;
+}
+.main-search-box {
+    display: flex; align-items: center; background: #fff; border-radius: 24px;
+    height: 48px; padding: 0 6px 0 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.main-search-box svg { width: 18px; height: 18px; margin-right: 8px; flex-shrink: 0; }
+.main-search-box input {
+    flex:1; border:none; outline:none; font-size:15px; color:#333; background:transparent;
+}
+.main-search-box input::placeholder { color: #bbb; }
+.main-search-btn {
+    height: 36px; padding: 0 18px;
+    background: #F08A4B; border: none; border-radius: 18px;
+    color: #fff; font-size: 14px; font-weight: 500; cursor: pointer;
+}
+.main-scan-area {
+    padding: 40px 16px; display: flex; flex-direction: column; align-items: center;
+}
+.scan-square-btn {
+    width: 140px; height: 140px; background: linear-gradient(135deg, #F08A4B, #E8783A);
+    border-radius: 24px; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 30px rgba(240,138,75,0.35); transition: transform 0.2s, box-shadow 0.2s;
+}
+.scan-square-btn:hover { box-shadow: 0 12px 40px rgba(240,138,75,0.45); }
+.scan-square-btn:active { transform: scale(0.96); }
+.scan-square-btn svg { width: 60px; height: 60px; }
+.scan-label-below { margin-top: 16px; color: #333; font-size: 18px; font-weight: 500; }
+.main-login-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; background: #fff;
+    margin: 0 16px 12px; border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.main-login-bar .login-left {
+    display: flex; align-items: center; gap: 10px;
+}
+.main-login-bar .avatar {
+    width: 36px; height: 36px; background: #f0f0f0; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+}
+.main-login-bar .avatar svg { width: 20px; height: 20px; stroke: #999; }
+.main-login-bar .login-text { font-size: 15px; color: #333; }
+.main-login-bar .login-btn-outline {
+    height: 32px; padding: 0 16px;
+    background: transparent; border: 1px solid #F08A4B; border-radius: 16px;
+    color: #F08A4B; font-size: 13px; cursor: pointer; white-space:nowrap;
+    display: flex; align-items: center; gap: 4px;
+}
+.login-bar-state {
+    display: flex; justify-content: space-between; align-items: center; width: 100%;
+}
+@keyframes scanMove {
+    0%{top:10px} 50%{top:170px} 100%{top:10px}
+}
+.main-bottom-bar {
+    display: flex; background: #fff; padding: 8px 0 12px;
+    border-top: 1px solid #f0f0f0;
+}
+.main-bottom-bar .tab-item {
+    flex:1; text-align: center; padding: 4px 0;
+    font-size: 11px; color: #999; cursor: pointer;
+}
+.main-bottom-bar .tab-item.active { color: #F08A4B; }
+.main-bottom-bar .tab-item svg { width: 24px; height: 24px; display: block; margin: 0 auto 4px; }
+
+/* ===== 分类页 ===== */
+.cat-item {
+    padding: 14px 10px; font-size: 13px; color: #666; text-align: center;
+    cursor: pointer; border-bottom: 1px solid #f5f5f5; transition: all 0.2s;
+}
+.cat-item.active { color: #FF6B00; font-weight: 600; background: #F5F5F5; position:relative; }
+.cat-item.active::before {
+    content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:3px; height:20px; background:#FF6B00; border-radius:0 3px 3px 0;
+}
+.product-grid {
+    display: flex; flex-wrap: wrap; gap: 8px; padding: 8px;
+    align-content: flex-start;
+}
+.product-item {
+    width: calc(50% - 4px); background: #fff; border-radius: 10px;
+    overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    display: flex; flex-direction: column;
+}
+.product-thumb {
+    width: 100%; height: 110px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+}
+.product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.product-detail { padding: 8px 10px 10px; }
+.product-title {
+    font-size: 13px; font-weight: 500; color: #1a1a1a;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px;
+}
+.product-name { font-size:13px; font-weight:500; color:#1a1a1a; margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.product-spec { font-size:11px; color:#bbb; margin-bottom:6px; }
+.product-bottom { display:flex; justify-content:space-between; align-items:center; }
+.product-price { font-size:15px; font-weight:700; color:#FF3B30; }
+.add-btn {
+    width: 24px; height: 24px; background: #FF6B00; border-radius: 50%;
+    border: none; color: #fff; font-size: 16px; font-weight: bold;
+    line-height: 24px; text-align: center; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.product-price { font-size:15px; font-weight:700; color:#D94A4A; }
+.add-btn {
+    width:28px; height:28px; background:#FF6B00; border:none; border-radius:50%;
+    color:#fff; font-size:20px; font-weight:300; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; line-height:1;
+}
+.add-btn:active { transform:scale(0.9); }
+.cart-tab-wrap { position:relative; display:block; }
+.cart-tab-wrap svg { width:24px; height:24px; display:block; margin:0 auto 4px; }
+.cart-badge-nav {
+    position:absolute; top:-4px; left:50%; transform:translateX(10px); min-width:16px; height:16px;
+    background:#FF4D4F; color:#fff; font-size:10px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; padding:0 4px;
+    border:1px solid #fff; font-weight:600;
+}
+
+/* ===== 购物车 ===== */
+.cart-member-bar {
+    margin: 8px 10px; padding: 10px 14px;
+    background: linear-gradient(135deg,#FFF3E0,#FFE0B2);
+    border-radius: 12px; display: flex; align-items: center; gap: 8px;
+    font-size:13px; color:#E65100;
+}
+.cart-member-bar .m-arrow { margin-left:auto; color:#FF6B00; }
+.cart-member-bar .m-login-btn {
+    padding: 4px 12px; background: #FF6B00; color: #fff;
+    border-radius: 14px; font-size: 12px; border: none; cursor: pointer;
+}
+.cart-member-bar .m-reg-btn {
+    padding: 4px 12px; background: transparent; color: #FF6B00;
+    border: 1px solid #FF6B00; border-radius: 14px; font-size: 12px; cursor: pointer;
+}
+.cart-store-name {
+    padding: 0 14px 8px; font-size: 13px; font-weight: 500; color: #333;
+}
+.cart-scan-bar {
+    margin: 0 10px 8px; display: flex; align-items: center; gap: 8px;
+    background: #F5F5F5; border-radius: 24px; padding: 10px 14px;
+}
+.cart-scan-bar .s-icon { flex-shrink: 0; }
+.cart-scan-bar input {
+    flex: 1; border: none; outline: none; background: transparent;
+    font-size: 13px; color: #333;
+}
+.cart-scan-bar input::placeholder { color: #bbb; }
+.cart-list { flex: 1; overflow-y: auto; padding: 0 10px; }
+.cart-item {
+    background: #fff; border-radius: 12px; padding: 12px;
+    margin-bottom: 8px; display: flex; gap: 10px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    position: relative;
+}
+.cart-item-img {
+    width: 64px; height: 64px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.cart-item-info { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cart-item-name { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+.cart-item-spec { font-size: 11px; color: #999; }
+.cart-item-price-row { display: flex; align-items: center; gap: 6px; }
+.cart-item-unit-price { font-size: 12px; color: #FF3B30; font-weight: 500; }
+.cart-item-promo {
+    font-size: 10px; color: #FF6B00; background: #FFF3E0;
+    padding: 1px 6px; border-radius: 4px;
+}
+.cart-item-bottom { display: flex; align-items: center; justify-content: space-between; }
+.cart-item-qty {
+    display: flex; align-items: center; gap: 0;
+    border: 1px solid #E0E0E0; border-radius: 6px; overflow: hidden;
+}
+.cart-item-qty button {
+    width: 28px; height: 28px; border: none; background: #F5F5F5;
+    color: #333; font-size: 16px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+}
+.cart-item-qty button:active { background: #E0E0E0; }
+.cart-item-qty span { width: 32px; text-align: center; font-size: 14px; font-weight: 500; }
+.cart-item-subtotal { font-size: 15px; font-weight: 700; color: #FF3B30; }
+.cart-item-del {
+    position: absolute; bottom: 12px; right: 12px;
+    width: 20px; height: 20px; cursor: pointer; opacity: 0.5;
+}
+.cart-item-del:hover { opacity: 1; }
+.cart-coupon-bar {
+    margin: 4px 10px; padding: 10px 14px; background: #fff;
+    border-radius: 12px; display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #666; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.cart-coupon-bar .c-arrow { margin-left: auto; color: #bbb; }
+.cart-bottom {
+    display: flex; align-items: center; background: #fff;
+    padding: 10px 14px 14px; border-top: 1px solid #f0f0f0;
+    gap: 10px;
+}
+.cart-total-area { flex: 1; }
+.cart-total-label { font-size: 12px; color: #999; }
+.cart-total-price { font-size: 18px; font-weight: 700; color: #FF3B30; }
+.cart-total-detail { font-size: 11px; color: #999; margin-top: 2px; }
+.cart-checkout-btn {
+    padding: 12px 24px; background: linear-gradient(135deg,#FF9500,#FF6B00);
+    border: none; border-radius: 28px; color: #fff; font-size: 15px;
+    font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+}
+.cart-checkout-btn:active { transform: scale(0.97); }
+.cart-checkout-btn .c-count {
+    background: rgba(255,255,255,0.25); border-radius: 10px;
+    padding: 1px 8px; font-size: 13px;
+}
+
+/* ===== Toast ===== */
+.toast {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(0,0,0,0.78); color:#fff; padding:10px 20px; border-radius:8px;
+    font-size:13px; z-index:200; pointer-events:none;
+}
+@keyframes toastAnim {
+    0%{opacity:0;transform:translate(-50%,-50%) scale(0.9)}
+    15%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    75%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(0.9)}
+}
+
+/* 控制面板 */
+.control-panel {
+    margin-top:24px; padding:16px 24px; background:rgba(255,255,255,0.05);
+    border-radius:12px; border:1px solid rgba(255,255,255,0.1);
+}
+.control-panel h3 { color:#fff; font-size:14px; margin-bottom:12px; opacity:0.8; }
+.ctrl-group { margin-bottom:10px; }
+.ctrl-group:last-child { margin-bottom:0; }
+.ctrl-group-label { color:rgba(255,255,255,0.4); font-size:11px; margin-bottom:6px; }
+.controls { display:flex; gap:6px; flex-wrap:wrap; }
+.ctrl-btn {
+    padding:6px 12px; background:rgba(255,107,0,0.2); border:1px solid rgba(255,107,0,0.4);
+    border-radius:6px; color:#FF9500; font-size:12px; cursor:pointer; transition:all 0.2s;
+}
+.ctrl-btn:hover { background:rgba(255,107,0,0.3); }
+.ctrl-btn:active { transform:scale(0.95); }
+.page-desc { color:rgba(255,255,255,0.5); font-size:12px; margin-top:12px; text-align:center; }
+@media (prefers-reduced-motion:reduce) {
+    .update-card,.success-icon,.fade-in,.error-icon,.code-input.error{animation:none}
+    .progress-bar-fill{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="device-frame">
+    <div class="device-screen">
+        <div class="status-bar">
+            <span>12:30</span>
+            <span class="time">移动收银</span>
+            <span>📶 🔋</span>
+        </div>
+        <div class="app-header"><h1 id="pageTitle">移动收银</h1></div>
+
+        <!-- ==================== 视图1：版本更新 ==================== -->
+        <div id="updateView" class="app-content" style="display:flex;">
+            <div class="modal-overlay" id="modalOverlay">
+                <!-- 发现新版本 -->
+                <div class="update-card" id="newVersionCard">
+                    <div class="card-header">
+                        <div class="card-title">发现新版本</div>
+                        <div class="version-tag">最新版本：2.0.0（正式版）</div>
+                        <div class="current-version">当前版本：1.8.5</div>
+                    </div>
+                    <div class="new-version-desc">
+                        <span>版本更新啦！我们优化了使用体验</span>
+                        <span>建议您更新到最新版本</span>
+                    </div>
+                    <button class="action-btn" id="updateNowBtn" style="width:100%;">立即更新（3s）</button>
+                </div>
+                <!-- 更新中 -->
+                <div class="update-card hidden" id="updatingCard">
+                    <div class="card-header">
+                        <div class="card-title">系统更新中</div>
+                        <div class="version-tag">新版本：2.0.0（正式版）</div>
+                        <div class="current-version">当前版本：1.8.5</div>
+                    </div>
+                    <div class="update-icon">
+                        <svg viewBox="0 0 100 100" width="80" height="80">
+                            <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FF9500"/><stop offset="100%" stop-color="#FF6B00"/></linearGradient></defs>
+                            <path d="M50 10 C52.5 10 55 12 55 14.5 L56 22 C60 23 63.5 24.5 67 27 L73 22 C75 21 78 22 79 24 L83 32 C84 34 83 37 81 38.5 L75 42 C76 46 76 50 75.5 54 L81 58 C83 59.5 84 62 83 64 L79 72 C78 74 75 75 73 74 L67 69 C63.5 71.5 60 73 56 74 L55 81.5 C55 84 52.5 86 50 86 C47.5 86 45 84 45 81.5 L44 74 C40 73 36.5 71.5 33 69 L27 74 C25 75 22 74 21 72 L17 64 C16 62 17 59.5 19 58 L25 54 C24.5 50 24.5 46 25 42 L19 38.5 C17 37 16 34 17 32 L21 24 C22 22 25 21 27 22 L33 27 C36.5 24.5 40 23 44 22 L45 14.5 C45 12 47.5 10 50 10Z" fill="url(#g)"/>
+                            <circle cx="50" cy="48" r="14" fill="#fff"/>
+                            <circle cx="50" cy="48" r="14" fill="none" stroke="#FF9500" stroke-width="1" opacity="0.3"/>
+                            <circle cx="50" cy="48" r="4" fill="url(#g)"/>
+                            <path d="M50 38 L50 56 M42 48 L50 56 L58 48" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-info">
+                            <span class="progress-text" id="progressText">已更新/总数（0/12）</span>
+                        </div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
+                        <div class="progress-status" id="progressStatus">正在准备更新中...</div>
+                    </div>
+                </div>
+                <!-- 更新完成 -->
+                <div class="update-card hidden" id="completeCard">
+                    <div class="card-header"><div class="card-title">更新完成</div></div>
+                    <div class="success-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    <div class="complete-text">已更新至 2.0.0 版本</div>
+                    <div class="redirect-text" id="redirectText">系统自动跳转登录页...</div>
+                    <div style="text-align:center;margin-top:12px;"><span class="countdown" id="countdown" style="font-size:12px;color:#FF6B00;font-weight:600;">3s</span></div>
+                </div>
+                <!-- 更新失败 -->
+                <div class="update-card hidden" id="failCard">
+                    <div class="card-header"><div class="card-title">更新失败</div></div>
+                    <div class="error-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+                    <div style="text-align:center;"><span class="error-code" id="errorCode">错误码：E-2003</span></div>
+                    <div class="error-detail" id="errorDetail">更新文件校验失败，安装包可能已损坏。</div>
+                    <div class="error-contact">请联系信息支持协助处理！</div>
+                    <div class="error-actions">
+                        <button class="cancel-btn" id="cancelBtn">取消</button>
+                        <button class="action-btn" id="retryBtn" style="flex:1;margin-top:0;">重试更新</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 视图2：用户登录 ==================== -->
+        <div id="loginView" class="hidden" style="flex:1;display:none;">
+            <div class="login-content">
+                <div class="business-date-card">
+                    <span class="bd-label">当前营业日</span>
+                    <span class="bd-value" id="loginBusinessDate">2026年05月23日</span>
+                </div>
+                <div class="input-group">
+                    <label>账号</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </span>
+                        <input class="input-field" type="text" id="accountInput" placeholder="请输入账号（手机号）" maxlength="11">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>密码</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                        </span>
+                        <input class="input-field" type="password" id="passwordInput" placeholder="请输入密码">
+                        <span class="input-toggle" id="eyeToggle" onclick="togglePassword()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" id="eyeIcon">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <div class="remember-row">
+                    <input type="checkbox" id="rememberCheck">
+                    <label for="rememberCheck">记住账号密码（7天有效）</label>
+                </div>
+                <button class="login-btn" id="loginBtn" onclick="handleLogin()">登录</button>
+                <button class="cancel-login-btn" onclick="handleCancelLogin()">取消</button>
+                <div class="footer-info">
+                    <div class="footer-row"><span class="fr-label">门店名称</span><span class="fr-value">长沙人民路店</span></div>
+                    <div class="footer-row"><span class="fr-label">款台号</span><span class="fr-value">1</span></div>
+                    <div class="footer-row"><span class="fr-label">上次登录用户</span><span class="fr-value">李雨</span></div>
+                    <div class="footer-row"><span class="fr-label">系统版本</span><span class="fr-value">v2.0.0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 视图3：门店注册 ==================== -->
+        <div id="registerView" class="hidden" style="flex:1;display:none;">
+            <div class="register-panel">
+                <!-- 页面1：引导页 -->
+                <div id="regGuidePage" class="fade-in" style="display:flex;flex-direction:column;align-items:center;width:100%;">
+                    <div class="guide-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#4A90D9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 21h18M3 7v14M21 7v14M6 11h3v4H6zM10 11h3v4h-3zM14 11h3v4h-3zM6 3h12l2 4H4z"/>
+                        </svg>
+                    </div>
+                    <div class="guide-title">请注册您的门店</div>
+                    <div class="guide-subtitle">
+                        <span>首次使用需注册门店</span>
+                        <span>请联系信息支持！</span>
+                    </div>
+                    <button class="primary-btn" onclick="showRegCodePage()">开始注册</button>
+                </div>
+
+                <!-- 页面2：注册码输入（隐藏） -->
+                <div id="regCodePage" style="display:none;flex-direction:column;align-items:center;width:100%;">
+                    <div style="height:20px;"></div>
+                    <div class="code-input-area" id="codeInputArea">
+                        <input class="code-input" type="text" id="regCodeInput" placeholder="请输入门店注册码" inputmode="text">
+                    </div>
+                    <div class="code-error-msg" id="codeErrorMsg"></div>
+                    <button class="primary-btn" id="queryBtn" onclick="queryStore()">查询门店</button>
+                    <a class="back-link" onclick="showRegGuidePage()">← 返回</a>
+                </div>
+
+                <!-- 页面3：门店确认（隐藏） -->
+                <div id="regConfirmPage" style="display:none;flex-direction:column;align-items:center;width:100%;">
+                    <div style="height:10px;"></div>
+                    <div class="store-card">
+                        <div class="store-card-header">
+                            <div class="store-icon-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#4A90D9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 21h18M3 7v14M21 7v14M6 11h3v4H6zM10 11h3v4h-3zM14 11h3v4h-3zM6 3h12l2 4H4z"/>
+                                </svg>
+                                <span class="store-confirm-badge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                            </div>
+                            <span class="store-name" id="confirmStoreName">长沙人民路店</span>
+                        </div>
+                        <div class="store-info-row"><span class="label">门店地址</span><span class="value" id="confirmStoreAddr">湖南省长沙市天心区人民路 188 号</span></div>
+                        <div class="store-info-row"><span class="label">联系电话</span><span class="value" id="confirmStorePhone">0731-8888xxxx</span></div>
+                    </div>
+                    <div class="confirm-hint">请确认以上门店信息是否正确</div>
+                    <div class="confirm-actions">
+                        <button class="primary-btn" onclick="bindStore()">确认注册</button>
+                        <button class="secondary-btn" onclick="showRegCodePage()">重新输入</button>
+                    </div>
+                </div>
+
+                <!-- 页面4：绑定成功（隐藏） -->
+                <div id="regSuccessPage" style="display:none;flex-direction:column;align-items:center;width:100%;">
+                    <div class="success-icon" style="margin-top:10px;"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    <div class="success-title" style="margin-bottom:20px;">注册成功</div>
+                    <div class="store-summary">
+                        <div class="summary-row"><span class="label">门店名称</span><span class="value" id="successStoreName">长沙人民路店</span></div>
+                        <div class="summary-row"><span class="label">款台号</span><span class="value" id="successCounterNo">1</span></div>
+                        <div class="summary-row"><span class="label">注册时间</span><span class="value" id="successBindTime">2026-05-23 09:15:00</span></div>
+                    </div>
+                    <div class="success-hint">门店注册完成，可开始使用移动收银</div>
+                    <button class="primary-btn" onclick="showMainView()">开始使用</button>
+                </div>
+
+                <!-- 页面5：绑定失败（隐藏） -->
+                <div id="regFailPage" style="display:none;flex-direction:column;align-items:center;width:100%;">
+                    <div class="error-icon" style="margin-top:10px;"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+                    <div class="fail-title">注册失败</div>
+                    <div style="text-align:center;"><span class="error-code" id="failErrorCode">错误码：E-3001</span></div>
+                    <div class="fail-reason" id="failReason">注册码已过期或已被使用，请重新获取注册码</div>
+                    <div class="fail-actions">
+                        <button class="primary-btn" onclick="retryBind()">重试</button>
+                        <button class="secondary-btn" onclick="showRegCodePage()">返回修改</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 视图4：首页（主页） ==================== -->
+        <div id="mainView" class="hidden" style="flex:1;display:none;">
+            <div class="main-panel">
+                <!-- 橙色渐变头部 -->
+                <div class="main-header">
+                    <div class="main-header-top">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="main-brand-logo">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="4"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="main-welcome">欢迎使用</div>
+                                <div class="main-welcome-sub">移动收银</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 搜索框 -->
+                <div class="main-search-wrap">
+                    <div class="main-search-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="输入商品名称、条码" readonly onclick="showToast('请输入商品信息')">
+                        <button class="main-search-btn">搜索</button>
+                    </div>
+                </div>
+                <!-- 扫码大按钮 -->
+                <div class="main-scan-area">
+                    <button class="scan-square-btn" onclick="showCartView()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+                            <rect x="7" y="9" width="10" height="6" rx="1"/>
+                            <line x1="12" y1="9" x2="12" y2="15"/><line x1="7" y1="12" x2="17" y2="12"/>
+                        </svg>
+                    </button>
+                    <div class="scan-label-below">扫商品码</div>
+                </div>
+                <!-- 登录栏 -->
+                <div class="main-login-bar">
+                    <!-- 会员已登录状态 -->
+                    <div id="loginBarLogged" class="login-bar-state">
+                        <div class="login-left">
+                            <div class="avatar" style="background:#FF6B00;">
+                                <svg viewBox="0 0 24 24" fill="#fff" stroke="none">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            </div>
+                            <span class="login-text">鸣鸣会员 | 134****6677</span>
+                        </div>
+                        <button class="login-btn-outline" onclick="confirmSwitchMember()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
+                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+                            </svg>
+                            切换会员
+                        </button>
+                    </div>
+                    <!-- 会员未登录状态 -->
+                    <div id="loginBarUnlogged" class="login-bar-state" style="display:none;">
+                        <div class="login-left">
+                            <div class="avatar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="#bbb">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            </div>
+                            <span class="login-text" style="color:#bbb;">会员未登录</span>
+                        </div>
+                        <button class="login-btn-outline" onclick="showMemberLoginView()" style="background:#F08A4B;color:#fff;border-color:#F08A4B;">去登录</button>
+                    </div>
+                </div>
+                <div style="text-align:center;padding:0 16px 8px;font-size:11px;color:#ccc;">
+                    长沙人民路店 v2.0.0 | 1号款台
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 视图5：会员登录 ==================== -->
+        <div id="memberLoginView" class="hidden" style="flex:1;display:none;">
+            <div style="flex:1;display:flex;flex-direction:column;background:#fff;">
+                <div style="height:48px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #f0f0f0;">
+                    <svg onclick="showMainView()" style="cursor:pointer;" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    <span style="flex:1;text-align:center;font-size:17px;font-weight:600;color:#1a1a1a;margin-right:24px;">会员登录</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 24px;">
+                    <div style="width:72px;height:72px;background:#FFF3E6;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div style="font-size:14px;color:#999;margin-bottom:36px;">输入手机号或扫描会员码</div>
+                    <div style="width:100%;display:flex;align-items:center;background:#F5F5F5;border-radius:10px;height:48px;padding:0 14px;margin-bottom:24px;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:10px;flex-shrink:0;">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                        <input id="memberPhoneInput" type="text" placeholder="请输入会员手机号" style="flex:1;border:none;outline:none;font-size:15px;color:#333;background:transparent;" maxlength="11" inputmode="numeric">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;cursor:pointer;" onclick="showToast('请扫描会员码')">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+                            <rect x="7" y="9" width="10" height="6" rx="1"/>
+                            <line x1="12" y1="9" x2="12" y2="15"/><line x1="7" y1="12" x2="17" y2="12"/>
+                        </svg>
+                    </div>
+                    <button onclick="handleMemberLogin()" style="width:100%;height:48px;background:linear-gradient(90deg,#FF9500,#FF6B00);border:none;border-radius:10px;color:#fff;font-size:17px;font-weight:600;cursor:pointer;margin-bottom:20px;">登录</button>
+                    <div onclick="showMemberRegisterView()" style="text-align:center;font-size:14px;color:#FF6B00;cursor:pointer;padding:8px;">去注册会员</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 视图6：会员注册 ==================== -->
+        <div id="memberRegisterView" class="hidden" style="flex:1;display:none;">
+            <div style="flex:1;display:flex;flex-direction:column;background:#fff;">
+                <div style="height:48px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #f0f0f0;">
+                    <svg onclick="showMemberLoginView()" style="cursor:pointer;" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    <span style="flex:1;text-align:center;font-size:17px;font-weight:600;color:#1a1a1a;margin-right:24px;">会员注册</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 24px;">
+                    <div style="width:72px;height:72px;background:#FFF3E6;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                    </div>
+                    <div style="font-size:14px;color:#999;margin-bottom:36px;">填写手机号快速注册会员</div>
+                    <div style="width:100%;display:flex;align-items:center;background:#F5F5F5;border-radius:10px;height:48px;padding:0 14px;margin-bottom:16px;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:10px;flex-shrink:0;">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                        <input id="regPhoneInput" type="text" placeholder="请输入手机号" style="flex:1;border:none;outline:none;font-size:15px;color:#333;background:transparent;" maxlength="11" inputmode="numeric">
+                    </div>
+                    <button onclick="handleMemberRegister()" style="width:100%;height:48px;background:linear-gradient(90deg,#FF9500,#FF6B00);border:none;border-radius:10px;color:#fff;font-size:17px;font-weight:600;cursor:pointer;">注册</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 视图7：扫码页 ==================== -->
+        <div id="scanView" class="hidden" style="flex:1;display:none;">
+            <div style="flex:1;display:flex;flex-direction:column;background:#000;">
+                <!-- 顶部 -->
+                <div style="height:48px;display:flex;align-items:center;padding:0 16px;">
+                    <svg onclick="showMainView()" style="cursor:pointer;" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    <div style="flex:1;"></div>
+                    <div style="position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;">
+                            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                        </svg>
+                        <span style="position:absolute;top:-2px;right:-2px;width:16px;height:16px;background:#FF4D4F;border-radius:50%;color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;">3</span>
+                    </div>
+                </div>
+                <!-- 扫描区域 -->
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;">
+                    <div style="width:200px;height:200px;position:relative;">
+                        <!-- 四角扫描框 -->
+                        <div style="position:absolute;top:0;left:0;width:30px;height:30px;border-top:3px solid #FF6B00;border-left:3px solid #FF6B00;border-radius:4px 0 0 0;"></div>
+                        <div style="position:absolute;top:0;right:0;width:30px;height:30px;border-top:3px solid #FF6B00;border-right:3px solid #FF6B00;border-radius:0 4px 0 0;"></div>
+                        <div style="position:absolute;bottom:0;left:0;width:30px;height:30px;border-bottom:3px solid #FF6B00;border-left:3px solid #FF6B00;border-radius:0 0 0 4px;"></div>
+                        <div style="position:absolute;bottom:0;right:0;width:30px;height:30px;border-bottom:3px solid #FF6B00;border-right:3px solid #FF6B00;border-radius:0 0 4px 0;"></div>
+                        <!-- 扫描线 -->
+                        <div id="scanLine" style="position:absolute;top:10px;left:10px;right:10px;height:2px;background:#FF6B00;box-shadow:0 0 8px #FF6B00;animation:scanMove 2s ease-in-out infinite;"></div>
+                    </div>
+                </div>
+                <!-- 底部 -->
+                <div style="padding:20px 24px 40px;text-align:center;">
+                    <div style="font-size:14px;color:rgba(255,255,255,0.7);">商品条形码可识别</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 视图8：分类点选列表 ==================== -->
+        <div id="categoriesView" class="hidden" style="flex:1;display:none;overflow:hidden;">
+            <div style="flex:1;display:flex;flex-direction:column;background:#F5F5F5;">
+                <!-- 顶部 -->
+                <div style="height:48px;display:flex;align-items:center;padding:0 16px;background:#fff;border-bottom:1px solid #f0f0f0;">
+                    <svg onclick="showMainView()" style="cursor:pointer;" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    <span style="flex:1;text-align:center;font-size:17px;font-weight:600;color:#1a1a1a;margin-right:24px;">分类</span>
+                </div>
+                <!-- 搜索框 -->
+                <div style="padding:10px 12px;background:#fff;">
+                    <div style="display:flex;align-items:center;background:#F5F5F5;border-radius:20px;height:36px;padding:0 14px;">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;flex-shrink:0;">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="搜索商品名称或条码" style="flex:1;border:none;outline:none;font-size:13px;color:#333;background:transparent;" readonly onclick="showToast('请输入商品名称')">
+                    </div>
+                </div>
+                <!-- 主体区域：左侧分类 + 右侧商品 -->
+                <div style="flex:1;display:flex;overflow:hidden;">
+                    <!-- 左侧分类导航 -->
+                    <div style="width:85px;background:#fff;overflow:hidden;flex-shrink:0;border-right:1px solid #f0f0f0;">
+                        <div class="cat-item active" onclick="selectCategory(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+                        </div>
+                        <div class="cat-item" onclick="selectCategory(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M14.31 8l5.74 9.94H3.95L9.69 8h4.62z"/></svg>
+                            <span style="font-size:12px;">饼干</span>
+                        </div>
+                        <div class="cat-item" onclick="selectCategory(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+                            <span style="font-size:12px;">面包糕点</span>
+                        </div>
+                        <div class="cat-item" onclick="selectCategory(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            <span style="font-size:12px;">冲泡类</span>
+                        </div>
+                        <div class="cat-item" onclick="selectCategory(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                            <span style="font-size:12px;">果冻</span>
+                        </div>
+                        <div class="cat-item" onclick="selectCategory(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/></svg>
+                            <span style="font-size:12px;">唐巧</span>
+                        </div>
+                        <div class="cat-item" onclick="selectCategory(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+                            <span style="font-size:12px;">坚果炒货</span>
+                        </div>
+                        <div class="cat-item" onclick="selectCategory(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5"/><circle cx="16" cy="10" r="4"/><circle cx="10" cy="16" r="3"/></svg>
+                            <span style="font-size:12px;">蜜饯果干</span>
+                        </div>
+                    </div>
+                    <!-- 右侧商品网格 -->
+                    <div style="flex:1;overflow:hidden;background:#F5F5F5;">
+                        <div class="product-grid">
+                            <!-- 商品1 -->
+                            <div class="product-item">
+                                <div class="product-thumb" style="background:linear-gradient(180deg,#FFF4E6 0%,#FFE8CC 100%);">
+                                    <svg viewBox="0 0 80 80" width="58" height="58" fill="none"><rect x="12" y="8" width="56" height="64" rx="8" fill="#FF8C00" opacity="0.2"/><rect x="18" y="16" width="44" height="12" rx="3" fill="#FF6B00" opacity="0.6"/><circle cx="40" cy="48" r="14" fill="#FF8C00" opacity="0.3"/><text x="40" y="52" text-anchor="middle" font-size="10" fill="#E65C00" font-weight="bold">C</text></svg>
+                                </div>
+                                <div class="product-detail">
+                                    <div class="product-title">元气森林维C气泡水</div>
+                                    <div class="product-spec">480ml/瓶</div>
+                                    <div class="product-bottom">
+                                        <span class="product-price">¥4.50</span>
+                                        <button class="add-btn" onclick="showToast('已加入购物车')">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 商品2 -->
+                            <div class="product-item">
+                                <div class="product-thumb" style="background:linear-gradient(180deg,#E8F8F0 0%,#D0F0E0 100%);">
+                                    <svg viewBox="0 0 80 80" width="58" height="58" fill="none"><rect x="20" y="14" width="40" height="52" rx="10" fill="#00A86B" opacity="0.15"/><rect x="28" y="22" width="24" height="10" rx="3" fill="#00A86B" opacity="0.5"/><ellipse cx="40" cy="50" rx="12" ry="8" fill="#00A86B" opacity="0.25"/></svg>
+                                </div>
+                                <div class="product-detail">
+                                    <div class="product-title">菲诺椰子水</div>
+                                    <div class="product-spec">200ml/盒</div>
+                                    <div class="product-bottom">
+                                        <span class="product-price">¥5.50</span>
+                                        <button class="add-btn" onclick="showToast('已加入购物车')">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 商品3 -->
+                            <div class="product-item">
+                                <div class="product-thumb" style="background:linear-gradient(180deg,#FFF8E8 0%,#FFF0CC 100%);">
+                                    <svg viewBox="0 0 80 80" width="58" height="58" fill="none"><rect x="20" y="12" width="40" height="56" rx="14" fill="#E6A800" opacity="0.15"/><rect x="20" y="20" width="40" height="16" rx="4" fill="#E6A800" opacity="0.5"/><rect x="20" y="42" width="40" height="16" rx="4" fill="#E6A800" opacity="0.4"/></svg>
+                                </div>
+                                <div class="product-detail">
+                                    <div class="product-title">乐事原味薯片</div>
+                                    <div class="product-spec">70g/袋</div>
+                                    <div class="product-bottom">
+                                        <span class="product-price">¥4.00</span>
+                                        <button class="add-btn" onclick="showToast('已加入购物车')">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 商品4 -->
+                            <div class="product-item">
+                                <div class="product-thumb" style="background:linear-gradient(180deg,#FFF0F4 0%,#FFE4EA 100%);">
+                                    <svg viewBox="0 0 80 80" width="58" height="58" fill="none"><rect x="18" y="14" width="44" height="52" rx="12" fill="#E8913A" opacity="0.15"/><rect x="18" y="24" width="44" height="14" rx="4" fill="#E8913A" opacity="0.5"/><rect x="18" y="44" width="44" height="14" rx="4" fill="#E8913A" opacity="0.35"/></svg>
+                                </div>
+                                <div class="product-detail">
+                                    <div class="product-title">蜂蜜牛奶味薯片</div>
+                                    <div class="product-spec">60g/袋</div>
+                                    <div class="product-bottom">
+                                        <span class="product-price">¥6.80</span>
+                                        <button class="add-btn" onclick="showToast('已加入购物车')">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 商品5 -->
+                            <div class="product-item">
+                                <div class="product-thumb" style="background:linear-gradient(180deg,#FBF3E8 0%,#F5E6D0 100%);">
+                                    <svg viewBox="0 0 80 80" width="58" height="58" fill="none"><ellipse cx="40" cy="40" rx="20" ry="18" fill="#8B6914" opacity="0.15"/><circle cx="28" cy="30" r="4" fill="#6B4F12" opacity="0.4"/><circle cx="44" cy="26" r="3" fill="#6B4F12" opacity="0.4"/><circle cx="36" cy="48" r="5" fill="#6B4F12" opacity="0.35"/><circle cx="50" cy="44" r="3.5" fill="#6B4F12" opacity="0.3"/></svg>
+                                </div>
+                                <div class="product-detail">
+                                    <div class="product-title">CookieTime巧克力饼干</div>
+                                    <div class="product-spec">200g/盒</div>
+                                    <div class="product-bottom">
+                                        <span class="product-price">¥12.80</span>
+                                        <button class="add-btn" onclick="showToast('已加入购物车')">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 商品6 -->
+                            <div class="product-item">
+                                <div class="product-thumb" style="background:linear-gradient(180deg,#F4EEFF 0%,#E8DEFF 100%);">
+                                    <svg viewBox="0 0 80 80" width="58" height="58" fill="none"><circle cx="32" cy="36" r="10" fill="#7733FF" opacity="0.2"/><circle cx="48" cy="30" r="9" fill="#7733FF" opacity="0.3"/><circle cx="40" cy="48" r="8" fill="#7733FF" opacity="0.25"/><line x1="32" y1="26" x2="38" y2="20" stroke="#7733FF" stroke-width="1.5" opacity="0.4"/><line x1="48" y1="21" x2="54" y2="16" stroke="#7733FF" stroke-width="1.5" opacity="0.4"/></svg>
+                                </div>
+                                <div class="product-detail">
+                                    <div class="product-title">溜溜梅原味</div>
+                                    <div class="product-spec">120g/袋</div>
+                                    <div class="product-bottom">
+                                        <span class="product-price">¥5.90</span>
+                                        <button class="add-btn" onclick="showToast('已加入购物车')">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+        </div>
+
+        <!-- ==================== 视图9：购物车 ==================== -->
+        <div id="cartView" class="hidden" style="flex:1;display:none;overflow:hidden;">
+            <div style="flex:1;display:flex;flex-direction:column;background:#F5F5F5;">
+                <!-- 顶部标题栏 -->
+                <div style="height:48px;display:flex;align-items:center;padding:0 14px;background:#fff;border-bottom:1px solid #f0f0f0;">
+                    <svg onclick="showMainView()" style="cursor:pointer;" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    <span style="flex:1;text-align:center;font-size:17px;font-weight:600;color:#1a1a1a;margin-right:24px;">购物车</span>
+                    <span onclick="clearCart()" style="font-size:13px;color:#999;cursor:pointer;flex-shrink:0;">清空</span>
+                </div>
+
+                <!-- 会员栏 -->
+                <div class="cart-member-bar" id="cartMemberBar">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span style="flex:1;">当前会员：未登录</span>
+                    <button class="m-login-btn" onclick="showMemberLoginView()">登录</button>
+                    <button class="m-reg-btn" onclick="showMemberRegisterView()">注册</button>
+                </div>
+
+                <!-- 门店名称 -->
+                <div class="cart-store-name">长沙人民路店</div>
+
+                <!-- 扫码栏 -->
+                <div class="cart-scan-bar">
+                    <svg class="s-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    <input type="text" placeholder="扫描商品条码..." readonly onclick="showToast('请使用PDA扫描商品条码')">
+                    <svg class="s-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                </div>
+
+                <!-- 商品列表 -->
+                <div class="cart-list" id="cartItemList">
+                    <!-- 商品1 -->
+                    <div class="cart-item" data-id="1">
+                        <div class="cart-item-img" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);">
+                            <svg viewBox="0 0 40 40" width="36" height="36"><ellipse cx="20" cy="18" rx="16" ry="12" fill="#81C784" opacity="0.4"/><rect x="10" y="12" width="20" height="4" rx="2" fill="#4CAF50" opacity="0.6"/></svg>
+                        </div>
+                        <div class="cart-item-info">
+                            <div class="cart-item-name">乐事黄瓜味薯片</div>
+                            <div class="cart-item-spec">70g/袋</div>
+                            <div class="cart-item-price-row">
+                                <span class="cart-item-unit-price">¥4.00/个</span>
+                                <span class="cart-item-promo">第二件半价</span>
+                            </div>
+                            <div class="cart-item-bottom">
+                                <div class="cart-item-qty">
+                                    <button onclick="changeQty(this, -1)">−</button>
+                                    <span>3</span>
+                                    <button onclick="changeQty(this, 1)">+</button>
+                                </div>
+                                <span class="cart-item-subtotal">¥12.00</span>
+                            </div>
+                        </div>
+                        <svg class="cart-item-del" onclick="removeCartItem(this)" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                        </svg>
+                    </div>
+
+                    <!-- 商品2 -->
+                    <div class="cart-item" data-id="2">
+                        <div class="cart-item-img" style="background:linear-gradient(135deg,#FFF8E1,#FFECB3);">
+                            <svg viewBox="0 0 40 40" width="36" height="36"><rect x="12" y="8" width="16" height="24" rx="6" fill="#FFB300" opacity="0.4"/><rect x="12" y="14" width="16" height="4" rx="2" fill="#FF8F00" opacity="0.5"/></svg>
+                        </div>
+                        <div class="cart-item-info">
+                            <div class="cart-item-name">科罗娜特级啤酒</div>
+                            <div class="cart-item-spec">330ml/瓶</div>
+                            <div class="cart-item-price-row">
+                                <span class="cart-item-unit-price">¥12.00/个</span>
+                            </div>
+                            <div class="cart-item-bottom">
+                                <div class="cart-item-qty">
+                                    <button onclick="changeQty(this, -1)">−</button>
+                                    <span>2</span>
+                                    <button onclick="changeQty(this, 1)">+</button>
+                                </div>
+                                <span class="cart-item-subtotal">¥24.00</span>
+                            </div>
+                        </div>
+                        <svg class="cart-item-del" onclick="removeCartItem(this)" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                        </svg>
+                    </div>
+
+                    <!-- 商品3 -->
+                    <div class="cart-item" data-id="3">
+                        <div class="cart-item-img" style="background:linear-gradient(135deg,#FCE4EC,#F8BBD0);">
+                            <svg viewBox="0 0 40 40" width="36" height="36"><path d="M20 8 L26 16 L35 18 L28 24 L30 34 L20 28 L10 34 L12 24 L5 18 L14 16 Z" fill="#E91E63" opacity="0.3"/></svg>
+                        </div>
+                        <div class="cart-item-info">
+                            <div class="cart-item-name">蜂窝奶香手撕面包</div>
+                            <div class="cart-item-spec">500g/袋</div>
+                            <div class="cart-item-price-row">
+                                <span class="cart-item-unit-price">¥18.00/个</span>
+                            </div>
+                            <div class="cart-item-bottom">
+                                <div class="cart-item-qty">
+                                    <button onclick="changeQty(this, -1)">−</button>
+                                    <span>1</span>
+                                    <button onclick="changeQty(this, 1)">+</button>
+                                </div>
+                                <span class="cart-item-subtotal">¥18.00</span>
+                            </div>
+                        </div>
+                        <svg class="cart-item-del" onclick="removeCartItem(this)" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- 优惠券栏 -->
+                <div class="cart-coupon-bar" onclick="showToast('暂无可用优惠券')">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+                    <span style="flex:1;">优惠券</span>
+                    <span style="font-size:12px;color:#bbb;">暂无可用</span>
+                    <svg class="c-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#bbb" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+
+                <!-- 底部结算 -->
+                <div class="cart-bottom">
+                    <div class="cart-total-area">
+                        <div class="cart-total-label">合计 <span style="font-size:11px;color:#bbb;">（不含优惠）</span></div>
+                        <div class="cart-total-price" id="cartTotalPrice">¥54.00</div>
+                        <div class="cart-total-detail">共6件商品 · 已优惠¥18.00</div>
+                    </div>
+                    <button class="cart-checkout-btn" onclick="showToast('结算功能待开发')">
+                        结算 <span class="c-count" id="cartItemCount">3</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 全局底部导航 ==================== -->
+        <div id="globalBottomBar" class="main-bottom-bar" style="flex-shrink:0;display:flex;background:#fff;padding:6px 0 10px;border-top:1px solid #f0f0f0;">
+            <div class="tab-item active" onclick="showMainView();highlightTab(this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                首页
+            </div>
+            <div class="tab-item" onclick="showCategoriesView();highlightTab(this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+                </svg>
+                分类
+            </div>
+            <div class="tab-item" onclick="showCartView();highlightTab(this)">
+                <div class="cart-tab-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                    <span class="cart-badge-nav">1</span>
+                </div>
+                购物车
+            </div>
+            <div class="tab-item" onclick="showToast('我的POS')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                我的
+            </div>
+        </div>
+
+        <!-- Toast容器 -->
+        <div class="toast hidden" id="toast" style="position:absolute;"></div>
+    </div>
+</div>
+
+<div class="control-panel">
+    <h3>演示控制面板</h3>
+    <div class="ctrl-group">
+        <div class="ctrl-group-label">🏪 门店注册流程</div>
+        <div class="controls">
+            <button class="ctrl-btn" onclick="showRegGuidePage()">引导页</button>
+            <button class="ctrl-btn" onclick="showRegCodePage()">输入注册码</button>
+            <button class="ctrl-btn" onclick="showRegConfirmPage()">门店确认</button>
+            <button class="ctrl-btn" onclick="showRegSuccessPage()">注册成功</button>
+            <button class="ctrl-btn" onclick="simulateRegFail()">注册失败</button>
+        </div>
+    </div>
+    <div class="ctrl-group">
+        <div class="ctrl-group-label">🔄 更新流程</div>
+        <div class="controls">
+            <button class="ctrl-btn" onclick="showUpdateView()">发现新版本</button>
+            <button class="ctrl-btn" onclick="startUpdateProcess()">开始更新</button>
+            <button class="ctrl-btn" onclick="showUpdateComplete()">更新完成</button>
+            <button class="ctrl-btn" onclick="showFail()">更新失败</button>
+            <button class="ctrl-btn" onclick="resetAll()">重置</button>
+        </div>
+    </div>
+    <div class="ctrl-group">
+        <div class="ctrl-group-label">🔑 用户登录流程</div>
+        <div class="controls">
+            <button class="ctrl-btn" onclick="showLoginView()">登录页</button>
+            <button class="ctrl-btn" onclick="fillRemembered()">填充账号</button>
+            <button class="ctrl-btn" onclick="mockLoginSuccess()">登录成功</button>
+        </div>
+    </div>
+    <div class="ctrl-group">
+        <div class="ctrl-group-label">🏠 首页</div>
+        <div class="controls">
+            <button class="ctrl-btn" onclick="showMainView()">首页</button>
+            <button class="ctrl-btn" onclick="showScanView()">扫码页</button>
+            <button class="ctrl-btn" onclick="toggleLoginState()">会员登录/退出</button>
+            <button class="ctrl-btn" onclick="showMemberLoginView()">会员登录页</button>
+            <button class="ctrl-btn" onclick="showMemberRegisterView()">新会员注册</button>
+        </div>
+    </div>
+    <div class="ctrl-group">
+        <div class="ctrl-group-label">📋 分类列表</div>
+        <div class="controls">
+            <button class="ctrl-btn" onclick="showCategoriesView()">分类列表</button>
+        </div>
+    </div>
+    <div class="ctrl-group">
+        <div class="ctrl-group-label">🛒 购物车</div>
+        <div class="controls">
+            <button class="ctrl-btn" onclick="showCartView()">购物车</button>
+            <button class="ctrl-btn" onclick="addProductToCart()">扫码加商品</button>
+            <button class="ctrl-btn" onclick="clearCart()">清空购物车</button>
+            <button class="ctrl-btn" onclick="resetCart()">重置购物车</button>
+        </div>
+    </div>
+    <div class="ctrl-group">
+        <div class="ctrl-group-label">📱 商品扫码</div>
+        <div class="controls">
+            <button class="ctrl-btn" onclick="showScanView()">扫码页</button>
+            <button class="ctrl-btn" onclick="showScanView();setTimeout(()=>{showToast('扫码成功：乐事黄瓜味薯片 70g');setTimeout(()=>showCartView(),800)},1200)">模拟扫码(跳购物车)</button>
+        </div>
+    </div>
+</div>
+<div class="page-desc">移动收银APP · 版本更新 → 登录 → 门店注册 → 主页 · 一体化交互原型</div>
+
+<script>
+// ====== 视图切换（4个主视图） ======
+const views = ['updateView','loginView','registerView','mainView','memberLoginView','memberRegisterView','scanView','categoriesView','cartView'];
+function hideAllViews() {
+    views.forEach(id => {
+        const el = document.getElementById(id);
+        el.style.display = 'none';
+        el.classList.add('hidden');
+    });
+}
+function showUpdateView() {
+    hideAllViews();
+    clearInterval(updateTimer); clearInterval(countdownTimer); clearInterval(autoTimer);
+    currentProgress=0; pb.style.width='0%'; pt.textContent='已更新/总数（0/12）';
+    ps.textContent='正在准备更新中...';
+    [uc,cc,fc].forEach(e=>e.classList.add('hidden'));
+    nv.classList.remove('hidden');
+    document.getElementById('redirectText').textContent='系统自动跳转登录页...';
+    document.getElementById('countdown').textContent='3s';
+    startAutoCountdown();
+    const el = document.getElementById('updateView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'flex';
+    document.getElementById('pageTitle').textContent = '系统更新';
+    document.getElementById('globalBottomBar').style.display = 'none';
+}
+function showLoginView() {
+    hideAllViews();
+    const el = document.getElementById('loginView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'flex';
+    document.getElementById('pageTitle').textContent = '用户登录';
+    document.getElementById('globalBottomBar').style.display = 'none';
+}
+function showRegGuidePage() {
+    hideAllViews();
+    const el = document.getElementById('registerView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'flex';
+    document.getElementById('pageTitle').textContent = '门店注册';
+    document.getElementById('globalBottomBar').style.display = 'none';
+    // 显示引导页，隐藏其他注册子页面
+    document.getElementById('regGuidePage').style.display = 'flex';
+    document.getElementById('regCodePage').style.display = 'none';
+    document.getElementById('regConfirmPage').style.display = 'none';
+    document.getElementById('regSuccessPage').style.display = 'none';
+    document.getElementById('regFailPage').style.display = 'none';
+}
+function showMainView() {
+    hideAllViews();
+    const el = document.getElementById('mainView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'flex';
+    document.getElementById('pageTitle').textContent = '移动收银';
+    // 底部tab高亮
+    const tabs = document.querySelectorAll('#globalBottomBar .tab-item');
+    tabs.forEach((t, i) => t.classList.toggle('active', i === 0));
+    document.getElementById('globalBottomBar').style.display = 'flex';
+}
+
+// 会员登录状态切换
+function toggleLoginState() {
+    const logged = document.getElementById('loginBarLogged');
+    const unlogged = document.getElementById('loginBarUnlogged');
+    if (logged.style.display === 'none') {
+        logged.style.display = 'flex';
+        unlogged.style.display = 'none';
+        showToast('会员已登录');
+    } else {
+        logged.style.display = 'none';
+        unlogged.style.display = 'flex';
+        showToast('会员未登录');
+    }
+}
+
+// 切换会员确认弹窗
+function confirmSwitchMember() {
+    const confirmHtml = `
+        <div id="switchConfirmModal" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:300;">
+            <div style="background:#fff;border-radius:16px;padding:28px 24px;width:280px;text-align:center;animation:cardEnter 0.3s ease-out;">
+                <div style="font-size:16px;color:#1a1a1a;margin-bottom:24px;line-height:1.5;">确定解除当前会员的绑定？</div>
+                <div style="display:flex;gap:12px;">
+                    <button onclick="document.getElementById('switchConfirmModal').remove()" style="flex:1;height:44px;background:transparent;border:1px solid #ddd;border-radius:8px;color:#999;font-size:15px;cursor:pointer;">取消</button>
+                    <button onclick="document.getElementById('switchConfirmModal').remove();unbindMember();" style="flex:1;height:44px;background:linear-gradient(90deg,#FF9500,#FF6B00);border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">确定</button>
+                </div>
+            </div>
+        </div>`;
+    const div = document.createElement('div');
+    div.innerHTML = confirmHtml;
+    document.querySelector('.device-screen').appendChild(div.firstElementChild);
+}
+// 解除会员绑定并跳转登录页
+function unbindMember() {
+    showMemberLoginView();
+}
+
+// ====== 会员登录 ======
+function showMemberLoginView() {
+    hideAllViews();
+    const el = document.getElementById('memberLoginView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'none';
+    document.getElementById('globalBottomBar').style.display = 'none';
+}
+function showMemberRegisterView() {
+    hideAllViews();
+    const el = document.getElementById('memberRegisterView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'none';
+    document.getElementById('globalBottomBar').style.display = 'none';
+}
+function handleMemberLogin() {
+    const phone = document.getElementById('memberPhoneInput').value.trim();
+    if (!phone) { showToast('请输入会员手机号'); return; }
+    if (phone.length < 11) { showToast('请输入完整的11位手机号'); return; }
+    // 模拟：特定号码表示会员不存在
+    if (phone === '00000000000') {
+        showMemberNotExistDialog(phone);
+        return;
+    }
+    showToast('会员登录成功');
+    setTimeout(() => {
+        showMainView();
+        document.getElementById('loginBarLogged').style.display = 'flex';
+        document.getElementById('loginBarUnlogged').style.display = 'none';
+    }, 800);
+}
+// 会员不存在弹窗
+function showMemberNotExistDialog(phone) {
+    const confirmHtml = `
+        <div id="memberNotExistModal" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:300;">
+            <div style="background:#fff;border-radius:16px;padding:28px 24px;width:280px;text-align:center;animation:cardEnter 0.3s ease-out;">
+                <div style="width:56px;height:56px;background:#FFF3E6;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div style="font-size:17px;font-weight:600;color:#1a1a1a;margin-bottom:6px;">会员不存在</div>
+                <div style="font-size:14px;color:#666;margin-bottom:24px;">是否注册成为会员？</div>
+                <div style="display:flex;gap:12px;">
+                    <button onclick="document.getElementById('memberNotExistModal').remove()" style="flex:1;height:44px;background:transparent;border:1px solid #ddd;border-radius:8px;color:#999;font-size:15px;cursor:pointer;">取消</button>
+                    <button onclick="document.getElementById('memberNotExistModal').remove();quickRegister('${phone}');" style="flex:1;height:44px;background:linear-gradient(90deg,#FF9500,#FF6B00);border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">注册</button>
+                </div>
+            </div>
+        </div>`;
+    const div = document.createElement('div');
+    div.innerHTML = confirmHtml;
+    document.querySelector('.device-screen').appendChild(div.firstElementChild);
+}
+// 快捷注册会员
+function quickRegister(phone) {
+    showToast('注册成功，欢迎新会员！');
+    setTimeout(() => {
+        showMainView();
+        document.getElementById('loginBarLogged').style.display = 'flex';
+        document.getElementById('loginBarUnlogged').style.display = 'none';
+    }, 800);
+}
+function handleMemberRegister() {
+    const phone = document.getElementById('regPhoneInput').value.trim();
+    if (!phone) { showToast('请输入手机号'); return; }
+    showToast('注册成功，欢迎新会员！');
+    setTimeout(() => {
+        showMainView();
+        document.getElementById('loginBarLogged').style.display = 'flex';
+        document.getElementById('loginBarUnlogged').style.display = 'none';
+    }, 800);
+}
+
+// ====== 扫码页 ======
+function showScanView() {
+    hideAllViews();
+    const el = document.getElementById('scanView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'none';
+    document.getElementById('globalBottomBar').style.display = 'none';
+}
+
+// ====== 分类页 ======
+function showCategoriesView() {
+    hideAllViews();
+    const el = document.getElementById('categoriesView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'none';
+    document.getElementById('globalBottomBar').style.display = 'flex';
+    // 底部tab高亮
+    const tabs = document.querySelectorAll('#globalBottomBar .tab-item');
+    tabs.forEach((t, i) => t.classList.toggle('active', i === 1));
+}
+function selectCategory(el) {
+    document.querySelectorAll('.cat-item').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+}
+function highlightTab(el) {
+    document.querySelectorAll('#globalBottomBar .tab-item').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+}
+
+// ====== 购物车 ======
+function showCartView() {
+    hideAllViews();
+    const el = document.getElementById('cartView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'none';
+    document.getElementById('globalBottomBar').style.display = 'flex';
+    // 底部tab高亮
+    const tabs = document.querySelectorAll('#globalBottomBar .tab-item');
+    tabs.forEach((t, i) => t.classList.toggle('active', i === 2));
+    updateCartTotal();
+    updateCartBadge();
+}
+function changeQty(btn, delta) {
+    const item = btn.closest('.cart-item');
+    const span = item.querySelector('.cart-item-qty span');
+    let qty = parseInt(span.textContent) + delta;
+    if (qty < 1) qty = 1;
+    if (qty > 99) qty = 99;
+    span.textContent = qty;
+    const unitPrice = parseFloat(item.querySelector('.cart-item-unit-price').textContent.replace('¥','').replace('/个',''));
+    item.querySelector('.cart-item-subtotal').textContent = '¥' + (unitPrice * qty).toFixed(2);
+    updateCartTotal();
+    updateCartBadge();
+}
+function removeCartItem(icon) {
+    const item = icon.closest('.cart-item');
+    item.style.transition = 'all 0.3s';
+    item.style.opacity = '0';
+    item.style.transform = 'translateX(40px)';
+    setTimeout(() => { item.remove(); updateCartTotal(); updateCartBadge(); }, 300);
+}
+function clearCart() {
+    const items = document.querySelectorAll('#cartItemList .cart-item');
+    items.forEach((item, i) => {
+        setTimeout(() => {
+            item.style.transition = 'all 0.2s';
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(30px)';
+        }, i * 80);
+    });
+    setTimeout(() => {
+        document.getElementById('cartItemList').innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;font-size:14px;">购物车为空</div>';
+        updateCartTotal();
+        updateCartBadge();
+    }, items.length * 80 + 300);
+}
+function updateCartTotal() {
+    const items = document.querySelectorAll('#cartItemList .cart-item');
+    let total = 0, count = 0;
+    items.forEach(item => {
+        const sub = item.querySelector('.cart-item-subtotal');
+        const qty = item.querySelector('.cart-item-qty span');
+        if (sub) total += parseFloat(sub.textContent.replace('¥',''));
+        if (qty) count += parseInt(qty.textContent);
+    });
+    const totalEl = document.getElementById('cartTotalPrice');
+    const countEl = document.getElementById('cartItemCount');
+    if (totalEl) totalEl.textContent = '¥' + total.toFixed(2);
+    if (countEl) countEl.textContent = count || '0';
+}
+function updateCartBadge() {
+    const items = document.querySelectorAll('#cartItemList .cart-item');
+    let count = 0;
+    items.forEach(item => {
+        const qty = item.querySelector('.cart-item-qty span');
+        if (qty) count += parseInt(qty.textContent);
+    });
+    const badge = document.querySelector('.cart-badge-nav');
+    if (badge) {
+        badge.textContent = count || '0';
+        badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+}
+// 模拟扫码添加商品
+let cartProductId = 4;
+const sampleProducts = [
+    {name:'元气森林维C气泡水',spec:'480ml/瓶',price:'4.50',color1:'#FFF4E6',color2:'#FFE8CC',icon:'C'},
+    {name:'菲诺椰子水',spec:'200ml/盒',price:'5.50',color1:'#E8F8F0',color2:'#D0F0E0',icon:'Y'},
+    {name:'乐事原味薯片',spec:'70g/袋',price:'4.00',color1:'#FFF8E8',color2:'#FFF0CC',icon:'P'},
+    {name:'溜溜梅原味',spec:'120g/袋',price:'5.90',color1:'#F4EEFF',color2:'#E8DEFF',icon:'M'},
+    {name:'CookieTime饼干',spec:'200g/盒',price:'12.80',color1:'#FBF3E8',color2:'#F5E6D0',icon:'C'},
+    {name:'蜂蜜牛奶味薯片',spec:'60g/袋',price:'6.80',color1:'#FFF0F4',color2:'#FFE4EA',icon:'F'},
+];
+function addProductToCart() {
+    const prod = sampleProducts[Math.floor(Math.random() * sampleProducts.length)];
+    const list = document.getElementById('cartItemList');
+    // Remove empty state if present
+    if (list.querySelector('div[style*="购物车为空"]')) list.innerHTML = '';
+    const id = 'cart-' + (cartProductId++);
+    const qty = 1;
+    const subtotal = (parseFloat(prod.price) * qty).toFixed(2);
+    const html = `<div class="cart-item" data-id="${id}" style="animation:cardEnter 0.3s ease-out;">
+        <div class="cart-item-img" style="background:linear-gradient(135deg,${prod.color1},${prod.color2});">
+            <svg viewBox="0 0 40 40" width="36" height="36"><rect x="8" y="10" width="24" height="20" rx="4" fill="${midColor(prod.color2)}" opacity="0.5"/><text x="20" y="26" text-anchor="middle" font-size="14" font-weight="bold" fill="${midColor(prod.color2)}" opacity="0.7">${prod.icon}</text></svg>
+        </div>
+        <div class="cart-item-info">
+            <div class="cart-item-name">${prod.name}</div>
+            <div class="cart-item-spec">${prod.spec}</div>
+            <div class="cart-item-price-row"><span class="cart-item-unit-price">¥${prod.price}/个</span></div>
+            <div class="cart-item-bottom">
+                <div class="cart-item-qty">
+                    <button onclick="changeQty(this,-1)">−</button>
+                    <span>${qty}</span>
+                    <button onclick="changeQty(this,1)">+</button>
+                </div>
+                <span class="cart-item-subtotal">¥${subtotal}</span>
+            </div>
+        </div>
+        <svg class="cart-item-del" onclick="removeCartItem(this)" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+    </div>`;
+    list.insertAdjacentHTML('beforeend', html);
+    updateCartTotal();
+    updateCartBadge();
+    showToast('已添加：' + prod.name);
+}
+function midColor(hex) { return hex; } // Keep original gradient
+function resetCart() {
+    window.location.reload();
+}
+
+// ====== 版本更新流程（同原有） ======
+let updateTimer=null, countdownTimer=null, autoTimer=null, autoSeconds=3, currentProgress=0;
+const totalSteps=12;
+const statusMessages=["正在准备更新环境...","正在获取版本中...","正在下载更新文件...","正在校验文件完整性...","正在进行文件更新...","正在加载配置文件...","即将完成..."];
+
+const nv=document.getElementById('newVersionCard'), uc=document.getElementById('updatingCard');
+const cc=document.getElementById('completeCard'), fc=document.getElementById('failCard');
+const pb=document.getElementById('progressBar'), pt=document.getElementById('progressText');
+const ps=document.getElementById('progressStatus'), startBtn=document.getElementById('updateNowBtn');
+
+function startAutoCountdown() {
+    clearInterval(autoTimer); autoSeconds=3;
+    startBtn.textContent='立即更新（'+autoSeconds+'s）';
+    autoTimer=setInterval(()=>{
+        autoSeconds--;
+        if(autoSeconds>0) startBtn.textContent='立即更新（'+autoSeconds+'s）';
+        else { clearInterval(autoTimer); startBtn.textContent='立即更新'; startUpdateProcess(); }
+    },1000);
+}
+function hideAllUpdateStates() { [nv,uc,cc,fc].forEach(e=>e.classList.add('hidden')); }
+function resetAll() {
+    clearInterval(updateTimer); clearInterval(countdownTimer); clearInterval(autoTimer);
+    currentProgress=0; pb.style.width='0%'; pt.textContent='已更新/总数（0/12）';
+    ps.textContent='正在准备更新中...';
+    [uc,cc,fc].forEach(e=>e.classList.add('hidden'));
+    nv.classList.remove('hidden'); nv.classList.remove('fade-in');
+    document.getElementById('redirectText').textContent='系统自动跳转登录页...';
+    document.getElementById('countdown').textContent='3s';
+    startAutoCountdown();
+    showUpdateView();
+}
+function startUpdateProcess() {
+    clearInterval(autoTimer); startBtn.textContent='立即更新';
+    hideAllUpdateStates(); uc.classList.remove('hidden'); uc.classList.add('fade-in');
+    currentProgress=0; let step=0;
+    updateTimer=setInterval(()=>{
+        step++; currentProgress=Math.round((step/totalSteps)*100);
+        pb.style.width=currentProgress+'%';
+        pt.textContent='已更新/总数（'+step+'/'+totalSteps+'）';
+        const si=Math.min(Math.floor((step/totalSteps)*statusMessages.length),statusMessages.length-1);
+        ps.textContent=statusMessages[si];
+        if(currentProgress>=100){ clearInterval(updateTimer); setTimeout(showCompleteAndRedirect,600); }
+    },80);
+}
+function showCompleteAndRedirect() {
+    clearInterval(countdownTimer); hideAllUpdateStates();
+    cc.classList.remove('hidden'); cc.classList.add('fade-in');
+    let sec=3; document.getElementById('countdown').textContent=sec+'s';
+    countdownTimer=setInterval(()=>{
+        sec--;
+        if(sec>0) document.getElementById('countdown').textContent=sec+'s';
+        else {
+            clearInterval(countdownTimer);
+            document.getElementById('countdown').textContent='0s';
+            document.getElementById('redirectText').textContent='正在跳转至登录页...';
+            setTimeout(()=>{ showToast('登录页'); showLoginView(); },800);
+        }
+    },1000);
+}
+function showFail() {
+    clearInterval(updateTimer); clearInterval(countdownTimer);
+    hideAllUpdateStates(); fc.classList.remove('hidden'); fc.classList.add('fade-in');
+}
+document.getElementById('retryBtn').addEventListener('click',()=>{
+    showToast('正在重新尝试更新...'); setTimeout(startUpdateProcess,600);
+});
+document.getElementById('cancelBtn').addEventListener('click',()=>{
+    showToast('已取消更新，请稍后重试'); resetAll();
+});
+startBtn.addEventListener('click',startUpdateProcess);
+
+// 直接展示更新完成页
+function showUpdateComplete() {
+    clearInterval(updateTimer); clearInterval(countdownTimer); clearInterval(autoTimer);
+    showUpdateView();
+    hideAllUpdateStates();
+    cc.classList.remove('hidden'); cc.classList.add('fade-in');
+    let sec=3; document.getElementById('countdown').textContent=sec+'s';
+    document.getElementById('redirectText').textContent='系统自动跳转登录页...';
+    countdownTimer=setInterval(()=>{
+        sec--;
+        if(sec>0) document.getElementById('countdown').textContent=sec+'s';
+        else {
+            clearInterval(countdownTimer);
+            document.getElementById('countdown').textContent='0s';
+            document.getElementById('redirectText').textContent='正在跳转至登录页...';
+            setTimeout(()=>{ showToast('登录页'); showLoginView(); },800);
+        }
+    },1000);
+}
+
+// ====== 登录页 ======
+function getToday() {
+    const d=new Date();
+    return d.getFullYear()+'年'+String(d.getMonth()+1).padStart(2,'0')+'月'+String(d.getDate()).padStart(2,'0')+'日';
+}
+document.getElementById('loginBusinessDate').textContent=getToday();
+
+function togglePassword() {
+    const inp=document.getElementById('passwordInput');
+    inp.type=inp.type==='password'?'text':'password';
+}
+function handleLogin() {
+    const acct=document.getElementById('accountInput').value.trim();
+    const pwd=document.getElementById('passwordInput').value;
+    if(!acct){showToast('请输入账号');return;}
+    if(!pwd){showToast('请输入密码');return;}
+    const btn=document.getElementById('loginBtn');
+    btn.textContent='登录中...'; btn.disabled=true;
+    setTimeout(()=>{
+        btn.textContent='登录'; btn.disabled=false;
+        showToast('登录成功');
+        // 登录成功后自动进入门店注册
+        setTimeout(() => showRegGuidePage(), 1200);
+    },1500);
+}
+function handleCancelLogin() { showToast('已取消登录'); }
+
+function fillRemembered() {
+    document.getElementById('accountInput').value='18812345678';
+    document.getElementById('passwordInput').value='123456';
+    document.getElementById('rememberCheck').checked=true;
+    showToast('已自动填充记住的账号密码');
+}
+function mockLoginSuccess() {
+    document.getElementById('accountInput').value='18812345678';
+    document.getElementById('passwordInput').value='123456';
+    handleLogin();
+}
+
+// ====== 门店注册 ======
+const regCodeInput = document.getElementById('regCodeInput');
+const regQueryBtn = document.getElementById('queryBtn');
+const regCodeError = document.getElementById('codeErrorMsg');
+
+function getCode() {
+    return regCodeInput.value.trim();
+}
+
+// 输入时清除错误状态
+regCodeInput.addEventListener('input', function() {
+    this.classList.remove('error');
+    regCodeError.textContent = '';
+});
+
+function showRegCodePage() {
+    document.getElementById('regGuidePage').style.display = 'none';
+    document.getElementById('regCodePage').style.display = 'flex';
+    document.getElementById('regConfirmPage').style.display = 'none';
+    document.getElementById('regSuccessPage').style.display = 'none';
+    document.getElementById('regFailPage').style.display = 'none';
+    document.getElementById('pageTitle').textContent = '门店注册';
+    regCodeInput.value = '';
+    regCodeInput.classList.remove('error');
+    regCodeError.textContent = '';
+    regCodeInput.focus();
+}
+function showRegConfirmPage() {
+    document.getElementById('regGuidePage').style.display = 'none';
+    document.getElementById('regCodePage').style.display = 'none';
+    document.getElementById('regConfirmPage').style.display = 'flex';
+    document.getElementById('regSuccessPage').style.display = 'none';
+    document.getElementById('regFailPage').style.display = 'none';
+    document.getElementById('pageTitle').textContent = '门店注册';
+}
+function showRegSuccessPage() {
+    document.getElementById('regGuidePage').style.display = 'none';
+    document.getElementById('regCodePage').style.display = 'none';
+    document.getElementById('regConfirmPage').style.display = 'none';
+    document.getElementById('regSuccessPage').style.display = 'flex';
+    document.getElementById('regFailPage').style.display = 'none';
+    document.getElementById('successBindTime').textContent = getNowStr();
+    document.getElementById('pageTitle').textContent = '注册成功';
+}
+function showRegFailPage() {
+    document.getElementById('regGuidePage').style.display = 'none';
+    document.getElementById('regCodePage').style.display = 'none';
+    document.getElementById('regConfirmPage').style.display = 'none';
+    document.getElementById('regSuccessPage').style.display = 'none';
+    document.getElementById('regFailPage').style.display = 'flex';
+    document.getElementById('pageTitle').textContent = '注册失败';
+}
+function showRegGuidePage() {
+    hideAllViews();
+    const el = document.getElementById('registerView');
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+    document.querySelector('.app-header').style.display = 'flex';
+    document.getElementById('globalBottomBar').style.display = 'none';
+    document.getElementById('regGuidePage').style.display = 'flex';
+    document.getElementById('regCodePage').style.display = 'none';
+    document.getElementById('regConfirmPage').style.display = 'none';
+    document.getElementById('regSuccessPage').style.display = 'none';
+    document.getElementById('regFailPage').style.display = 'none';
+    document.getElementById('pageTitle').textContent = '门店注册';
+}
+
+function queryStore() {
+    const code = getCode();
+    if (!code) { regCodeInput.classList.add('error'); regCodeError.textContent = '请输入注册码'; return; }
+    regQueryBtn.textContent = '查询中...';
+    regQueryBtn.disabled = true;
+    setTimeout(() => {
+        regQueryBtn.textContent = '查询门店';
+        regQueryBtn.disabled = false;
+        // 模拟：特定码触发错误
+        if (code === '000000') {
+            regCodeInput.classList.add('error');
+            regCodeError.textContent = '注册码无效，请重新输入';
+        } else if (code === '111111') {
+            regCodeInput.classList.add('error');
+            regCodeError.textContent = '注册码已过期，请重新获取';
+        } else if (code === '222222') {
+            regCodeInput.classList.add('error');
+            regCodeError.textContent = '注册码已被使用';
+        } else {
+            document.getElementById('confirmStoreName').textContent = '长沙人民路店';
+            document.getElementById('confirmStoreAddr').textContent = '湖南省长沙市天心区人民路 188 号';
+            document.getElementById('confirmStorePhone').textContent = '0731-8888xxxx';
+            document.getElementById('successStoreName').textContent = '长沙人民路店';
+            showRegConfirmPage();
+        }
+    }, 1200);
+}
+
+function bindStore() {
+    const btn = document.querySelector('#regConfirmPage .primary-btn');
+    btn.textContent = '注册中...';
+    btn.disabled = true;
+    setTimeout(() => {
+        btn.textContent = '确认注册';
+        btn.disabled = false;
+        const success = Math.random() > 0.2;
+        if (success) showRegSuccessPage();
+        else showRegFailPage();
+    }, 1500);
+}
+
+function simulateRegFail() {
+    showRegGuidePage();
+    setTimeout(() => {
+        showToast('直接跳转至注册失败页面');
+        setTimeout(() => {
+            showRegFailPage();
+        }, 500);
+    }, 300);
+}
+
+function retryBind() {
+    showToast('正在重新尝试注册...');
+    const btn = document.querySelector('#regFailPage .primary-btn');
+    btn.textContent = '注册中...';
+    btn.disabled = true;
+    setTimeout(() => {
+        btn.textContent = '重试';
+        btn.disabled = false;
+        showRegSuccessPage();
+    }, 1500);
+}
+
+// ====== Toast ======
+function showToast(msg) {
+    const old = document.querySelector('.toast.hidden');
+    if (!old) { const t2 = document.querySelector('.toast'); if(t2) t2.remove(); }
+    let t = document.querySelector('.toast');
+    if (!t || !t.classList.contains('hidden')) {
+        t = document.createElement('div');
+        t.className = 'toast';
+        document.querySelector('.device-screen').appendChild(t);
+    } else {
+        t.classList.remove('hidden');
+    }
+    t.textContent = msg;
+    t.style.animation = 'none';
+    void t.offsetWidth;
+    t.style.animation = 'toastAnim 2s ease';
+    setTimeout(() => t.classList.add('hidden'), 2000);
+}
+
+function getNowStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' +
+        String(d.getMonth()+1).padStart(2,'0') + '-' +
+        String(d.getDate()).padStart(2,'0') + ' ' +
+        String(d.getHours()).padStart(2,'0') + ':' +
+        String(d.getMinutes()).padStart(2,'0') + ':' +
+        String(d.getSeconds()).padStart(2,'0');
+}
+
+window.addEventListener('load',()=>{ startAutoCountdown(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<svg viewBox="0 0 680 740" width="100%" role="img" aria-label="Version update business flow diagram" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#333" stroke-width="1"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#c62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#c62828" stroke-width="1"/>
+    </marker>
+    <marker id="arr-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#e65100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#e65100" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="340" y="25" text-anchor="middle" font-size="15" font-weight="600" fill="#222">版本更新业务流程图</text>
+  <text x="340" y="43" text-anchor="middle" font-size="12" fill="#666">两种触发场景，共享更新流程</text>
+
+  <!-- ===== Row 1: APP冷启动 ===== -->
+  <rect x="260" y="60" width="160" height="40" rx="6" fill="#f5f5f5" stroke="#666" stroke-width="1.5"/>
+  <text x="340" y="83" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#333">APP冷启动</text>
+  <line x1="340" y1="100" x2="340" y2="123" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ===== Row 2: 版本检测 ===== -->
+  <rect x="170" y="123" width="340" height="52" rx="6" fill="#fff" stroke="#555" stroke-width="1.5"/>
+  <text x="340" y="143" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#333">请求后台版本接口 + 检查 pendingUpdate</text>
+  <text x="340" y="162" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#888">（两个检查并行执行）</text>
+
+  <!-- 版本检测底部 y=175 -->
+
+  <!-- 三叉分支线（从版本检测底部一个点分三个方向） -->
+  <line x1="340" y1="175" x2="340" y2="200" stroke="#333" stroke-width="2"/>
+  <line x1="300" y1="200" x2="380" y2="200" stroke="#333" stroke-width="2"/>
+  <line x1="300" y1="200" x2="300" y2="230" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="340" y1="200" x2="340" y2="230" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="380" y1="200" x2="380" y2="230" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 三叉水平分支到各自位置 -->
+  <line x1="300" y1="230" x2="140" y2="230" stroke="#333" stroke-width="2"/>
+  <line x1="140" y1="230" x2="140" y2="245" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+
+  <line x1="380" y1="230" x2="540" y2="230" stroke="#333" stroke-width="2"/>
+  <line x1="540" y1="230" x2="540" y2="245" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ===== Row 3a: 无新版本 ===== -->
+  <rect x="260" y="230" width="160" height="36" rx="6" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
+  <text x="340" y="251" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#2e7d32">正常启动至登录页</text>
+
+  <!-- ===== Row 3b: 场景A和场景B ===== -->
+  <!-- 场景A -->
+  <rect x="40" y="245" width="200" height="50" rx="6" fill="#e0f2f1" stroke="#00897b" stroke-width="1.5"/>
+  <text x="140" y="263" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#004d40">APK MD5 完整性校验</text>
+  <text x="140" y="280" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#00897b">A002-R02 / A002-R03</text>
+
+  <!-- 场景B -->
+  <rect x="440" y="245" width="200" height="50" rx="6" fill="#e3f2fd" stroke="#1976d2" stroke-width="1.5"/>
+  <text x="540" y="263" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#0d47a1">静默下载更新包</text>
+  <text x="540" y="280" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#1976d2">A002-R05</text>
+
+  <!-- 分支标签 -->
+  <text x="90" y="220" text-anchor="middle" font-size="11" fill="#00897b" font-weight="500">场景A：有预下载包</text>
+  <text x="590" y="220" text-anchor="middle" font-size="11" fill="#1976d2" font-weight="500">场景B：冷启动发现新版本</text>
+
+  <!-- ===== Row 4a: MD5通过 ===== -->
+  <line x1="140" y1="295" x2="140" y2="325" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="155" y="314" font-size="11" fill="#2e7d32" font-weight="500">通过</text>
+
+  <rect x="40" y="325" width="200" height="40" rx="6" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
+  <text x="140" y="348" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#2e7d32">校验通过 → 展示更新就绪</text>
+  <!-- 底部 y=365 -->
+
+  <!-- ===== Row 4b: 场景B完成下载 ===== -->
+  <line x1="540" y1="295" x2="540" y2="325" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="440" y="325" width="200" height="40" rx="6" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
+  <text x="540" y="348" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#2e7d32">下载完成 → MD5校验 → 安装</text>
+  <!-- 底部 y=365 -->
+
+  <!-- ===== Row 4c: 校验失败（跨场景） ===== -->
+  <!-- 从MD5框右缘 到 下载完成框左缘 -->
+  <path d="M240 270 L320 270 L320 345 L440 345" stroke="#c62828" stroke-width="2" stroke-dasharray="8,4" marker-end="url(#arr-red)" fill="none"/>
+  <rect x="310" y="256" width="70" height="20" rx="3" fill="#c62828"/>
+  <text x="345" y="269" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#fff" font-weight="500">校验失败</text>
+  <text x="380" y="320" text-anchor="middle" font-size="10" fill="#c62828">错误码 E-2003</text>
+
+  <!-- ===== Row 5: 合并到全量安装 ===== -->
+  <path d="M240 365 L290 365 L290 395" stroke="#333" stroke-width="2" marker-end="url(#arr)" fill="none"/>
+  <path d="M440 365 L390 365 L390 395" stroke="#333" stroke-width="2" marker-end="url(#arr)" fill="none"/>
+
+  <rect x="250" y="395" width="180" height="50" rx="6" fill="#fff3e0" stroke="#e65100" stroke-width="1.5"/>
+  <text x="340" y="413" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#bf360c">全量安装更新</text>
+  <text x="340" y="432" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#e65100">A-004 更新中页面</text>
+
+  <!-- ===== Row 6: 分支到完成/失败 ===== -->
+  <line x1="340" y1="445" x2="340" y2="470" stroke="#333" stroke-width="2"/>
+  <line x1="180" y1="470" x2="500" y2="470" stroke="#333" stroke-width="2"/>
+  <line x1="180" y1="470" x2="180" y2="490" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="500" y1="470" x2="500" y2="490" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 更新完成 -->
+  <rect x="80" y="490" width="200" height="50" rx="6" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
+  <text x="180" y="508" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#2e7d32">更新完成</text>
+  <text x="180" y="526" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#43a047">3秒倒计时 → 自动跳转登录页</text>
+
+  <!-- 更新失败 -->
+  <rect x="400" y="490" width="200" height="70" rx="6" fill="#ffebee" stroke="#c62828" stroke-width="1.5"/>
+  <text x="500" y="508" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="500" fill="#b71c1c">更新失败</text>
+  <text x="500" y="526" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#c62828">错误码 + 错误原因</text>
+  <text x="500" y="544" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#c62828">请联系信息支持协助处理</text>
+
+  <!-- 成功路径：更新完成 → 登录页 -->
+  <line x1="180" y1="540" x2="180" y2="570" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="100" y="570" width="160" height="40" rx="6" fill="#f5f5f5" stroke="#43a047" stroke-width="1.5"/>
+  <text x="180" y="593" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#2e7d32">登录页</text>
+
+  <!-- 取消路径：更新失败 → 下次启动 -->
+  <line x1="500" y1="560" x2="500" y2="590" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="430" y="590" width="140" height="40" rx="6" fill="#f5f5f5" stroke="#666" stroke-width="1.5"/>
+  <text x="500" y="613" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#666">下次启动重新触发</text>
+
+  <!-- 重试回退路径 -->
+  <path d="M400 525 L360 525 L340 500 L340 445" stroke="#e65100" stroke-width="2" stroke-dasharray="8,4" marker-end="url(#arr-orange)" fill="none"/>
+  <rect x="330" y="488" width="50" height="20" rx="3" fill="#e65100"/>
+  <text x="355" y="501" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#fff" font-weight="500">重试</text>
+
+  <!-- 图例 -->
+  <g transform="translate(40, 650)">
+    <text y="0" font-size="11" fill="#888">图例说明</text>
+    <rect x="60" y="-9" width="14" height="14" rx="3" fill="#e0f2f1" stroke="#00897b" stroke-width="1.5"/>
+    <text x="78" y="-2" font-size="10" fill="#004d40">场景A（静默下载）</text>
+    <rect x="170" y="-9" width="14" height="14" rx="3" fill="#e3f2fd" stroke="#1976d2" stroke-width="1.5"/>
+    <text x="188" y="-2" font-size="10" fill="#0d47a1">场景B（冷启动下载）</text>
+
+    <line x1="20" y1="20" x2="40" y2="20" stroke="#333" stroke-width="2.5"/>
+    <text x="46" y="24" font-size="10" fill="#333">主流程路径</text>
+    <line x1="110" y1="20" x2="130" y2="20" stroke="#c62828" stroke-width="2" stroke-dasharray="8,4"/>
+    <text x="138" y="24" font-size="10" fill="#c62828">异常/失败路径</text>
+    <line x1="220" y1="20" x2="240" y2="20" stroke="#e65100" stroke-width="2" stroke-dasharray="8,4"/>
+    <text x="248" y="24" font-size="10" fill="#e65100">重试回退路径</text>
+  </g>
+</svg>
