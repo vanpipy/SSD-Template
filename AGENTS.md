@@ -1,83 +1,60 @@
-# AGENTS.md (Template)
+# AGENTS.md
 
 <!--
-TEMPLATE_VERSION: v1.0
-本文件是 SSD-Template 的 wiki AGENTS.md 模板。
-本仓库是文档/规格仓库,不是代码仓库。
-
-Fork 后:
-  - 必改: 维度 1(仓库)+ 维度 2(项目信息)
-  - 保持: 维度 3(使用方式)通常不变
-  - 必删: 维度 1.1 不适用的 code repo 行, 维度 4 不需要的附录
+本文件是 SSD-Template 自身使用的 AGENTS.md(dogfooding 示例)。
+其他项目 fork SSD-Template 时,应基于本文件结构改写为自己的版本。
 -->
 
-> AI agent 在**本仓库(文档/规格仓库)** 工作时的操作契约。
+> AI agent 在 SSD-Template 仓库工作时的操作契约。
 > 每次开始工作前,先读本文件 + 读 `schema/` 对应模板。
 
 ---
 
-## 1. 仓库 (Repositories)                              ← 维度 1:Fork 后必改
+## 1. 仓库 (Repositories)
 
-> **本仓库永远是文档/规格仓库,不是代码仓库**。
-> 代码仓库可从 0 到 N 个,本仓库通过 `tech_design/` 和 `plan/` 协调所有代码仓库。
+> **本仓库是文档/规格仓库,不是代码仓库**(SSD-Template 是纯文档项目)。
+> 当前 **0 个代码仓库**。
 
 ### 1.1 仓库清单
 
 | 仓库 | 角色 | 主要语言 | 说明 |
 |------|------|----------|------|
-| `本仓库` | 文档/规格库 | Markdown | **本仓库**(固定) |
-| `{CODE_REPO_1}` | {e.g. 后端} | {e.g. Python} | 通过 tech_design/plan 引用 |
-| `{CODE_REPO_2}` | {e.g. 前端} | {e.g. TypeScript} | 通过 tech_design/plan 引用 |
-| `{CODE_REPO_3}` | {e.g. 共享代码} | {e.g. TypeScript} | 可选 |
-| ... | | | 按需加行 |
+| `vanpipy/SSD-Template` | 文档/规格模板 | Markdown | **本仓库**(固定) |
 
-> **0 代码仓库** (纯文档项目): 删掉所有 code repo 行
-> **1+ 代码仓库**: 列出所有相关代码仓库
+> 当前 0 代码仓库。如未来增加(如 `ssd-template-cli` 等工具),在此追加并定义跨仓引用。
 
 ### 1.2 跨仓库引用约定
 
 | 引用类型 | 写法 | 示例 |
 |----------|------|------|
-| 指向代码仓库 | `{仓库前缀}/path` | `web-backend/src/services/auth.ts` |
-| 共享代码 | `{仓库前缀}/path` | `web-shared/types/api.ts` |
-| 本仓库内引用 | `schema/path` 或 `prd/path` | `schema/prd.md`, `prd/{date}-processed/{topic}.md` |
+| 本仓库内引用 | `schema/path` 或 `prd/path` | `schema/prd.md`, `prd/2026-06-22-processed/login.md` |
 
-> **建议**: 代码仓库使用**统一前缀**(如 `web-frontend` / `web-backend`)
+> 当前无代码仓库可引用。
 > **禁止**: 在本仓库中引用 `src/`(本仓库没有 src/)
 
-### 1.3 代码仓的本地 AGENTS (1+ 代码仓库时,可选)
+### 1.3 代码仓的本地 AGENTS
 
-> **关键**: 技术栈、代码规范、构建/测试命令放在**代码仓的 AGENTS.md** 中
-> 本节只**登记**这些本地 AGENTS 的存在和位置(不重复内容)
-
-| 仓库 | 本地 AGENTS 路径 | 内容范围(参考) |
-|------|------------------|----------------|
-| `{CODE_REPO_1}` | `AGENTS.md` | 技术栈 / 代码规范 / 构建测试 |
-| `{CODE_REPO_2}` | `AGENTS.md` | 技术栈 / 代码规范 / 构建测试 |
+> 当前 0 代码仓库,本节不适用。
+> 如未来增加代码仓库,在此登记各代码仓的 AGENTS.md 路径。
 
 ---
 
-## 2. 项目信息 (Project Info)                            ← 维度 2:Fork 后必改
-
-> **本节只描述"项目是什么",不描述"用什么技术实现"**(技术栈见 1.3 代码仓 AGENTS)
+## 2. 项目信息 (Project Info)
 
 | 字段 | 值 |
 |------|-----|
-| 项目类型 | `{PROJECT_TYPE}` (e.g. Web 全栈 / 移动端 / 后端服务 / 纯文档模板) |
-| 项目描述 | `{PROJECT_DESCRIPTION}` (一句话) |
-| 沟通语言 | `{COMMUNICATION_LANGUAGE}` (e.g. 中文 / English) |
-| 负责人 | `{GITHUB_HANDLE}` |
+| 项目类型 | 流程/文档模板 |
+| 项目描述 | Spec-Driven Development(SSD)工作流脚手架,提供 3 层规格架构(PRD / Tech Design / Plan)+ 多文件 schema + AI agent 协作契约 |
+| 沟通语言 | 中文 |
+| 负责人 | vanpipy |
 
 ---
 
-## 3. 使用方式 (Usage)                                  ← 维度 3:固定
+## 3. 使用方式 (Usage)
 
-> **本节是 SSD-Template 的标准工作流**,通常 fork 后保持不变。
-> 修改前请确认改动有充分理由,否则会影响跨项目的兼容性。
+### 3.1 工作流 (3 步 spec)
 
-### 3.1 工作流 (3 步 spec + 交接)
-
-> **关键**: wiki AGENTS 只管**写规格**。代码相关执行(TDD/构建/测试)在**代码仓的 AGENTS.md** 中。
+> **本项目 0 代码仓库,Step 5 (TDD/交接) 跳过**。
 
 | 步骤 | 输入 | 输出 | 状态 | 位置 |
 |------|------|------|------|------|
@@ -85,11 +62,8 @@ Fork 后:
 | 2. Step 1: 加工为 PRD | `prd/{date}/` | PRD | Draft → Active | `prd/{date}-processed/{topic}.md` |
 | 3. Step 2: PRD → Tech Design | PRD | Tech Design(7 文件) | Ready | `tech_design/{date}-{topic}/` |
 | 4. Step 3: Tech Design → Plan | Tech Design | Plan | Ready | `plan/{date}-{topic}/{topic}.md` |
-| 5. **交接 (Handoff)** | Plan (Ready) | 移交给代码仓 | (代码仓执行) | (代码仓) |
 
-> **Step 2 提示**: KD 可涉及技术决策(如"用什么缓存"),但**具体技术栈由各代码仓 AGENTS 规定**
-> **Step 3 提示**: V 用例描述"测什么",**怎么测见各代码仓 AGENTS**
-> **Step 5 提示**: 代码仓完成 TDD 后,**由人工或 agent 回写** wiki Plan 状态为 `Executed`
+> 0 代码仓库时,规格完成(`Ready`)即终态,无 `Implemented`/`Executed` 回写。
 
 ### 3.2 命名规范
 
@@ -99,7 +73,7 @@ Fork 后:
 - `plan/{YYYY-MM-DD}-{topic}/{topic}.md` — 日期 + topic 子文件夹 + 单文件
 
 **topic 规则**:
-- 使用**小写连字符**,如 `order-flow` / `member-login` / `staff-management`
+- 使用**小写连字符**
 - tech_design 和 plan 的文件夹名**必须带日期前缀**
 
 **跨文件引用**(相对路径):
@@ -112,19 +86,15 @@ Fork 后:
 | 层 | 起始 | 终态 | 触发 |
 |----|------|------|------|
 | PRD | Draft | Active | Step 1 完成所有门禁清单 |
-| PRD | Active | Implemented | **人工/agent 回写**(代码仓完成) |
 | Tech Design | Draft | Ready | Step 2 完成所有门禁清单 |
 | Plan | Draft | Ready | Step 3 完成所有门禁清单 |
-| Plan | Ready | Executed | **人工/agent 回写**(代码仓完成 TDD) |
 
-> **回写说明**:
-> - wiki **不自动**回写状态(`Active → Implemented`、`Ready → Executed`)
-> - 由人工或 agent 在收到代码仓完成通知后**手动修改** Plan/PRD 文件 frontmatter
-> - 显式回写避免 wiki 假设代码仓完成了实际未完成的工作
+> **0 代码仓库**: 无 `Implemented`/`Executed` 终态。规格 Ready 即"完成"。
 
 ### 3.4 门禁清单 (wiki 视角)
 
 > wiki 只检查**规格侧**的门禁清单。**实现侧**(代码/Lint/测试)的门禁清单见各代码仓 AGENTS。
+> 本项目 0 代码仓库,只看 wiki 侧。
 
 **每个 PRD**:
 - [ ] **Why** 用一句话具体问题陈述
@@ -144,15 +114,13 @@ Fork 后:
 - [ ] **业务约束 + 开发约束** 已填写
 - [ ] **跨文件引用对账**
 
-> **实现侧门禁清单**(在代码仓 AGENTS,不在这里): 代码实现、类型检查、Lint、测试通过
-
 ### 3.5 禁止行为
 
 - ❌ **不修改 `schema/` 下的模板文件**(除非显式要求更新工作流规范)
 - ❌ **不省略日期前缀**——`tech_design/` 和 `plan/` 文件夹名必须带 `{YYYY-MM-DD}-`
-- ❌ **不在 Plan 中写完整代码**——只写策略和约束,代码在 TDD 阶段产出
+- ❌ **不在 Plan 中写完整代码**——只写策略和约束,代码在 TDD 阶段产出(本项目无 TDD)
 - ❌ **不遗漏 PRD 场景**——Tech Design 场景映射必须覆盖所有 Given/When/Then
-- ❌ **不假设代码仓完成**——Plan 状态 `Executed` / PRD 状态 `Implemented` 必须由人工/agent 显式回写
+- ❌ **不假设代码仓完成**——本项目无代码仓,故此条不适用;fork 多仓项目时启用
 
 ### 3.6 快速定位文件
 
@@ -166,52 +134,47 @@ Fork 后:
 | 某功能的需求 | `prd/{YYYY-MM-DD}-processed/{topic}.md` |
 | 某功能的设计 | `tech_design/{YYYY-MM-DD}-{topic}/` |
 | 某功能的实施计划 | `plan/{YYYY-MM-DD}-{topic}/{topic}.md` |
-| 某代码仓的约定 | `{CODE_REPO}/AGENTS.md` |
 | 历史参考(已弃用方案) | `legacy/` |
 
 ---
 
-## 4. 附录 (Appendices)                                ← 可选
+## 4. 附录 (Appendices)
 
-### A. 定制指南 (给 fork 的人读)
+### A. 定制指南 (供 fork 参考)
 
-**必须替换**:
-- 维度 1 全部内容(仓库清单、跨仓引用、本地 AGENTS 登记)
-- 维度 2 全部字段(项目类型、描述、沟通语言、负责人)
+> 本节为 fork SSD-Template 的项目提供定制指南。SSD-Template 自身已应用:
+> - 维度 1: 0 代码仓库,本仓库为唯一文档仓库
+> - 维度 2: 流程/文档模板(中文沟通,vanpipy 维护)
+> - 维度 3: 标准工作流(已适配 0 代码仓库: Step 5 跳过)
+> - 维度 4: 见下文 B/C
 
-**必须删除**:
-- 维度 1.1 中不适用的 code repo 行
-- 维度 1.3 中不适用的本地 AGENTS 登记行
-- 维度 4 中不需要的附录
+**fork 时必改**:
+- 维度 1.1: 仓库清单(填入实际的代码仓库)
+- 维度 1.2: 跨仓引用(增加"指向代码仓库"行)
+- 维度 1.3: 代码仓的本地 AGENTS(填入实际路径)
+- 维度 2: 项目信息(替换为实际项目)
 
-**必须保留**:
-- 维度 3 全部(3 步工作流 + 命名 + 状态 + 门禁清单 + 禁止行为 + 快速定位)
-- 维度 1 / 2 的小节结构
+**fork 时保留**:
+- 维度 3 全部内容
+- 维度 4 全部内容(可选)
 
-### B. prompts 策略选择 (项目决定)
+**多仓库 fork 时的关键约束**:
+- 本仓库永远是 wiki,**不是**代码仓
+- 跨仓引用使用 `{仓库前缀}/path` 写法
+- Step 5 (TDD) 在代码仓执行,**人工回写** wiki Plan 状态为 `Executed`
 
-> pos-wiki 的经验:`prompts/{prd,tech_design,plan}.md` 目录容易漂移(文件丢失或与 AGENTS.md 不一致)
+### B. prompts 策略选择
 
-**选项 (a)**: 不维护 `prompts/` 目录(推荐起步)
-- 所有执行指令内联在本 AGENTS.md
-- 优点: 单一信息源,无漂移风险
-- 缺点: AGENTS.md 变长
+> SSD-Template 自身选择**(a) 不维护 `prompts/` 目录**——所有执行指令内联在本 AGENTS.md。
+> 这是基于 pos-wiki 经验(`prompts/` 目录易漂移)的决策。
 
-**选项 (b)**: 维护 `prompts/` 目录
-- 每个 step 单独 prompt 文件
-- 优点: 可独立引用、版本化
-- 缺点: 两份规范需要同步,有漂移风险
+### C. Evaluator 阶段启用条件
 
-**选择流程**:
-1. 评估 prompt 文件是否被多个项目/agent 复用
-2. 如是,选 (b); 如否,选 (a)
-3. 选定后,删除另一个选项对应的所有引用
-
-### C. Evaluator 阶段启用条件 (可选)
-
-> 引入 Evaluator 阶段(参考 sages/gaoyao 5 phase 审计)时,启用条件:
+> 当前**不启用** Evaluator 阶段(决策影响 < 3 个 PRD,无需独立审计)。
+>
+> 启用条件:
 > - 决策影响 ≥ 3 个 PRD
 > - 涉及长期架构(数据库/通信协议/部署拓扑)
 > - 即将上线的功能需独立审计
-
-不启用时: 保持 3 步工作流,门禁清单由 wiki + 代码仓的静态检查保障。
+>
+> 启用方式: 引入 sages/gaoyao 5 phase 审计。
