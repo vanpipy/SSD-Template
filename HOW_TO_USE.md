@@ -47,7 +47,7 @@
 
 1. **创建 raw** — 将原始描述或文件引用放入 `raw/{date}-{topic}.md`
 2. **创建 prd** — 在 `prd/{date}-{topic}/{topic}.md` 产出 PRD
-3. **创建 tech_design** — 在 `tech_design/{date}-{topic}/{topic}.md` 产出 Tech Design
+3. **创建 tech_design** — 在 `tech_design/{date}-{topic}/` 产出多文件 Tech Design(见 [tech_design/README.md](tech_design/README.md))
 4. **创建 plan** — 在 `plan/{date}-{topic}/{topic}.md` 产出 Plan
 5. **执行 TDD** — 按 Plan 的验证用例进入 Red → Green → Refactor
 
@@ -69,19 +69,33 @@ raw (Collected) → prd (Draft → Active) → tech_design (Draft → Ready) →
 {project-root}/
 ├── raw/              # Layer 0: 原始需求(扁平,按日期命名)
 ├── prd/              # Layer 1: 产品需求(按功能组织)
-├── tech_design/      # Layer 2: 技术设计(按功能组织)
+├── tech_design/      # Layer 2: 技术设计(按功能组织,7 个子文件)
 ├── plan/             # Layer 3: 实施计划(按功能组织)
 └── schema/           # 模板定义
 ```
 
 **raw 命名**: `{YYYY-MM-DD}-{简短主题}.md` (扁平结构)
 
-**prd/tech_design/plan 命名**:
+**prd/ 和 plan/ 命名** (单文件):
 
 ```text
-{folder}/
-└── {YYYY-MM-DD}-{topic}/      ← 子文件夹
+prd/  或  plan/
+└── {YYYY-MM-DD}-{topic}/
     └── {topic}.md             ← 内容文件,简化为功能名
+```
+
+**tech_design/ 命名** (7 个子文件,见 [tech_design/README.md](tech_design/README.md)):
+
+```text
+tech_design/
+└── {YYYY-MM-DD}-{topic}/
+    ├── README.md              ← 入口/索引(必填)
+    ├── decisions.md           ← 关键决策(必填)
+    ├── data-model.md          ← 数据模型(必填)
+    ├── api-contracts.md       ← API 契约(必填)
+    ├── scenario-mapping.md    ← 场景映射(必填)
+    ├── interactions.md        ← 时序图(视情况)
+    └── quality.md             ← 指标 + 降级 + 错误(必填)
 ```
 
 ## 三步工作流
@@ -90,7 +104,7 @@ raw (Collected) → prd (Draft → Active) → tech_design (Draft → Ready) →
 flowchart LR
     A[原始需求] --> B[raw/id.md]
     B --> C[prd/id/login.md Active]
-    C --> D[tech_design/id/tech_design.md Ready]
+    C --> D[tech_design/id/ Ready]
     D --> E[plan/id/plan.md Ready]
     E --> F[TDD: Red → Green → Refactor]
     F --> G[src/ + 通过的测试]
@@ -113,7 +127,7 @@ flowchart LR
 
 基于 Active 状态的 PRD,产出:
 
-- `tech_design/{date}-{topic}/{topic}.md` (**Ready**): 关键决策 + 数据模型 + API 契约 + 场景映射
+- `tech_design/{date}-{topic}/` (**Ready**): 7 个子文件——关键决策 + 数据模型 + API 契约 + 场景映射 + 时序图(可选) + 质量保证
 - `plan/{date}-{topic}/{topic}.md` (**Ready**): 变更清单 + 验证用例 + 业务约束 + 开发约束
 
 **Tech Design 必填**:
@@ -166,10 +180,11 @@ flowchart LR
 
 ### 每个 Tech Design
 
-- [ ] **关键决策** 已定义(每个有 Context/Decision/Alternatives/Rationale/Enforced by)
-- [ ] **场景映射** 覆盖所有 PRD 场景
-- [ ] **指标** 有具体数字
-- [ ] **降级策略** 已定义
+- [ ] **7 个子文件** 全部按 [schema/tech_design/](schema/tech_design/) 完成门通过
+- [ ] **`interactions.md` 必填门** 已检查(满足条件则创建,否则显式跳过并注明)
+- [ ] **跨文件引用** (KD, V, FR, SC, SYS, MOD) 已对账
+- [ ] **场景映射** 覆盖 PRD 所有 Given/When/Then
+- [ ] **指标** 有具体数字,**每个外部依赖** 有降级策略
 
 ### 每个 Plan
 
@@ -182,7 +197,7 @@ flowchart LR
 | 文件 | 用途 |
 |------|------|
 | [schema/prd.md](schema/prd.md) | PRD 模板 |
-| [schema/tech_design.md](schema/tech_design.md) | Tech Design 模板 |
+| [schema/tech_design/](schema/tech_design/) | Tech Design 模板(7 个子模板) |
 | [schema/plan.md](schema/plan.md) | Plan 模板 |
 | [new-factors.md](new-factors.md) | 深度概念参考 |
 | [legacy/](legacy/) | 历史参考(旧 7-schema 设计) |
