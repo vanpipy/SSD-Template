@@ -42,7 +42,7 @@
 
 ---
 
-## 检查清单 (Completion Checklist)
+## 门禁清单 (Completion Gate)
 
 - [ ] 指标有具体数字 (**不是** "响应要快")
 - [ ] 每个外部依赖有降级策略

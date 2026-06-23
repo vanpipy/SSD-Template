@@ -56,7 +56,7 @@
 
 ---
 
-## 检查清单 (Completion Checklist)
+## 门禁清单 (Completion Gate)
 
 - [ ] 每个 API 有端点 + 请求 + 响应(成功 / 失败) + 前置 / 后置 / 副作用
 - [ ] 字段类型明确(**不用 `any`**)

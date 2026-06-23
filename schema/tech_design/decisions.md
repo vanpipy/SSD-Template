@@ -35,7 +35,7 @@
 
 ---
 
-## 检查清单 (Completion Checklist)
+## 门禁清单 (Completion Gate)
 
 - [ ] 每个 KD 有完整 5 段 (Context / Decision / Alternatives / Rationale / Enforced by)
 - [ ] 至少 2 个备选方案 (不能只有一个选项)

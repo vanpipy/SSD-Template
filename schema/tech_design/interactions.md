@@ -108,7 +108,7 @@ sequenceDiagram
 
 ---
 
-## 检查清单 (Completion Checklist)
+## 门禁清单 (Completion Gate)
 
 - [ ] 每个时序图有 **Reference** (PRD 场景或 FR-XXX)
 - [ ] 每个时序图有 **Trigger** (触发条件)

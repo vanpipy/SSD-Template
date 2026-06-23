@@ -32,7 +32,7 @@
 工作流是固定的 harness,不是灵活的建议:
 
 - 5 步必须走完,不简化
-- 每步有明确的"检查清单"
+- 每步有明确的"门禁清单"
 - 违反则失败,不跳过
 
 ## 如何使用本指南
@@ -54,7 +54,7 @@
 ### 遇到问题时
 
 - **不确定填什么?** → 查看对应 schema 模板 [schema/prd.md](schema/prd.md)
-- **不知道覆盖哪些场景?** → 参考下方完成检查清单
+- **不知道覆盖哪些场景?** → 参考下方门禁清单
 - **不确定一个需求走多深?** → 默认走完 5 步,不简化
 
 ### 状态流转
@@ -183,7 +183,7 @@ flowchart LR
 | 多需求聚合管理 | batch-overview | v2 引入 |
 | 需要可执行 BDD 框架 | 已在 PRD/Plan 内联 Given/When/Then,无需独立 | — |
 
-## 完成检查清单
+## 门禁清单
 
 ### 每个 PRD
 
@@ -195,7 +195,7 @@ flowchart LR
 
 ### 每个 Tech Design
 
-- [ ] **7 个子文件** 全部按 [schema/tech_design/](schema/tech_design/) 检查清单通过
+- [ ] **7 个子文件** 全部按 [schema/tech_design/](schema/tech_design/) 门禁清单通过
 - [ ] **`interactions.md` 必填门** 已检查(满足条件则创建,否则显式跳过并注明)
 - [ ] **跨文件引用** (KD, V, FR, SC, SYS, MOD) 已对账
 - [ ] **场景映射** 覆盖 PRD 所有 Given/When/Then

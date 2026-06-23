@@ -92,7 +92,7 @@ sequenceDiagram
 
 **对账规则**:
 - 每一行都必须勾选 `[x]`
-- 找不到引用 = 检查清单不通过,**禁止**进入 TDD 阶段
+- 找不到引用 = 门禁清单不通过,**禁止**进入 TDD 阶段
 
 ---
 
@@ -151,7 +151,7 @@ sequenceDiagram
 
 ---
 
-## 完成检查 (Completion Checklist)
+## 完成检查 (Completion Gate)
 
 ### 实现层
 - [ ] **代码实现** — 所有 Change 已完成
