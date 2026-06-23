@@ -60,24 +60,24 @@
 ### 状态流转
 
 ```
-prd/{date}/ (raw) → prd/{date}-processed/ (Active) → tech_design/ (Ready) → plan/ (Ready) → code → prd (Implemented)
+prd/{date}/ (素材) → prd/{date}-processed/ (Active) → tech_design/ (Ready) → plan/ (Ready) → code → prd (Implemented)
 ```
 
 ## 目录组织(4 个文件夹)
 
 ```text
 {project-root}/
-├── prd/              # Layer 0+1: 原始需求(只读) + PRD(双层结构)
+├── prd/              # 素材区 + Layer 1: PRD(素材区非独立 Layer)
 ├── tech_design/      # Layer 2: 技术设计(按功能组织,7 个子文件)
 ├── plan/             # Layer 3: 实施计划(按功能组织)
 └── schema/           # 模板定义
 ```
 
-**prd/ 命名** (双层结构,见 [prd/README.md](prd/README.md)):
+**prd/ 命名** (素材区 + Layer 1,见 [prd/README.md](prd/README.md)):
 
 ```text
 prd/
-├── {YYYY-MM-DD}/              ← Layer 0: 原始需求(多文件,只读)
+├── {YYYY-MM-DD}/              ← 素材区(只读,非 Layer)
 │   ├── {source-1}.md
 │   └── {source-2}.md
 └── {YYYY-MM-DD}-processed/    ← Layer 1: PRD
@@ -119,11 +119,11 @@ flowchart LR
     G --> H[prd 状态 → Implemented]
 ```
 
-### Step 1: 原始需求 → PRD(prd/ 内转换)
+### Step 1: 原始素材 → Layer 1 PRD
 
-将原始需求(用户抱怨、会议纪要、需求文档)放入 `prd/{YYYY-MM-DD}/`(多文件,只读),然后经过分析和讨论收敛,产出 PRD 到 `prd/{YYYY-MM-DD}-processed/{topic}.md`,状态从 **Draft → Active**。
+将原始素材(用户抱怨、会议纪要、需求文档)放入 `prd/{YYYY-MM-DD}/`(多文件,只读),然后经过分析和讨论收敛,产出 PRD 到 `prd/{YYYY-MM-DD}-processed/{topic}.md`,状态从 **Draft → Active**。
 
-> ⚠️ **合并后**: 这一步是 `prd/` 目录**内部**的转换,不是跨目录的 step。`{date}/` 和 `{date}-processed/` 是同一目录的两层(详见 [prd/README.md](prd/README.md))。
+> `prd/{date}/` 是 Layer 1 的**素材区**,**不是**独立 Layer。架构层只有 3 层(Layer 1/2/3),详见 [prd/README.md](prd/README.md)。
 
 **转换关系**:
 - **1:1**: 一份原始文档对应一个 PRD

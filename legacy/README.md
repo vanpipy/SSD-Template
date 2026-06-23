@@ -29,7 +29,7 @@ legacy/
 | `ard.md` | 内联到 `tech_design.md` 的"关键决策"段 (KD-1, KD-2...) |
 | `bdd-spec.md` | 内联到 `prd.md`(场景)和 `plan.md`(验证用例) |
 | `batch-overview.md` | 删除(多需求聚合是 v2 关注点) |
-| `collection.md` | 简化为 `raw/` 文件夹(无模板) → v3 进一步合并到 `prd/{date}/` 子层 |
+| `collection.md` | 简化为 `raw/` 文件夹(无模板) → v3 进一步合并到 `prd/{date}/` 素材区(去掉 Layer 0 概念) |
 | `implementation.md` | 改名 `plan.md` |
 | `prd.md` / `tech-design.md` | 重新设计 |
 
@@ -43,4 +43,4 @@ legacy/
 |------|------|
 | v1 | 7 个 schema(ard / bdd-spec / collection / batch-overview / implementation / prd / tech-design) |
 | v2 | 收敛到 3 个 schema(prd / tech_design / plan) + 独立 `raw/` 文件夹 |
-| **v3** | **`raw/` 进一步合并到 `prd/{date}/` 子层(双层结构)**,目录数从 5 减到 4 |
+| **v3** | **`raw/` 进一步合并到 `prd/{date}/` 素材区(去掉 Layer 0 概念,架构只保留 Layer 1/2/3)**,目录数从 5 减到 4 |
