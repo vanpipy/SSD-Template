@@ -55,7 +55,7 @@
 
 | 类型 | 标识 | 说明 |
 |------|------|------|
-| 来源 Raw | raw/{id}.md | 原始需求输入 |
+| 来源 Raw | prd/{YYYY-MM-DD}/ | 原始需求输入(多文件,只读) |
 | 关联 Tech Design | tech_design/{id}.md | 后续技术设计 |
 | 关联 Plan | plan/{id}.md | 后续实施计划 |
 

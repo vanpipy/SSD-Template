@@ -45,10 +45,10 @@
 
 当有新的需求时:
 
-1. **创建 raw** — 将原始描述或文件引用放入 `raw/{date}-{topic}.md`
-2. **创建 prd** — 在 `prd/{date}-{topic}/{topic}.md` 产出 PRD
-3. **创建 tech_design** — 在 `tech_design/{date}-{topic}/` 产出多文件 Tech Design(见 [tech_design/README.md](tech_design/README.md))
-4. **创建 plan** — 在 `plan/{date}-{topic}/{topic}.md` 产出 Plan
+1. **收集原始需求** — 将原始描述或文件引用放入 `prd/{YYYY-MM-DD}/`(多文件)
+2. **Step 1: 加工为 PRD** — 读 `prd/{YYYY-MM-DD}/`,产出 PRD 到 `prd/{YYYY-MM-DD}-processed/{topic}.md`(Active)
+3. **Step 2: PRD → Tech Design** — 产出多文件 Tech Design 到 `tech_design/{date}-{topic}/`(Ready,见 [tech_design/README.md](tech_design/README.md))
+4. **Step 3: Tech Design → Plan** — 产出 Plan 到 `plan/{date}-{topic}/{topic}.md`(Ready → Executed)
 5. **执行 TDD** — 按 Plan 的验证用例进入 Red → Green → Refactor
 
 ### 遇到问题时
@@ -60,26 +60,34 @@
 ### 状态流转
 
 ```
-raw (Collected) → prd (Draft → Active) → tech_design (Draft → Ready) → plan (Draft → Ready) → code → prd (Implemented)
+prd/{date}/ (raw) → prd/{date}-processed/ (Active) → tech_design/ (Ready) → plan/ (Ready) → code → prd (Implemented)
 ```
 
-## 目录组织(5 个文件夹)
+## 目录组织(4 个文件夹)
 
 ```text
 {project-root}/
-├── raw/              # Layer 0: 原始需求(扁平,按日期命名)
-├── prd/              # Layer 1: 产品需求(按功能组织)
+├── prd/              # Layer 0+1: 原始需求(只读) + PRD(双层结构)
 ├── tech_design/      # Layer 2: 技术设计(按功能组织,7 个子文件)
 ├── plan/             # Layer 3: 实施计划(按功能组织)
 └── schema/           # 模板定义
 ```
 
-**raw 命名**: `{YYYY-MM-DD}-{简短主题}.md` (扁平结构)
-
-**prd/ 和 plan/ 命名** (单文件):
+**prd/ 命名** (双层结构,见 [prd/README.md](prd/README.md)):
 
 ```text
-prd/  或  plan/
+prd/
+├── {YYYY-MM-DD}/              ← Layer 0: 原始需求(多文件,只读)
+│   ├── {source-1}.md
+│   └── {source-2}.md
+└── {YYYY-MM-DD}-processed/    ← Layer 1: PRD
+    └── {topic}.md
+```
+
+**plan/ 命名** (单文件):
+
+```text
+plan/
 └── {YYYY-MM-DD}-{topic}/
     └── {topic}.md             ← 内容文件,简化为功能名
 ```
@@ -102,18 +110,26 @@ tech_design/
 
 ```mermaid
 flowchart LR
-    A[原始需求] --> B[raw/id.md]
-    B --> C[prd/id/login.md Active]
-    C --> D[tech_design/id/ Ready]
+    A[原始需求] --> B[prd/{date}/]
+    B --> C[prd/{date}-processed/{topic}.md Active]
+    C --> D[tech_design/{date}-{topic}/ Ready]
     D --> E[plan/id/plan.md Ready]
     E --> F[TDD: Red → Green → Refactor]
     F --> G[src/ + 通过的测试]
     G --> H[prd 状态 → Implemented]
 ```
 
-### Step 1: 发现 + 收敛 (Raw → PRD)
+### Step 1: 原始需求 → PRD(prd/ 内转换)
 
-将原始需求(用户抱怨、会议纪要、需求文档)放入 `raw/`,然后经过分析和讨论收敛,产出 PRD,状态从 **Draft → Active**。
+将原始需求(用户抱怨、会议纪要、需求文档)放入 `prd/{YYYY-MM-DD}/`(多文件,只读),然后经过分析和讨论收敛,产出 PRD 到 `prd/{YYYY-MM-DD}-processed/{topic}.md`,状态从 **Draft → Active**。
+
+> ⚠️ **合并后**: 这一步是 `prd/` 目录**内部**的转换,不是跨目录的 step。`{date}/` 和 `{date}-processed/` 是同一目录的两层(详见 [prd/README.md](prd/README.md))。
+
+**转换关系**:
+- **1:1**: 一份原始文档对应一个 PRD
+- **1:N**: 一份原始文档(如 `history-apis.md`)拆成多个 PRD
+- **N:1**: 多份原始文档合成一个 PRD
+- **N:N**: 更复杂的 1→N→M 组合
 
 **PRD 必填**:
 
