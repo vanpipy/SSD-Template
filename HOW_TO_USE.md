@@ -110,13 +110,12 @@ tech_design/
 
 ```mermaid
 flowchart LR
-    A[原始需求] --> B[prd/{date}/]
-    B --> C[prd/{date}-processed/{topic}.md Active]
-    C --> D[tech_design/{date}-{topic}/ Ready]
-    D --> E[plan/id/plan.md Ready]
-    E --> F[TDD: Red → Green → Refactor]
-    F --> G[src/ + 通过的测试]
-    G --> H[prd 状态 → Implemented]
+    A[原始需求] -->|收集| B[prd/YYYY-MM-DD/]
+    B -->|Step 1| C[prd/YYYY-MM-DD-processed/topic.md]
+    C -->|Step 2| D[tech_design/YYYY-MM-DD-topic/]
+    D -->|Step 3| E[plan/YYYY-MM-DD-topic/topic.md]
+    E -->|交接| F((代码仓 TDD))
+    F -->|人工回写| G[状态 Executed]
 ```
 
 ### Step 1: 原始素材 → Layer 1 PRD
