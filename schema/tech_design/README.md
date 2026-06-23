@@ -37,11 +37,11 @@
 
 ---
 
-## 完成门 (Completion Checklist)
+## 检查清单 (Completion Checklist)
 
 - [ ] 摘要清晰,2-3 句话讲清楚方案
-- [ ] 必填文件全部存在且完成门通过
-- [ ] `interactions.md` 完成门已检查(创建或显式跳过,并在此处注明)
+- [ ] 必填文件全部存在且检查清单通过
+- [ ] `interactions.md` 检查清单已检查(创建或显式跳过,并在此处注明)
 - [ ] 所有跨文件引用 (KD, V, FR, SC, SYS, MOD) 已对账
 - [ ] 状态从 `Draft` 改为 `Ready`
 

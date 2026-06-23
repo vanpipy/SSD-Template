@@ -42,7 +42,7 @@
 
 ---
 
-## 完成门 (Completion Checklist)
+## 检查清单 (Completion Checklist)
 
 - [ ] 指标有具体数字 (**不是** "响应要快")
 - [ ] 每个外部依赖有降级策略

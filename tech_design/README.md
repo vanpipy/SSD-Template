@@ -23,7 +23,7 @@ tech_design/
 
 | 文件 | 职责 | 必填 |
 |------|------|------|
-| README.md | 入口/索引 + 摘要 + 完成门 | 是 |
+| README.md | 入口/索引 + 摘要 + 检查清单 | 是 |
 | decisions.md | 关键决策 (KD-1, KD-2...) | 是 |
 | data-model.md | 数据模型 + 实体关系 | 是 |
 | api-contracts.md | API 端点 + 请求/响应 | 是 |

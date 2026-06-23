@@ -36,7 +36,7 @@
 
 ---
 
-## 完成门 (Completion Checklist)
+## 检查清单 (Completion Checklist)
 
 - [ ] PRD 中每个 Given/When/Then 场景都在表中
 - [ ] 异常和边界场景不遗漏

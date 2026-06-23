@@ -32,7 +32,7 @@
 工作流是固定的 harness,不是灵活的建议:
 
 - 5 步必须走完,不简化
-- 每步有明确的"完成门"
+- 每步有明确的"检查清单"
 - 违反则失败,不跳过
 
 ## 如何使用本指南
@@ -195,7 +195,7 @@ flowchart LR
 
 ### 每个 Tech Design
 
-- [ ] **7 个子文件** 全部按 [schema/tech_design/](schema/tech_design/) 完成门通过
+- [ ] **7 个子文件** 全部按 [schema/tech_design/](schema/tech_design/) 检查清单通过
 - [ ] **`interactions.md` 必填门** 已检查(满足条件则创建,否则显式跳过并注明)
 - [ ] **跨文件引用** (KD, V, FR, SC, SYS, MOD) 已对账
 - [ ] **场景映射** 覆盖 PRD 所有 Given/When/Then

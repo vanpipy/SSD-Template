@@ -30,7 +30,7 @@
 
 ---
 
-## 完成门 (Completion Checklist)
+## 检查清单 (Completion Checklist)
 
 - [ ] 每个模型有字段表 + 约束段
 - [ ] 主键、外键、索引明确
