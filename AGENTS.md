@@ -52,16 +52,20 @@
 
 ## 3. 使用方式 (Usage)
 
-### 3.1 工作流 (3 步 spec)
+### 3.1 工作流 (5 步 spec)
 
-> **本项目 0 代码仓库,Step 5 (TDD/交接) 跳过**。
+> **5 步工作流与 HOW_TO_USE.md 对齐**:
+> Step 0(收集原始需求) + Step 1(加工为 PRD) + Step 2(PRD → Tech Design) + Step 3(Tech Design → Plan) + Step 4(TDD 执行)
+>
+> **本项目 0 代码仓库,Step 4 (TDD) 跳过**——规格进入 `Ready` 终态即"完成"。
 
 | 步骤 | 输入 | 输出 | 状态 | 位置 |
 |------|------|------|------|------|
-| 1. 收集原始需求 | 外部输入 | 原始素材 | (只读) | `prd/{YYYY-MM-DD}/` |
-| 2. Step 1: 加工为 PRD | `prd/{date}/` | PRD | Draft → Ready | `prd/{date}-processed/{topic}.md` |
-| 3. Step 2: PRD → Tech Design | PRD | Tech Design(7 文件) | Ready | `tech_design/{date}-{topic}/` |
-| 4. Step 3: Tech Design → Plan | Tech Design | Plan | Ready | `plan/{date}-{topic}/{topic}.md` |
+| Step 0: 收集原始需求 | 外部输入 | 原始素材 | (只读) | `prd/{YYYY-MM-DD}/` |
+| Step 1: 加工为 PRD | `prd/{date}/` | PRD | Draft → Ready | `prd/{date}-processed/{topic}.md` |
+| Step 2: PRD → Tech Design | PRD | Tech Design(7 文件) | Ready | `tech_design/{date}-{topic}/` |
+| Step 3: Tech Design → Plan | Tech Design | Plan | Ready | `plan/{date}-{topic}/{topic}.md` |
+| Step 4: TDD 执行(仅 ≥1 外部代码仓) | Plan | 代码 + 测试 | Ready → Implemented | 外部代码仓 |
 
 > 0 代码仓库时,规格完成(`Ready`)即终态,无 `Implemented` 回写。
 
@@ -95,24 +99,16 @@
 
 > wiki 只检查**规格侧**的门禁清单。**实现侧**(代码/Lint/测试)的门禁清单见各代码仓 AGENTS。
 > 本项目 0 代码仓库,只看 wiki 侧。
+>
+> **门禁清单的权威定义在 `schema/*` 各文件,本节不复制——只列速查索引**(避免与 schema 漂移)。
 
-**每个 PRD**:
-- [ ] **Why** 用一句话具体问题陈述
-- [ ] **Goal** 每条可观察可测量
-- [ ] **Scenarios** 覆盖正常 + 至少一个异常
-- [ ] **Out of Scope** 至少 2 条
-- [ ] **Review** 已填写
+| 层 | 门禁清单位置 | 自动校验脚本 |
+|----|-------------|-------------|
+| PRD | `schema/prd.md` 全文 | `scripts/check-md-schema.sh` |
+| Tech Design | `schema/tech_design/README.md` + 6 子文件 | `scripts/check-md-schema.sh` |
+| Plan | `schema/plan.md` 完成检查段 | `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` |
 
-**每个 Tech Design** (7 文件):
-- [ ] **7 个子文件** 全部按 `schema/tech_design/` 门禁清单通过
-- [ ] **`interactions.md` 必填门** 已检查
-- [ ] **跨文件引用** (KD, V, FR, SC, SYS, MOD) 已对账
-
-**每个 Plan**:
-- [ ] **变更清单** 完整,引用 `KD-{n}`
-- [ ] **验证用例 V-{n}** 覆盖正常+异常+边界,Then 可断言
-- [ ] **业务约束 + 开发约束** 已填写
-- [ ] **跨文件引用对账**
+**调用方式**:`./scripts/check-md-schema.sh && ./scripts/check-traceability.sh && ./scripts/check-naming.sh` 全返回 0 方可标 Ready。
 
 ### 3.5 禁止行为
 
@@ -162,6 +158,23 @@
 - 本仓库永远是 wiki,**不是**代码仓
 - 跨仓引用使用 `{仓库前缀}/path` 写法
 - Step 5 (TDD) 在代码仓执行,**人工回写** wiki Plan 状态为 `Implemented`
+
+### fork 时可选:Step 4 启动模式
+
+> fork 项目在 ≥1 关联代码仓时,需选择 Step 4(Plan → TDD)的启动模式。
+
+**(B) Coding agent 自取(默认推荐)**:
+- **适用**:AI coding agent fork(Claude Code / aider / Cursor / Codex 等)
+- **工作量**:0 额外配置
+- **原理**:Plan Ready = 工作信号,coding agent 直接消费本地 wiki
+- **不需要**:`Implementing` 中间态 / 调度 issue / wiki agent kickoff
+- **唯一人工介入**:外部 PR merged 后回写 wiki 状态
+
+**(C) 显式调度(仅多 agent 协调需要)**:
+- **适用**:多 code agent / 多 repo fork(罕见)
+- **工作量**:+1 张状态图 + 1 套转换规则 + 1 个跨仓写权限
+- **原理**:wiki agent 创建 kickoff issue,code agent 认领后执行
+- **反例论证**:见 [HOW_TO_USE.md "为什么不引入 `Implementing` 中间态"](HOW_TO_USE.md#为什么不引入-implementing-中间态) —— 仅在 (B) 不可行时才升级到 (C)
 
 ### B. prompts 策略选择
 
