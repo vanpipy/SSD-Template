@@ -1,6 +1,6 @@
 # PRD: {主题}
 
-> **状态**: Draft | Active | Implemented | Deprecated
+> **状态**: Draft | Ready | Implemented | Deprecated
 > **负责人**: {github-handle}
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}

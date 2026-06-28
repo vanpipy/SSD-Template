@@ -48,7 +48,7 @@ Enforced: ...
 ```
 ---
 id: prd-101
-status: Active
+status: Ready
 owner: leroy
 ---
 

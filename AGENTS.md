@@ -59,11 +59,11 @@
 | 步骤 | 输入 | 输出 | 状态 | 位置 |
 |------|------|------|------|------|
 | 1. 收集原始需求 | 外部输入 | 原始素材 | (只读) | `prd/{YYYY-MM-DD}/` |
-| 2. Step 1: 加工为 PRD | `prd/{date}/` | PRD | Draft → Active | `prd/{date}-processed/{topic}.md` |
+| 2. Step 1: 加工为 PRD | `prd/{date}/` | PRD | Draft → Ready | `prd/{date}-processed/{topic}.md` |
 | 3. Step 2: PRD → Tech Design | PRD | Tech Design(7 文件) | Ready | `tech_design/{date}-{topic}/` |
 | 4. Step 3: Tech Design → Plan | Tech Design | Plan | Ready | `plan/{date}-{topic}/{topic}.md` |
 
-> 0 代码仓库时,规格完成(`Ready`)即终态,无 `Implemented`/`Executed` 回写。
+> 0 代码仓库时,规格完成(`Ready`)即终态,无 `Implemented` 回写。
 
 ### 3.2 命名规范
 
@@ -85,11 +85,11 @@
 
 | 层 | 起始 | 终态 | 触发 |
 |----|------|------|------|
-| PRD | Draft | Active | Step 1 完成所有门禁清单 |
+| PRD | Draft | Ready | Step 1 完成所有门禁清单 |
 | Tech Design | Draft | Ready | Step 2 完成所有门禁清单 |
 | Plan | Draft | Ready | Step 3 完成所有门禁清单 |
 
-> **0 代码仓库**: 无 `Implemented`/`Executed` 终态。规格 Ready 即"完成"。
+> **0 代码仓库**: 无 `Implemented` 终态。规格 Ready 即"完成"。
 
 ### 3.4 门禁清单 (wiki 视角)
 
@@ -161,7 +161,7 @@
 **多仓库 fork 时的关键约束**:
 - 本仓库永远是 wiki,**不是**代码仓
 - 跨仓引用使用 `{仓库前缀}/path` 写法
-- Step 5 (TDD) 在代码仓执行,**人工回写** wiki Plan 状态为 `Executed`
+- Step 5 (TDD) 在代码仓执行,**人工回写** wiki Plan 状态为 `Implemented`
 
 ### B. prompts 策略选择
 

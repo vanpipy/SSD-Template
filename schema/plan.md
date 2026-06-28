@@ -1,6 +1,6 @@
 # Plan: {主题}
 
-> **状态**: Draft | Ready | Executed
+> **状态**: Draft | Ready | Implemented
 > **来源 Tech Design**: [../tech_design/{YYYY-MM-DD}-{topic}/](../tech_design/{YYYY-MM-DD}-{topic}/README.md)
 > **来源 PRD**: [../../prd/{YYYY-MM-DD}-processed/{topic}.md](../../prd/{YYYY-MM-DD}-processed/{topic}.md)
 > **创建日期**: {YYYY-MM-DD}
@@ -74,7 +74,7 @@ sequenceDiagram
 - 每个 V 用例**先写失败测试**(Red),后写实现(Green)
 - 一次只让**一个** V 用例从红变绿,避免大爆炸
 - Refactor 时**所有** V 用例必须保持绿
-- 完成所有 V 用例 → Plan 状态 `Ready → Executed`,对应 PRD 状态 `Active → Implemented`
+- 完成所有 V 用例 → Plan 状态 `Ready → Implemented`,对应 PRD 状态 `Ready → Implemented`
 
 ---
 

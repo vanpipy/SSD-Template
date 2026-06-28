@@ -6,9 +6,9 @@
 
 | Layer | 位置 | 状态 |
 |-------|------|------|
-| Layer 1 | `prd/{date}-processed/` | Active → Implemented |
+| Layer 1 | `prd/{date}-processed/` | Ready → Implemented |
 | Layer 2 | `tech_design/{date}-{topic}/` | Ready |
-| Layer 3 | `plan/{date}-{topic}/{topic}.md` | Ready → Executed |
+| Layer 3 | `plan/{date}-{topic}/{topic}.md` | Ready → Implemented |
 
 > `prd/{date}/` 是 Layer 1 的**素材存放区**,**不**是独立 Layer。
 
@@ -39,7 +39,7 @@ prd/
 ## 放什么(Layer 1 PRD)
 
 - 产品的"为什么"、"目标"、"场景"、"不在范围"
-- 状态机: Draft → Active → Implemented | Deprecated
+- 状态机: Draft → Ready → Implemented | Deprecated
 
 ## 模板
 
@@ -47,4 +47,4 @@ prd/
 
 ## 下一步
 
-基于 Active PRD,产出 `tech_design/{date}-{topic}/`(多文件结构,见 [tech_design/README.md](../tech_design/README.md))。
+基于 Ready PRD,产出 `tech_design/{date}-{topic}/`(多文件结构,见 [tech_design/README.md](../tech_design/README.md))。
