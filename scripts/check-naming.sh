@@ -83,7 +83,12 @@ while IFS= read -r d; do
     [[ -f "$f" ]] || continue
     checked=$((checked+1))
     base="$(basename "$f")"
-    topic="${parent#${DATE_RE}-}"  # 去掉日期前缀
+    # 从父目录名提取 topic: ${DATE}-{topic} → topic
+    if [[ "$parent" =~ ^${DATE_RE}-(.+)$ ]]; then
+      topic="${BASH_REMATCH[1]}"
+    else
+      topic="$parent"
+    fi
     if [[ "$base" != "${topic}.md" ]]; then
       echo -e "${RED}✗${NC} $f — 文件名应为 \`${topic}.md\`,实为 \`$base\`"
       errors=$((errors+1))

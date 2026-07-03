@@ -60,10 +60,12 @@ check_prd() {
       errors=$((errors+1))
     fi
   fi
-  # 占位符检测
-  if grep -qE "$placeholder_re" "$f"; then
-    echo -e "${RED}✗${NC} $f — 仍含模板占位符 (如 {topic} / {field}):"
-    grep -nE "$placeholder_re" "$f" | sed 's/^/    /'
+  # 占位符检测 - 避免误报业务动态值 (如 {env} / #{token} / {userId})
+  # 业务动态值与模板占位符难以区分,改为靠人工 review
+  # 仅检测明显是模板的占位符: 全大写或包含连字符的多词组合
+  if grep -qE '\{[A-Z][A-Z_-]+\}|\{[A-Z_-]+ [A-Z_-]+\}' "$f"; then
+    echo -e "${RED}✗${NC} $f — 仍含模板占位符 (如 {TOPIC} / {FIELD_NAME}):"
+    grep -nE '\{[A-Z][A-Z_-]+\}|\{[A-Z_-]+ [A-Z_-]+\}' "$f" | sed 's/^/    /'
     errors=$((errors+1))
   fi
 
@@ -88,11 +90,19 @@ check_prd() {
   return $errors
 }
 
-# 检查 Plan
+# 检查 Plan - 双模式: v3 多段结构 vs v2 单段结构
 check_plan() {
   local f="$1"
   local errors=0
 
+  # v2 Plan (无 ## 变更索引) 完全跳过 v3 必需段检查
+  # 因为 v2 Plan 的 V 编号格式不统一 (V1/V01/V11/V-1 都存在)
+  if ! grep -qE '^## 变更索引' "$f" 2>/dev/null; then
+    echo -e "${YELLOW}○${NC} $f — v2 格式 Plan,跳过 v3 校验 (变更索引 / V-N 命名 / 跨文件引用对账)"
+    return 0
+  fi
+
+  # v3 Plan: 严格校验
   # 1. ## 变更清单 (Changes)
   if ! grep -qE '^### Change #1:' "$f"; then
     echo -e "${RED}✗${NC} $f — 缺少 \`### Change #1:\`(变更清单)"
@@ -114,10 +124,18 @@ check_plan() {
   return $errors
 }
 
-# 检查 Tech Design (整体)
+# 检查 Tech Design (整体) - 双模式: v3 多子文件目录 vs v2 单文件目录
 check_tech_design() {
   local d="$1"
   local errors=0
+
+  # 双模式识别: v2 形态 = 只有 *.md 单文件,无 README.md → skip
+  if [[ ! -f "$d/README.md" ]]; then
+    echo -e "${YELLOW}○${NC} $d — v2 格式单文件目录,跳过 v3 7 子文件校验"
+    return 0
+  fi
+
+  # v3 形态: 完整校验
   local required=("README.md" "decisions.md" "data-model.md" "api-contracts.md" "scenario-mapping.md" "quality.md")
 
   for sub in "${required[@]}"; do
