@@ -6,7 +6,8 @@
 -->
 
 > AI agent 在 SSD-Template 仓库工作时的操作契约。
-> 每次开始工作前,先读本文件 + 读 `schema/` 对应模板。
+> **核心原则**:以 skill 为执行单元——agent 不直接拼装 `schema/` 模板或 `scripts/` 校验脚本,而是调用 `skills/` 下的 skill。
+> 每次开始工作前,先读本文件 + 读 `skills/<skill-name>/SKILL.md`(skill 内部已封装 schema 读取 + scripts 校验流程)。
 
 ---
 
@@ -62,12 +63,14 @@
 | 步骤 | 输入 | 输出 | 状态 | 位置 |
 |------|------|------|------|------|
 | Step 0: 收集原始需求 | 外部输入 | 原始素材 | (只读) | `prd/{YYYY-MM-DD}/` |
-| Step 1: 加工为 PRD | `prd/{date}/` | PRD | Draft → Ready | `prd/{date}-processed/{topic}.md` |
-| Step 2: PRD → Tech Design | PRD | Tech Design(7 文件) | Ready | `tech_design/{date}-{topic}/` |
-| Step 3: Tech Design → Plan | Tech Design | Plan | Ready | `plan/{date}-{topic}/{topic}.md` |
+| Step 1: 加工为 PRD | `/to-prd <date>` | PRD | Ready | `prd/{date}-processed/{topic}.md` |
+| Step 2: PRD → Tech Design | `/to-tech-design <prd-path>` | Tech Design(7 文件) | Ready | `tech_design/{date}-{topic}/` |
+| Step 3: Tech Design → Plan | `/to-plan <tech-design-dir>` | Plan | Ready | `plan/{date}-{topic}/{topic}.md` |
 | Step 4: TDD 执行(仅 ≥1 外部代码仓) | Plan | 代码 + 测试 | Ready → Implemented | 外部代码仓 |
 
 > 0 代码仓库时,规格完成(`Ready`)即终态,无 `Implemented` 回写。
+> **不产出 Draft 状态**——`to-prd` / `to-tech-design` / `to-plan` skill 完成后直接设 `Ready`。
+> 详细调用示例见 §3.7,Skill 注册见 §3.8。
 
 ### 3.2 命名规范
 
@@ -102,13 +105,13 @@
 >
 > **门禁清单的权威定义在 `schema/*` 各文件,本节不复制——只列速查索引**(避免与 schema 漂移)。
 
-| 层 | 门禁清单位置 | 自动校验脚本 |
-|----|-------------|-------------|
-| PRD | `schema/prd.md` 全文 | `scripts/check-md-schema.sh` |
-| Tech Design | `schema/tech_design/README.md` + 6 子文件 | `scripts/check-md-schema.sh` |
-| Plan | `schema/plan.md` 完成检查段 | `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` |
+| 层 | 门禁清单位置 | 验证方式 |
+|----|-------------|----------|
+| PRD | `schema/prd.md` 全文 | `/validate-spec` |
+| Tech Design | `schema/tech_design/README.md` + 6 子文件 | `/validate-spec` |
+| Plan | `schema/plan.md` 完成检查段 | `/validate-spec` |
 
-**调用方式**:`./scripts/check-md-schema.sh && ./scripts/check-traceability.sh && ./scripts/check-naming.sh` 全返回 0 方可标 Ready。
+**调用方式**:三件套 Ready 前,跑 `validate-spec` skill(自动跑全部 3 个 scripts),全部 `✓` 方可标 Ready。
 
 ### 3.5 禁止行为
 
@@ -117,11 +120,43 @@
 - ❌ **不在 Plan 中写完整代码**——只写策略和约束,代码在 TDD 阶段产出(本项目无 TDD)
 - ❌ **不遗漏 PRD 场景**——Tech Design 场景映射必须覆盖所有 Given/When/Then
 - ❌ **不假设代码仓完成**——本项目无代码仓,故此条不适用;fork 多仓项目时启用
+- ❌ **不绕过 skill 直接拼 schema/scripts 命令**——保持调用入口单一,agent 首选 `skills/<name>/SKILL.md`
 
-### 3.6 快速定位文件
+### 3.6 调用示例
+
+```bash
+# Step 1: 原始需求 → PRD
+/to-prd <date>                              # 例: /to-prd 2026-07-03
+
+# Step 2: PRD → Tech Design(单文件)
+/to-tech-design <prd-path>                  # 例: /to-tech-design prd/2026-07-03-processed/login.md
+/to-tech-design <prd-dir>                   # 例: /to-tech-design prd/2026-07-03-processed/  (批量)
+
+# Step 3: Tech Design → Plan
+/to-plan <tech-design-dir>                  # 例: /to-plan tech_design/2026-07-03-login/
+
+# 验证(任意时点跑,产完就跑)
+/validate-spec
+```
+
+### 3.7 Skill 注册
+
+skills 通过 `setup.sh` 注册到 agent 的 skills 目录(支持 claude / qoder / pi / cursor):
+
+```bash
+bash <repo>/skills/setup.sh                  # 注册到默认 4 个目录
+bash <repo>/skills/setup.sh --unregister     # 注销所有
+bash <repo>/skills/setup.sh --target <dir>   # 注册到指定目录
+```
+
+注册后 agent 可识别 `/to-prd` / `/to-tech-design` / `/to-plan` / `/validate-spec` 命令。
+
+### 3.8 快速定位文件
 
 | 需要什么 | 去哪里找 |
 |----------|----------|
+| **执行工作流**(首选) | `skills/{to-prd,to-tech-design,to-plan,validate-spec}/SKILL.md` ★ |
+| Skill 注册到 agent | `skills/setup.sh`(注册到 `~/.claude/skills/` 等) |
 | PRD 模板 | `schema/prd.md` |
 | Tech Design 模板 | `schema/tech_design/` (7 个子模板) |
 | Plan 模板 | `schema/plan.md` |
@@ -176,10 +211,11 @@
 - **原理**:wiki agent 创建 kickoff issue,code agent 认领后执行
 - **反例论证**:见 [HOW_TO_USE.md "为什么不引入 `Implementing` 中间态"](HOW_TO_USE.md#为什么不引入-implementing-中间态) —— 仅在 (B) 不可行时才升级到 (C)
 
-### B. prompts 策略选择
+### B. Skill 策略选择
 
-> SSD-Template 自身选择**(a) 不维护 `prompts/` 目录**——所有执行指令内联在本 AGENTS.md。
-> 这是基于 pos-wiki 经验(`prompts/` 目录易漂移)的决策。
+> SSD-Template 自身选择**(a) 维护 `skills/` 目录**——所有执行流程封装在 `skills/<name>/SKILL.md`。
+> 这是基于 pos-wiki 经验(内联 prompt 步骤易漂移)进化出的设计。
+> **fork 项目推荐沿用本策略**——直接复制 `skills/` 目录,无需重建 prompt。
 
 ### C. Evaluator 阶段启用条件
 
