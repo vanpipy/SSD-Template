@@ -13,30 +13,121 @@
 
 ## 1. 仓库 (Repositories)
 
-> **本仓库是文档/规格仓库,不是代码仓库**(SSD-Template 是纯文档项目)。
-> 当前 **0 个代码仓库**。
+> **本仓库是文档/规格仓库,不是代码仓库**(SSD-Template 自身是纯 wiki 项目)。
+> 当前 SSD-Template **0 关联代码仓库**(A only),但 §1.1 展示了 fork 后接入 B / C 的多仓布局示例,fork 项目按需替换为实际仓库。
 
 ### 1.1 仓库清单
 
-| 仓库 | 角色 | 主要语言 | 说明 |
-|------|------|----------|------|
-| `vanpipy/SSD-Template` | 文档/规格模板 | Markdown | **本仓库**(固定) |
+> **本节用途**:登记 fork 项目的**全部仓库**(Wiki + 0-N 个代码仓),是 §1.2 / §1.3 / §1.4 的**唯一数据源**(single source of truth)。
+> **禁止**:本节**不**附 check/detect 脚本——仓库存在性由 §1.4 Clone Protocol 处理(agent 主动 `git clone`,不写自定义脚本)。
 
-> 当前 0 代码仓库。如未来增加(如 `ssd-template-cli` 等工具),在此追加并定义跨仓引用。
+#### 标识约定
+
+| 标识 | 角色 | 说明 |
+|------|------|------|
+| **A** | Wiki / Spec 仓库 | **本仓库**(固定),所有 spec 的源 |
+| **B**, **C**, ... | Code workspace | fork 后接入的代码仓,通常 0-N 个 |
+| **N** | 占位符 | §1.1 表中任意非 A 行(便于泛指) |
+
+#### 布局示例:A + B + C (3 仓 fork)
+
+```text
+parent_dir/
+├── SSD-Template/              ← A (current dir, ./)
+├── client/                     ← B (../client/)
+└── server/      ← C (../server/)
+```
+
+| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |
+|------|------|---------|----------|------|----------|------|
+| **A** | `vanpipy/SSD-Template` | `https://github.com/vanpipy/SSD-Template` | `./` | Wiki / Spec | Markdown | **本仓库**(固定,current dir) |
+| **B** | `vanpipy/client` | `https://github.com/vanpipy/client` | `../client/` | Code workspace | TypeScript | 示例代码仓 (sibling of A,fork 后替换为实际仓库) |
+| **C** | `vanpipy/server` | `https://github.com/vanpipy/server` | `../server/` | Code workspace | Java | 示例代码仓 (sibling of A,fork 后替换为实际仓库) |
+
+> **关键点**:**标识** (B/C) 是逻辑标签,稳定不变;**目录名** (`client/` / `server/`) 由 Git URL 决定,fork 时可改名而引用语法 (`{B}/path`) 不受影响。
+> 当前 SSD-Template 自身为 **A only** (0 代码仓,见 §1.3)。B / C 行是 fork 项目典型多仓布局示例——fork 时按需替换为实际仓库。
+> 不需要代码仓时(如纯文档项目):整行删除 B / C,并把 §1.3 标注 "0 代码仓"。
 
 ### 1.2 跨仓库引用约定
 
-| 引用类型 | 写法 | 示例 |
-|----------|------|------|
-| 本仓库内引用 | `schema/path` 或 `prd/path` | `schema/prd.md`, `prd/2026-06-22-processed/login.md` |
+| 引用类型 | 写法 | 示例 | 来源 |
+|----------|------|------|------|
+| 本仓库内引用 (A) | `schema/path` / `prd/path` / `tech_design/path` / `plan/path` | `schema/prd.md`, `prd/2026-06-22-processed/login.md` | 当前文件位置 |
+| 跨仓库引用 (B / C / ...) | `{标识}/{path}` (用 §1.1 标识列) | `client/app/services/auth.ts`, `server/api/controller/OrderController.java` | §1.1 标识 + 本地路径 |
 
-> 当前无代码仓库可引用。
-> **禁止**: 在本仓库中引用 `src/`(本仓库没有 src/)
+**跨仓库引用规则**:
+
+- `{标识}` 必须**严格**匹配 §1.1 "标识" 列 (A / B / C / ...)——一一对应
+- 路径**相对于该标识的 本地路径** (如 `{B}/app/services/auth.ts` 解析为 §1.1 B 行 本地路径 + `/app/services/auth.ts`)
+- **禁止**口语化引用(`client 仓库` / `server 项目` 等)
+- **禁止**在 A 仓库 spec 文件中引用 `src/` / `cmd/` / `pkg/` / `internal/` 等代码目录前缀——这些是 B/C 内部约定,A 不应假设
+
+> 当前 SSD-Template 自身为 0 代码仓,跨仓引用行仅在 fork 后有 B/C 时生效。
+> 多仓项目 Plan 的 Change 分仓规则(强制 B / C 分组)见 [`to-plan` skill §多仓强制分仓](skills/to-plan/SKILL.md)。
 
 ### 1.3 代码仓的本地 AGENTS
 
 > 当前 0 代码仓库,本节不适用。
-> 如未来增加代码仓库,在此登记各代码仓的 AGENTS.md 路径。
+> 如未来增加代码仓库,在此登记各代码仓的 AGENTS.md 路径,以便 §3.4 实现侧门禁清单可被引用。
+
+#### 布局示例(以 §1.1 A + B + C 为准)
+
+| 标识 | AGENTS.md 路径 |
+|------|---------------|
+| **A** | `./AGENTS.md` (本文件) |
+| **B** | `../client/AGENTS.md` |
+| **C** | `../server/AGENTS.md` |
+
+> 仅 A 时,实现侧(代码仓)门禁清单**不**生效——所有 §4 完成检查全部停留为 "未启用"。
+> 标识 → AGENTS 路径的映射应与 §1.1 同步(fork 修改 §1.1 时,本表对应行也要更新)。
+
+### 1.4 工作开始前 — 仓库补齐 (Clone Protocol)
+
+> **本节用途**:定义 agent 在 §3 工作流开始前如何确保 §1.1 列出的所有仓库已存在于本地工作区。
+> **原则**:补齐操作由 agent 主动执行 `git clone`,**不**写自定义 check 脚本(沿用 §1.1 禁止约束)。
+
+#### Step 1 — 核对 A (本仓库)
+
+```bash
+git remote -v
+# output 应与 §1.1 A 行 Git URL 一致
+```
+
+不一致 → **停止**,先解决目录错误再继续(可能身在 fork 而非本仓库)。
+
+#### Step 2 — 遍历 §1.1,补齐 B / C / ... (代码仓)
+
+**通用模式**(按 §1.1 表的每一非 A 行执行):
+
+```bash
+[[ -d <本地路径> ]] || git clone <Git URL> <本地路径>
+```
+
+**具体应用**(以 §1.1 A + B + C 布局为准):
+
+```bash
+# §1.1 B 行: ../client/ + https://github.com/vanpipy/client
+[[ -d ../client ]] || git clone https://github.com/vanpipy/client ../client
+
+# §1.1 C 行: ../server/ + https://github.com/vanpipy/server
+[[ -d ../server ]] || git clone https://github.com/vanpipy/server ../server
+```
+
+> 0 代码仓项目(仅 A):Step 2 跳过,直接进 §3。
+> 添加新仓库到 §1.1 时,只需在本节补一行对应的 `[[ -d <path> ]] || git clone ...` 即可。
+
+#### Step 3 — 验证工作区拓扑
+
+完成后,本地工作区应呈现 §1.1 表的镜像布局:
+
+```bash
+ls -la ..
+# 应见: SSD-Template/  client/  server/  (或 fork 实际目录名)
+```
+
+#### Step 4 — 跨仓库引用启用
+
+A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的具体文件。
 
 ---
 
