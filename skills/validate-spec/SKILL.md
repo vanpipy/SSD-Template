@@ -1,15 +1,15 @@
 ---
 name: validate-spec
-description: 跑 pos-wiki 全部 spec 校验脚本（check-md-schema / check-traceability / check-naming），输出统一报告。Use when 完成 PRD / Tech Design / Plan 产出后，需要快速验证是否符合规范；或修改存量 spec 文件后，需要确认无新违规。
+description: 跑 SSD-Template 全部 spec 校验脚本 (check-md-schema / check-traceability / check-naming), 输出统一报告。支持 v4/v3 双模式 TD + Test Case 可选层 (test_cases/ 目录存在才校验)。Use when 完成 PRD / Tech Design / Plan 产出后, 需要快速验证是否符合规范; 或修改存量 spec 文件后, 需要确认无新违规。
 skill-type: spec
-version: 1.0
+version: 1.1
 type: skill
 skill-role: tool
 ---
 
 # validate-spec
 
-跑 pos-wiki 全部 3 个 spec 校验脚本，输出统一报告。
+跑 SSD-Template 全部 3 个 spec 校验脚本，输出统一报告。
 
 ## Mode Indicator
 

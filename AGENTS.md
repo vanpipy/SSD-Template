@@ -52,7 +52,7 @@ parent_dir/
 
 | 引用类型 | 写法 | 示例 | 来源 |
 |----------|------|------|------|
-| 本仓库内引用 (A) | `schema/path` / `prd/path` / `tech_design/path` / `plan/path` | `schema/prd.md`, `prd/2026-06-22-processed/login.md` | 当前文件位置 |
+| 本仓库内引用 (A) | `schema/path` / `prd/path` / `tech_design/path` / `plan/path` | `schema/prd.md`, `prd/2026-06-22/login.md` | 当前文件位置 |
 | 跨仓库引用 (B / C / ...) | `{标识}/{path}` (用 §1.1 标识列) | `client/app/services/auth.ts`, `server/api/controller/OrderController.java` | §1.1 标识 + 本地路径 |
 
 **跨仓库引用规则**:
@@ -153,31 +153,38 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的
 
 | 步骤 | 输入 | 输出 | 状态 | 位置 |
 |------|------|------|------|------|
-| Step 0: 收集原始需求 | 外部输入 | 原始素材 | (只读) | `prd/{YYYY-MM-DD}/` |
-| Step 1: 加工为 PRD | `/to-prd <date>` | PRD | Ready | `prd/{date}-processed/{topic}.md` |
-| Step 2: PRD → Tech Design | `/to-tech-design <prd-path>` | Tech Design(7 文件) | Ready | `tech_design/{date}-{topic}/` |
+| Step 0: 收集原始需求 | 外部输入 | 原始素材 | (只读) | `prd/{YYYY-MM-DD}/` 或 `material/{YYYY-MM-DD}/` (可选) |
+| Step 1: 加工为 PRD | `/to-prd <date>` | PRD | Ready | `prd/{date}/{topic}.md` (无 `-processed` 后缀) |
+| Step 2: PRD → Tech Design | `/to-tech-design <prd-path>` | Tech Design(v3 6 文件 / v4 4 文件) | Ready | `tech_design/{date}-{topic}/` |
 | Step 3: Tech Design → Plan | `/to-plan <tech-design-dir>` | Plan | Ready | `plan/{date}-{topic}/{topic}.md` |
 | Step 4: TDD 执行(仅 ≥1 外部代码仓) | Plan | 代码 + 测试 | Ready → Implemented | 外部代码仓 |
 
 > 0 代码仓库时,规格完成(`Ready`)即终态,无 `Implemented` 回写。
 > **不产出 Draft 状态**——`to-prd` / `to-tech-design` / `to-plan` skill 完成后直接设 `Ready`。
 > 详细调用示例见 §3.7,Skill 注册见 §3.8。
+> **可选层**: `material/`(Layer 0 素材区)、`test_cases/`(Layer 4 质量层) 仅在项目启用时存在;不存在则跳过对应校验。
 
 ### 3.2 命名规范
 
 **目录命名**:
-- `prd/{YYYY-MM-DD}/` 和 `prd/{YYYY-MM-DD}-processed/` — 日期分桶
+- `prd/{YYYY-MM-DD}/` — 日期分桶(新约定, **无 `-processed` 后缀**)
+- `material/{YYYY-MM-DD}/` — 可选 Layer 0 素材区(项目启用时存在)
 - `tech_design/{YYYY-MM-DD}-{topic}/` — 日期 + topic 子文件夹
 - `plan/{YYYY-MM-DD}-{topic}/{topic}.md` — 日期 + topic 子文件夹 + 单文件
+- `test_cases/{YYYY-MM-DD}/{topic}.md` — 可选 Layer 4 质量层(项目启用时存在;允许 `-smoke` / `-key-points` 后缀)
 
 **topic 规则**:
 - 使用**小写连字符**
 - tech_design 和 plan 的文件夹名**必须带日期前缀**
 
 **跨文件引用**(相对路径):
-- Tech Design 引用 PRD: `../../prd/{date}-processed/{topic}.md`
+- Tech Design 引用 PRD: `../../prd/{date}/{topic}.md` (无 `-processed`)
 - Plan 引用 Tech Design: `../../tech_design/{date}-{topic}/{topic}.md`
-- Plan 引用 PRD: `../../prd/{date}-processed/{topic}.md`
+- Plan 引用 PRD: `../../prd/{date}/{topic}.md` (无 `-processed`)
+
+**Tech Design 代际选择**(默认 v3, opt-in v4):
+- **v3** (存量): `README.md` + `decisions.md` + `data-model.md` + `api-contracts.md` + `scenario-mapping.md` + `quality.md` (+ `interactions.md` 条件)
+- **v4** (新约定): `README.md` 综合描述 + `ards.md` 架构决策+方案对比+探索机制 + `apis.md` 接口契约+时序 + `data-model.md`
 
 ### 3.3 状态流转
 
@@ -220,8 +227,8 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的
 /to-prd <date>                              # 例: /to-prd 2026-07-03
 
 # Step 2: PRD → Tech Design(单文件)
-/to-tech-design <prd-path>                  # 例: /to-tech-design prd/2026-07-03-processed/login.md
-/to-tech-design <prd-dir>                   # 例: /to-tech-design prd/2026-07-03-processed/  (批量)
+/to-tech-design <prd-path>                  # 例: /to-tech-design prd/2026-07-03/login.md
+/to-tech-design <prd-dir>                   # 例: /to-tech-design prd/2026-07-03/  (批量)
 
 # Step 3: Tech Design → Plan
 /to-plan <tech-design-dir>                  # 例: /to-plan tech_design/2026-07-03-login/
@@ -253,7 +260,7 @@ bash <repo>/skills/setup.sh --target <dir>   # 注册到指定目录
 | Plan 模板 | `schema/plan.md` |
 | 工作流全貌 | `HOW_TO_USE.md` |
 | 概念参考 | `new-factors.md` |
-| 某功能的需求 | `prd/{YYYY-MM-DD}-processed/{topic}.md` |
+| 某功能的需求 | `prd/{YYYY-MM-DD}/{topic}.md` (新约定, 无 `-processed`) |
 | 某功能的设计 | `tech_design/{YYYY-MM-DD}-{topic}/` |
 | 某功能的实施计划 | `plan/{YYYY-MM-DD}-{topic}/{topic}.md` |
 | 历史参考(已弃用方案) | `legacy/` |

@@ -2,12 +2,13 @@
 # check-naming.sh — 校验 SSD-Template 目录与文件命名规范
 #
 # 规范 (见 AGENTS.md §3.2):
-#   - prd/{YYYY-MM-DD}-processed/{topic}.md           (Layer 1 PRD)
-#   - prd/{YYYY-MM-DD}/*.md                          (素材区,任意文件名)
-#   - tech_design/{YYYY-MM-DD}-{topic}/*.md          (Layer 2,7 子文件)
-#   - plan/{YYYY-MM-DD}-{topic}/{topic}.md           (Layer 3,文件名=目录 topic)
+#   - prd/{YYYY-MM-DD}/{topic}.md                     (Layer 1 PRD, 无 -processed 后缀)
+#   - material/{YYYY-MM-DD}/*.md                      (Layer 0 素材区, 任意文件名, 目录存在才校验)
+#   - tech_design/{YYYY-MM-DD}-{topic}/*.md           (Layer 2, v3 7 子文件 / v4 4 子文件)
+#   - plan/{YYYY-MM-DD}-{topic}/{topic}.md            (Layer 3, 文件名=目录 topic)
+#   - test_cases/{YYYY-MM-DD}/{topic}.md              (Layer 4, 可选 -smoke / -key-points 后缀, 目录存在才校验)
 #
-# topic 规则: 小写连字符 (lowercase-with-hyphens),如 login / order-flow
+# topic 规则: 小写连字符 (lowercase-with-hyphens), 如 login / order-flow
 #
 # 用法:
 #   ./scripts/check-naming.sh                  # 检查整个仓库
@@ -39,31 +40,46 @@ fi
 errors=0
 checked=0
 
-# --- prd/{date}-processed/{topic}.md ---
+# --- prd/{date}/{topic}.md (Layer 1 PRD, 无 -processed 后缀) ---
+# SSD-Template 允许 prd/{date}/ 同时存放 raw material (非 {topic}.md 格式) 与 processed PRD。
+# Raw material 文件用 ⚠ 提示而非 ✗ 错误, 建议逐步迁到 material/{date}/。
 while IFS= read -r f; do
   checked=$((checked+1))
   base="$(basename "$f")"
   parent="$(basename "$(dirname "$f")")"
-  # 父目录必须是 {DATE}-processed
-  if [[ ! "$parent" =~ ^${DATE_RE}-processed$ ]]; then
-    echo -e "${RED}✗${NC} $f — 父目录应为 \`{YYYY-MM-DD}-processed/\`,实为 \`$parent/\`"
+  # 父目录必须是 {DATE}
+  if [[ ! "$parent" =~ ^${DATE_RE}$ ]]; then
+    echo -e "${RED}✗${NC} $f — 父目录应为 \`{YYYY-MM-DD}/\`, 实为 \`$parent/\`"
     errors=$((errors+1))
     continue
   fi
-  # 文件名必须是 {topic}.md (topic 用小写连字符)
-  if [[ ! "$base" =~ ^${TOPIC_RE}\.md$ ]]; then
-    echo -e "${RED}✗${NC} $f — 文件名应为 \`{topic}.md\` (小写连字符),实为 \`$base\`"
-    errors=$((errors+1))
+  # 文件名匹配 {topic}.md: 严格校验 (processed PRD)
+  if [[ "$base" =~ ^${TOPIC_RE}\.md$ ]]; then
     continue
   fi
-done < <(find "$ROOT/prd" -mindepth 2 -maxdepth 2 -type f -name "*.md" -path "*-processed/*" 2>/dev/null)
+  # 否则视为 raw material: ⚠ 警告, 不计入 errors (允许 prd/{date}/ 暂存素材)
+  echo -e "${YELLOW}⚠${NC} $f — 非 \`{topic}.md\` 小写连字符格式, 实为 \`$base\` (raw material 允许, 建议迁到 material/$parent/)"
+done < <(find "$ROOT/prd" -mindepth 2 -maxdepth 2 -type f -name "*.md" 2>/dev/null)
+
+# --- material/{date}/ (Layer 0 素材区, 目录名必须为规范日期, 目录存在才校验) ---
+if [[ -d "$ROOT/material" ]]; then
+  while IFS= read -r d; do
+    checked=$((checked+1))
+    parent="$(basename "$d")"
+    if [[ ! "$parent" =~ ^${DATE_RE}$ ]]; then
+      echo -e "${RED}✗${NC} $d — 目录名应为 \`{YYYY-MM-DD}\`, 实为 \`$parent/\`"
+      errors=$((errors+1))
+      continue
+    fi
+  done < <(find "$ROOT/material" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+fi
 
 # --- tech_design/{date}-{topic}/ ---
 while IFS= read -r d; do
   checked=$((checked+1))
   parent="$(basename "$d")"
   if [[ ! "$parent" =~ ^${DATE_RE}-${TOPIC_RE}$ ]]; then
-    echo -e "${RED}✗${NC} $d — 目录名应为 \`{YYYY-MM-DD}-{topic}\`,实为 \`$parent/\`"
+    echo -e "${RED}✗${NC} $d — 目录名应为 \`{YYYY-MM-DD}-{topic}\`, 实为 \`$parent/\`"
     errors=$((errors+1))
     continue
   fi
@@ -74,7 +90,7 @@ while IFS= read -r d; do
   checked=$((checked+1))
   parent="$(basename "$d")"
   if [[ ! "$parent" =~ ^${DATE_RE}-${TOPIC_RE}$ ]]; then
-    echo -e "${RED}✗${NC} $d — 目录名应为 \`{YYYY-MM-DD}-{topic}\`,实为 \`$parent/\`"
+    echo -e "${RED}✗${NC} $d — 目录名应为 \`{YYYY-MM-DD}-{topic}\`, 实为 \`$parent/\`"
     errors=$((errors+1))
     continue
   fi
@@ -90,11 +106,29 @@ while IFS= read -r d; do
       topic="$parent"
     fi
     if [[ "$base" != "${topic}.md" ]]; then
-      echo -e "${RED}✗${NC} $f — 文件名应为 \`${topic}.md\`,实为 \`$base\`"
+      echo -e "${RED}✗${NC} $f — 文件名应为 \`${topic}.md\`, 实为 \`$base\`"
       errors=$((errors+1))
     fi
   done
 done < <(find "$ROOT/plan" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+
+# --- test_cases/{date}/{topic}.md (Layer 4, 可选 -smoke / -key-points 后缀, 目录存在才校验) ---
+if [[ -d "$ROOT/test_cases" ]]; then
+  while IFS= read -r f; do
+    checked=$((checked+1))
+    base="$(basename "$f")"
+    parent="$(basename "$(dirname "$f")")"
+    if [[ ! "$parent" =~ ^${DATE_RE}$ ]]; then
+      echo -e "${RED}✗${NC} $f — 父目录应为 \`{YYYY-MM-DD}/\`, 实为 \`$parent/\`"
+      errors=$((errors+1))
+      continue
+    fi
+    if [[ ! "$base" =~ ^${TOPIC_RE}\.md$ && ! "$base" =~ ^${TOPIC_RE}-smoke\.md$ && ! "$base" =~ ^${TOPIC_RE}-key-points\.md$ ]]; then
+      echo -e "${RED}✗${NC} $f — 文件名应为 \`{topic}.md\` / \`{topic}-smoke.md\` / \`{topic}-key-points.md\` (小写连字符), 实为 \`$base\`"
+      errors=$((errors+1))
+    fi
+  done < <(find "$ROOT/test_cases" -mindepth 2 -maxdepth 2 -type f -name "*.md" 2>/dev/null)
+fi
 
 # --- 总结 ---
 if [[ $errors -eq 0 ]]; then

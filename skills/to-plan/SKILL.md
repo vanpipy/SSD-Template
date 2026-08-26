@@ -1,15 +1,15 @@
 ---
 name: to-plan
-description: Tech Design → Plan 转换流程，按 schema/plan.md 多段结构产出实施计划。Use when 收到 Ready 状态的 Tech Design（含 7 子文件目录），需要产出多段结构 Plan（含变更索引 + TDD Flow + 跨文件引用对账 + 4 段完成检查）。多仓项目按 §1.5 强制分仓分组 Change。
+description: Tech Design → Plan 转换流程，按 schema/plan.md 多段结构产出实施计划。KD 来源自适应: v4 TD 取自 ards.md, v3 TD 取自 decisions.md. Use when 收到 Ready 状态的 Tech Design (v3 6 子文件 / v4 4 子文件), 需要产出多段结构 Plan (含变更索引 + TDD Flow + 跨文件引用对账 + 4 段完成检查)。多仓项目按 §1.5 强制分仓分组 Change。
 skill-type: spec
-version: 1.0
+version: 1.1
 type: skill
 skill-role: procedure
 ---
 
 # to-plan
 
-将 `tech_design/{date}-{topic}/`（7 子文件结构）转换为 `plan/{date}-{topic}/{topic}.md` 多段结构。
+将 `tech_design/{date}-{topic}/`（v3 6 子文件 / v4 4 子文件 自适应）转换为 `plan/{date}-{topic}/{topic}.md` 多段结构。
 
 ## Mode Indicator
 

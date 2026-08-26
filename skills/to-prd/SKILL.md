@@ -1,15 +1,15 @@
 ---
 name: to-prd
-description: 原始需求 → PRD 转换流程，按 schema/prd.md 模板提炼产出 PRD。Use when 收到 prd/{YYYY-MM-DD}/ 下原始素材（用户抱怨、会议纪要、技术方案），需要提炼为符合规范的 PRD 文件。
+description: 原始需求 → PRD 转换流程，按 schema/prd.md 模板提炼产出 PRD。Use when 收到 material/{YYYY-MM-DD}/ 或 prd/{YYYY-MM-DD}/ 下原始素材（用户抱怨、会议纪要、技术方案），需要提炼为符合规范的 PRD 文件 (输出到 prd/{YYYY-MM-DD}/{topic}.md, 无 -processed 后缀)。Use when 启用 material/ 可选层时, 也支持 material/ → PRD 流水线。
 skill-type: spec
-version: 1.0
+version: 1.1
 type: skill
 skill-role: procedure
 ---
 
 # to-prd
 
-将 `prd/{YYYY-MM-DD}/` 下的原始素材提炼为 `prd/{YYYY-MM-DD}-processed/{topic}.md`，遵循 `schema/prd.md` 模板。
+将 `prd/{YYYY-MM-DD}/` 下的原始素材提炼为 `prd/{YYYY-MM-DD}/{topic}.md`（**新约定**: 无 `-processed` 后缀）, 遵循 `schema/prd.md` 模板.
 
 ## Mode Indicator
 
@@ -23,9 +23,9 @@ skill-role: procedure
 
 | Phase | 做什么 |
 |-------|--------|
-| `reading` | 读取原始素材 + schema 模板 + 项目 AGENTS.md §1 |
+| `reading` | 读取原始素材 (prd/{date}/ 或可选 material/{date}/) + schema 模板 + 项目 AGENTS.md §1 |
 | `extracting` | 提炼 Why/Goal/Scenarios/Out of Scope/Review |
-| `writing` | 写出 PRD 到 `prd/{date}-processed/` |
+| `writing` | 写出 PRD 到 `prd/{date}/{topic}.md` (新约定, 无 -processed) |
 | `validating` | 跑 `scripts/check-md-schema.sh` 校验 |
 
 ## When to Use
