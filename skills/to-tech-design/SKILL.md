@@ -28,16 +28,16 @@ skill-role: procedure
 
 | Phase | 做什么 |
 |-------|--------|
-| `reading` | 读 PRD + schema 7 子文件模板 |
-| `structuring` | 设计 7 子文件内容骨架（KD / 数据模型 / API 等） |
+| `reading` | 读 PRD + schema 子文件模板（v3 7 或 v4 4） |
+| `structuring` | 设计子文件内容骨架（v3 KD/数据模型/API 等 / v4 ards+apis+data-model+README 场景映射） |
 | `injecting-context` | 从 AGENTS.md §1 读多仓关系，决定跨仓引用前缀 |
-| `writing` | 写 7 子文件到 `tech_design/{date}-{topic}/` |
+| `writing` | 写子文件到 `tech_design/{date}-{topic}/`（v3 7 个 / v4 4 个） |
 | `validating` | 跑 `check-md-schema.sh` 校验 |
 
 ## When to Use
 
 - 收到 Active 状态的 PRD
-- 需要产出符合 v3 7 子文件结构的 Tech Design
+- 需要产出符合 v3 7 子文件 / v4 4 子文件结构的 Tech Design（默认 v3, opt-in v4）
 - 需要自动注入多仓上下文
 
 ## Slash Command
@@ -49,8 +49,8 @@ skill-role: procedure
 示例：
 
 ```
-/to-tech-design prd/2026-07-03-processed/login.md
-/to-tech-design prd/2026-07-03-processed/      # 批量处理整个分桶
+/to-tech-design prd/2026-07-03/login.md
+/to-tech-design prd/2026-07-03/      # 批量处理整个分桶
 ```
 
 ## Prerequisites
@@ -58,14 +58,16 @@ skill-role: procedure
 | 依赖 | 路径 | 用途 |
 |------|------|------|
 | PRD 状态 | Active | 前置条件 |
-| Schema 模板 | `schema/tech_design/*.md` | 7 子文件结构 |
+| Schema 模板 | `schema/tech_design/*.md` | v3 7 子文件 / v4 4 子文件（按需）|
 | AGENTS.md | §1 仓库清单 + §1.2 跨仓引用约定 | 多仓上下文 |
 | 校验脚本 | `scripts/check-md-schema.sh` | 自动校验 |
 | Code 仓 | 关联的 code 仓（如 client + server）| 跨仓引用前缀 |
 
 ## Core Concept
 
-### 7 子文件职责
+### 子文件职责 (按所选代际)
+
+#### v3 模式 (存量, 默认)
 
 | 子文件 | 必填 | 关注点 |
 |--------|------|--------|
@@ -77,7 +79,19 @@ skill-role: procedure
 | interactions.md | 条件 | 系统级/模块级 mermaid sequence diagram |
 | quality.md | ✓ | 指标 + 降级 + 错误处理 |
 
-### 何时需要 interactions.md
+#### v4 模式 (新约定, opt-in)
+
+| 子文件 | 必填 | 关注点 |
+|--------|------|--------|
+| README.md | ✓ | 综合描述 + `## 场景映射` 段 (6 列表, 与 v3 的 scenario-mapping.md 等效, 合并入口) |
+| ards.md | ✓ | 探索深度声明 + 方向选择总表 + Solution Space 候选方案对比 + **KD-{n}** (Context/Decision/Alternatives/Rationale/Enforced by) + Open Questions/Spikes/Pivot Triggers + Gap 表 + 风险缓解 |
+| apis.md | ✓ | 接口契约 (全响应变体) + 枚举速查 + 组装规则 + 时序图 (SYS-{n} 系统级 / MOD-{n} 模块级) |
+| data-model.md | ✓ | ER 图 / 数据结构 |
+
+> **v4 不需要** decisions.md / api-contracts.md / scenario-mapping.md / quality.md / interactions.md — 内容已合并到 ards.md + apis.md + README.md 场景映射。
+> **迁移 v3 → v4**: 不强制迁移, 存量目录保留 v3; 新建目录 opt-in v4。
+
+### 何时需要 interactions.md (仅 v3 适用)
 
 满足**任一**条件时必填：
 
@@ -87,6 +101,8 @@ skill-role: procedure
 - 包含异步流程 / 状态机 / 重试逻辑
 
 否则可在 README.md 显式标注"不适用"跳过。
+
+> v4 模式下时序图直接写在 `apis.md` 的 SYS-{n} / MOD-{n} 段，不需要独立 interactions.md。
 
 ### 多仓上下文注入
 
@@ -106,7 +122,7 @@ skill-role: procedure
 # 读 PRD
 cat "$PRD_PATH"
 
-# 读 schema 7 子文件模板
+# 读 schema 子文件模板 (按代际)
 ls schema/tech_design/
 for f in schema/tech_design/*.md; do cat "$f"; done
 
@@ -116,14 +132,21 @@ sed -n '/^## 1\. /,/^## 2\. /p' AGENTS.md
 
 ### 2. Structuring Phase
 
-按"Core Concept → 7 子文件职责"设计每个子文件内容骨架：
+按"Core Concept → 子文件职责（按所选代际）"设计每个子文件内容骨架：
 
+**v3 模式（默认）**:
 1. **识别 KD**：PRD 中存在 ≥2 方案的设计选择 → 必须记录为 KD
 2. **数据模型**：列出实体 + 字段 + 约束
 3. **API 契约**：每个端点 + 请求/响应
 4. **场景映射**：PRD 每个 Given/When/Then 必出现在映射表
 5. **时序图**（条件）：如满足触发条件
 6. **质量保证**：具体数字指标 + 降级策略 + 错误处理
+
+**v4 模式（opt-in）**:
+1. **ards.md**：每个设计选择 → KD-{n} 段（5 段结构 + Solution Space 候选 ≥2 + Spikes/Pivot）
+2. **apis.md**：每个接口 + 时序图（系统级 SYS-{n} / 模块级 MOD-{n}）
+3. **data-model.md**：实体 + 字段 + 约束（与 v3 一致）
+4. **README.md**：综合描述 + 场景映射 6 列表（覆盖 PRD 所有 Given/When/Then）
 
 ### 3. Injecting-Context Phase
 
@@ -155,14 +178,22 @@ client (从 §1.1 仓库清单)
 td_dir="tech_design/{date}-{topic}/"
 mkdir -p "$td_dir"
 
-# 写 7 子文件
-for sub in README decisions data-model api-contracts scenario-mapping quality; do
-  echo "$content_for_$sub" > "$td_dir/$sub.md"
-done
+# v3 模式 (默认): 写 7 子文件 (含条件 interactions)
+if [[ "$mode" == "v3" ]]; then
+  for sub in README decisions data-model api-contracts scenario-mapping quality; do
+    echo "$content_for_$sub" > "$td_dir/$sub.md"
+  done
+  if needs_interactions; then
+    echo "$interactions_content" > "$td_dir/interactions.md"
+  fi
+fi
 
-# 条件写 interactions.md
-if needs_interactions; then
-  echo "$interactions_content" > "$td_dir/interactions.md"
+# v4 模式 (opt-in): 写 4 子文件 (README 综合描述 + ards + apis + data-model)
+if [[ "$mode" == "v4" ]]; then
+  for sub in README ards apis data-model; do
+    echo "$content_for_$sub" > "$td_dir/$sub.md"
+  done
+  # README 必须含 ## 场景映射 段 (6 列表), ards 必须含 ## KD-{n}: 段, apis 必须含 ## 接口契约 + 时序图 (SYS/MOD) 段
 fi
 ```
 
@@ -172,7 +203,7 @@ fi
 ./scripts/check-md-schema.sh tech_design/{date}-{topic}/
 ```
 
-要求：v3 形态（有 README.md）→ 严格校验全部 7 子文件；返回 0，无 `✗`。
+要求：双模式自动识别（ards.md 或 apis.md 存在 → v4 校验 4 子文件；否则 → v3 校验 7 子文件 + 条件 interactions.md）；返回 0，无 `✗`。
 
 ## Anti-Patterns
 
@@ -228,7 +259,7 @@ grep "^## KD-" tech_design/{date}-{topic}/decisions.md
 
 **症状**：data-model.md 的实体名与 api-contracts.md 的字段名不一致
 
-**原因**：分步写 7 子文件时，跨文件命名漂移
+**原因**：分步写子文件时，跨文件命名漂移（v3 7 个 / v4 4 个都易犯）
 
 **处理**：用"命名表"（统一术语表）作为写之前的强制步骤：
 
@@ -263,17 +294,17 @@ grep "^## KD-" tech_design/{date}-{topic}/decisions.md
 ### Simple
 
 ```
-User: /to-tech-design prd/2026-07-03-processed/login.md
+User: /to-tech-design prd/2026-07-03/login.md
 Agent: [MODE: to-tech-design] (reading)
-Agent: 📂 读取 prd/2026-07-03-processed/login.md
+Agent: 📂 读取 prd/2026-07-03/login.md
 Agent: 📋 读取 schema/tech_design/*.md (7 个模板)
 Agent: 🔧 读取 AGENTS.md §1 (仓库: client + server)
 Agent: [MODE: to-tech-design] (structuring)
-Agent: 设计 7 子文件骨架：KD-1 (会话存储) / KD-2 (Token 刷新策略)
+Agent: 设计子文件骨架：KD-1 (会话存储) / KD-2 (Token 刷新策略)
 Agent: [MODE: to-tech-design] (injecting-context)
 Agent: 跨仓引用前缀: client/, server/
 Agent: [MODE: to-tech-design] (writing)
-Agent: ✅ 写 7 子文件到 tech_design/2026-07-03-login/
+Agent: ✅ 写子文件到 tech_design/2026-07-03-login/
 Agent: [MODE: to-tech-design] (validating)
 Agent: 🟢 check-md-schema.sh 返回 0
 ```

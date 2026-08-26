@@ -19,7 +19,7 @@ skill-role: procedure
 
 | Phase | 做什么 |
 |-------|--------|
-| `reading` | 读 7 子文件 TD + 对应 PRD + AGENTS.md §1 |
+| `reading` | 读 TD 子文件（v3 7 子文件 / v4 4 子文件 自动识别）+ 对应 PRD + AGENTS.md §1 |
 | `structuring` | 设计变更清单 + V 用例 + 业务/开发约束骨架 |
 | `grouping-by-repo` | 按 §1.5 **强制分仓**：Change 按仓分组，V 用例按场景聚合 |
 | `writing` | 写 Plan 到 `plan/{date}-{topic}/{topic}.md` |
@@ -27,7 +27,7 @@ skill-role: procedure
 
 ## When to Use
 
-- 收到 Ready 状态的 Tech Design（7 子文件目录）
+- 收到 Ready 状态的 Tech Design（v3 7 子文件 / v4 4 子文件目录）
 - 需要产出符合 v3 多段结构的 Plan
 - **多仓项目**：需要按 §1.5 强制分仓分组 Change
 - 需要自动注入跨仓引用前缀
@@ -50,7 +50,7 @@ skill-role: procedure
 | 依赖 | 路径 | 用途 |
 |------|------|------|
 | Tech Design 状态 | Ready | 前置条件 |
-| Tech Design 结构 | 7 子文件（v3 形态）| 输入 |
+| Tech Design 结构 | v3 7 子文件 / v4 4 子文件（按目录识别）| 输入 |
 | 对应 PRD | Active 状态 | 上下文（Goal / Scenarios 用于 V 用例） |
 | AGENTS.md | §1 仓库清单 + §1.5 多仓 Plan 编排约定 | 强制分仓 |
 | Schema 模板 | `schema/plan.md` | Plan 多段结构 |
@@ -116,15 +116,32 @@ skill-role: procedure
 
 ### 1. Reading Phase
 
+**TD 代际识别**（用 check-md-schema.sh 或直接看子文件是否存在）：
+
 ```bash
-# 读 TD 7 子文件
-for f in schema/tech_design/README.md decisions.md data-model.md \
-         api-contracts.md scenario-mapping.md quality.md; do
-  cat "$TD_DIR/$f"
-done
+# v3 模式: 读 7 子文件 (含条件 interactions)
+if [[ ! -f "$TD_DIR/ards.md" && ! -f "$TD_DIR/apis.md" ]]; then
+  for f in README.md decisions.md data-model.md \
+           api-contracts.md scenario-mapping.md quality.md; do
+    cat "$TD_DIR/$f"
+  done
+  [[ -f "$TD_DIR/interactions.md" ]] && cat "$TD_DIR/interactions.md"
+fi
+
+# v4 模式: 读 4 子文件
+if [[ -f "$TD_DIR/ards.md" || -f "$TD_DIR/apis.md" ]]; then
+  for f in README.md ards.md apis.md data-model.md; do
+    cat "$TD_DIR/$f"
+  done
+fi
+```
+
+**KD 来源**（写 Plan 引用 KD 时使用对应文件）：
+- v3 → `decisions.md`
+- v4 → `ards.md`
 
 # 读对应 PRD
-PRD_PATH="prd/${DATE}-processed/${TOPIC}.md"
+PRD_PATH="prd/${DATE}/${TOPIC}.md"
 cat "$PRD_PATH"
 
 # 读 AGENTS.md §1（注入多仓上下文）
@@ -229,15 +246,17 @@ grep -E "^### V-[0-9]+:" plan/{date}-{topic}/{topic}.md
 
 | 引用类型 | 标识 | 来源 | 已对账 |
 |----------|------|------|--------|
-| 关键决策 | KD-1 | `tech_design/{topic}/decisions.md` | [x] |
+| 关键决策 | KD-1 | `tech_design/{topic}/decisions.md` (v3) 或 `ards.md` (v4) | [x] |
 | 验证用例 | V-1 | 本文件 | [x] |
 ```
 
 ### Q4：check-traceability.sh 报"引用 KD-N 但不存在"
 
-**症状**：Plan 引用 KD-3，但 `tech_design/{topic}/decisions.md` 没有 `## KD-3:`
+**症状**：Plan 引用 KD-3，但 TD 里没有 `## KD-3:`
 
-**处理**：在 decisions.md 补 `## KD-3: ...` 段。
+**处理**：根据 TD 代际补对应文件：
+- v3 → 在 `tech_design/{topic}/decisions.md` 补 `## KD-3: ...` 段
+- v4 → 在 `tech_design/{topic}/ards.md` 补 `## KD-3: ...` 段
 
 ### Q5：check-traceability.sh 报"引用 V-N 但未在验证用例段定义"
 
@@ -290,7 +309,7 @@ grep -E "^### V-[0-9]+:" plan/{date}-{topic}/{topic}.md
 ```
 User: /to-plan tech_design/2026-07-03-login/
 Agent: [MODE: to-plan] (reading)
-Agent: 📂 读 7 子文件 TD + 对应 PRD
+Agent: 📂 读 TD 子文件（v3/v4 自动识别）+ 对应 PRD
 Agent: [MODE: to-plan] (structuring)
 Agent: 设计骨架：5 个 Change + 6 个 V 用例 + 4 段完成检查
 Agent: [MODE: to-plan] (grouping-by-repo)

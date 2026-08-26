@@ -96,7 +96,7 @@ skill-role: procedure
 
 ### 3. Writing Phase
 
-- 输出路径：`prd/{YYYY-MM-DD}-processed/{topic}.md`
+- 输出路径：`prd/{YYYY-MM-DD}/{topic}.md`（**新约定**：无 `-processed` 后缀）
 - `topic` 命名规则：小写连字符（lowercase-with-hyphens），如 `checkout-flow` / `member-login`
 - **不修改** Layer 0 原始文件
 
@@ -144,7 +144,7 @@ ls prd/ | grep "2026-07-03"
 
 **排查**：
 ```bash
-grep -nE '\{[A-Z][A-Z_-]+\}|\{[A-Z_-]+ [A-Z_-]+\}' prd/2026-07-03-processed/{topic}.md
+grep -nE '\{[A-Z][A-Z_-]+\}|\{[A-Z_-]+ [A-Z_-]+\}' prd/2026-07-03/{topic}.md
 ```
 
 **处理**：把占位符替换为真实值（如 `{TOPIC}` → `member-login`）。
@@ -180,7 +180,7 @@ grep -nE '\{[A-Z][A-Z_-]+\}|\{[A-Z_-]+ [A-Z_-]+\}' prd/2026-07-03-processed/{top
 - **Scenarios 至少 1 个异常**：从原始素材的"异常处理"段提取，写在 `But` 子句
 - **Out of Scope 至少 2 项**：从原始素材的"框架阶段" / "后续迭代"段提取
 - **topic 命名用小写连字符**：`checkout-flow` ✓，`order_flow` ✗，`orderFlow` ✗
-- **跨文件引用 PRD 用相对路径**：`../../prd/{date}-processed/{topic}.md`
+- **跨文件引用 PRD 用相对路径**：`../../prd/{date}/{topic}.md`
 - **多仓项目 PRD 仍可写**：`Out of Scope` 段注明"前端 / 后端边界"，为后续 TD/Plan 留接口
 
 ## Examples
@@ -199,7 +199,7 @@ Agent: 提炼 Goal：手机号+验证码登录，2s 内完成...
 Agent: 提炼 Scenarios：正常路径 + 验证码错误 + 网络异常
 Agent: 提炼 Out of Scope：第三方登录（仅手机号）
 Agent: [MODE: to-prd] (writing)
-Agent: ✅ 写入 prd/2026-07-03-processed/login.md
+Agent: ✅ 写入 prd/2026-07-03/login.md
 Agent: [MODE: to-prd] (validating)
 Agent: 🟢 check-md-schema.sh 返回 0
 Agent: [MODE: to-prd] (done)
@@ -231,7 +231,7 @@ bash <repo>/skills/setup.sh
 
 ## Related Skills
 
-- `to-tech-design`：PRD → Tech Design（7 子文件结构）
+- `to-tech-design`：PRD → Tech Design（v3 7 子文件 / v4 4 子文件，opt-in 选代际）
 - `to-plan`：Tech Design → Plan（强制按仓分组 Change）
 - `validate-spec`：跑全部校验脚本
 

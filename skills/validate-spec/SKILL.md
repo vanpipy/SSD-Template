@@ -33,7 +33,7 @@ skill-role: tool
 
 ```
 /validate-spec                # 验证整个仓库
-/validate-spec prd/2026-07-03-processed/login.md   # 验证单个文件
+/validate-spec prd/2026-07-03/login.md   # 验证单个文件
 /validate-spec tech_design/2026-07-03-login/       # 验证单个目录
 ```
 
@@ -137,10 +137,10 @@ ls plan/{date}-{topic}/
 
 **症状**：tech_design 目录缺 README.md / decisions.md 等
 
-**原因**：v2 单文件目录（只有 `{topic}.md`）不满足 v3 7 子文件结构
+**原因**：v2 单文件目录（只有 `{topic}.md`）不满足 v3 7 子文件 / v4 4 子文件结构
 
 **处理**：
-- **新 tech_design**：写 7 子文件结构
+- **新 tech_design**：写 v3 7 子文件结构（默认），或 opt-in v4 4 子文件（README + ards + apis + data-model）
 - **v2 旧 tech_design**：脚本已打双模式补丁（无 README.md → 走 `○ v2 跳过`）
 
 ### Q3：check-md-schema.sh 报"非法引用类型"（误报）
