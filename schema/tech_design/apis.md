@@ -80,7 +80,7 @@
 
 | 枚举 | 值 | 含义 |
 |------|---|------|
-| **OrderStatus** | `pending` / `paid` / `shipped` / `completed` / `cancelled` | 订单状态机 |
+| **StatusEnum** | `pending` / `active` / `completed` / `archived` / `cancelled` | 通用状态机示例 |
 | **[其他枚举]** | ... | ... |
 
 ---

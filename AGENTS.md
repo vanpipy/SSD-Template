@@ -53,7 +53,7 @@ parent_dir/
 | 引用类型 | 写法 | 示例 | 来源 |
 |----------|------|------|------|
 | 本仓库内引用 (A) | `schema/path` / `prd/path` / `tech_design/path` / `plan/path` | `schema/prd.md`, `prd/2026-06-22/login.md` | 当前文件位置 |
-| 跨仓库引用 (B / C / ...) | `{标识}/{path}` (用 §1.1 标识列) | `client/app/services/auth.ts`, `server/api/controller/OrderController.java` | §1.1 标识 + 本地路径 |
+| 跨仓库引用 (B / C / ...) | `{标识}/{path}` (用 §1.1 标识列) | `client/app/services/auth.ts`, `server/api/controller/UserController.java` | §1.1 标识 + 本地路径 |
 
 **跨仓库引用规则**:
 
@@ -312,7 +312,7 @@ bash <repo>/skills/setup.sh --target <dir>   # 注册到指定目录
 ### B. Skill 策略选择
 
 > SSD-Template 自身选择**(a) 维护 `skills/` 目录**——所有执行流程封装在 `skills/<name>/SKILL.md`。
-> 这是基于 pos-wiki 经验(内联 prompt 步骤易漂移)进化出的设计。
+> 这是基于多仓 fork 经验(内联 prompt 步骤易漂移)进化出的设计。
 > **fork 项目推荐沿用本策略**——直接复制 `skills/` 目录,无需重建 prompt。
 
 ### C. Evaluator 阶段启用条件
