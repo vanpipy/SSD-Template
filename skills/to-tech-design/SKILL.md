@@ -1,15 +1,24 @@
 ---
 name: to-tech-design
-description: PRD → Tech Design 转换流程，按 schema/tech_design/ 7 子文件结构产出技术设计。Use when 收到 Active 状态的 PRD，需要产出 7 子文件结构的 Tech Design（README + decisions + data-model + api-contracts + scenario-mapping + interactions + quality）。
+description: PRD → Tech Design 转换流程, 支持 v3 6 子文件 (存量) 与 v4 4 子文件 (新约定) 双模式。v4 子文件: README 综合描述 + ards 架构决策+方案对比+探索机制 + apis 接口契约+时序 + data-model ER 图。v3 子文件: README + decisions + data-model + api-contracts + scenario-mapping + quality (+ interactions 条件)。Use when 收到 Ready 状态的 PRD, 需要产出 Tech Design (默认 v3, 显式 opt-in v4)。
 skill-type: spec
-version: 1.0
+version: 1.1
 type: skill
 skill-role: procedure
 ---
 
 # to-tech-design
 
-将 `prd/{date}-processed/{topic}.md`（Active 状态）转换为 `tech_design/{date}-{topic}/` 7 子文件结构。
+将 `prd/{date}/{topic}.md`（Ready 状态, 无 `-processed` 后缀）转换为 `tech_design/{date}-{topic}/`.
+
+## 代际选择 (默认 v3, opt-in v4)
+
+| 形态 | 子文件 | 适用场景 |
+|------|--------|----------|
+| **v3** (默认, 存量) | README + decisions + data-model + api-contracts + scenario-mapping + quality (+ interactions 条件) | 维护既有 v3 项目, 增量补 TD |
+| **v4** (新约定, opt-in) | README 综合描述 + **ards** 架构决策+方案对比+探索深度声明+OQ/Spikes/Pivot+Gap 对比 + **apis** 接口契约+时序图 (SYS/MOD) + data-model ER 图 | 新建项目, 探索机制必填, 决策可追溯 |
+
+> **校验脚本**: `check-md-schema.sh` 双模式识别 (按 `ards.md`/`apis.md` 存在判定 v4). v3 → v4 迁移无需触动存量目录, 新建目录按 opt-in 选择.
 
 ## Mode Indicator
 

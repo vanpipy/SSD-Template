@@ -45,11 +45,13 @@
 
 当有新的需求时:
 
-1. **收集原始需求** — 将原始描述或文件引用放入 `prd/{YYYY-MM-DD}/`(多文件)
-2. **Step 1: 加工为 PRD** — 读 `prd/{YYYY-MM-DD}/`,产出 PRD 到 `prd/{YYYY-MM-DD}-processed/{topic}.md`(Ready)
-3. **Step 2: PRD → Tech Design** — 产出多文件 Tech Design 到 `tech_design/{date}-{topic}/`(Ready,见 [tech_design/README.md](tech_design/README.md))
+1. **收集原始需求** — 将原始描述或文件引用放入 `prd/{YYYY-MM-DD}/`(多文件), 或启用 `material/{YYYY-MM-DD}/` 可选层
+2. **Step 1: 加工为 PRD** — 读 `prd/{YYYY-MM-DD}/`, 产出 PRD 到 `prd/{YYYY-MM-DD}/{topic}.md`(Ready, **新约定**: 无 `-processed` 后缀)
+3. **Step 2: PRD → Tech Design** — 产出多文件 Tech Design 到 `tech_design/{date}-{topic}/`(Ready, v3 6 文件 / v4 4 文件 双模式)
 4. **Step 3: Tech Design → Plan** — 产出 Plan 到 `plan/{date}-{topic}/{topic}.md`(Ready → Implemented)
 5. **执行 TDD** — 按 Plan 的验证用例进入 Red → Green → Refactor
+
+> 可选 Layer 4: `test_cases/{YYYY-MM-DD}/{topic}.md`(项目启用时存在, 配合 [schema/test_case.md](schema/test_case.md) 模板产出)
 
 ### 遇到问题时
 
@@ -132,8 +134,7 @@ prd/
 ├── {YYYY-MM-DD}/              ← 素材区(只读,非 Layer)
 │   ├── {source-1}.md
 │   └── {source-2}.md
-└── {YYYY-MM-DD}-processed/    ← Layer 1: PRD
-    └── {topic}.md
+└── {topic}.md                 ← Layer 1: PRD(直接位于 prd/ 下或按需组织, **新约定**: 无 `-processed` 后缀)
 ```
 
 **plan/ 命名** (单文件):
@@ -144,11 +145,12 @@ plan/
     └── {topic}.md             ← 内容文件,简化为功能名
 ```
 
-**tech_design/ 命名** (7 个子文件,见 [tech_design/README.md](tech_design/README.md)):
+**tech_design/ 命名** (双模式,见 [tech_design/README.md](tech_design/README.md)):
 
 ```text
 tech_design/
 └── {YYYY-MM-DD}-{topic}/
+    # v3 (存量, 6 子文件 + 条件 interactions)
     ├── README.md              ← 入口/索引(必填)
     ├── decisions.md           ← 关键决策(必填)
     ├── data-model.md          ← 数据模型(必填)
@@ -156,6 +158,12 @@ tech_design/
     ├── scenario-mapping.md    ← 场景映射(必填)
     ├── interactions.md        ← 时序图(视情况)
     └── quality.md             ← 指标 + 降级 + 错误(必填)
+
+    # v4 (新约定, 4 子文件 - 存 ards.md 则走 v4 校验)
+    # ├── README.md            ← 综合描述(必填, 含 ## 场景映射)
+    # ├── ards.md              ← 架构决策+方案对比+探索机制+Gap(必填)
+    # ├── apis.md              ← 接口契约+时序图(必填)
+    # └── data-model.md        ← ER 图/数据结构(必填)
 ```
 
 ## 三步工作流
@@ -173,7 +181,7 @@ flowchart LR
 
 ### Step 1: 原始素材 → Layer 1 PRD
 
-将原始素材(用户抱怨、会议纪要、需求文档)放入 `prd/{YYYY-MM-DD}/`(多文件,只读),然后经过分析和讨论收敛,产出 PRD 到 `prd/{YYYY-MM-DD}-processed/{topic}.md`,状态从 **Draft → Ready**。
+将原始素材(用户抱怨、会议纪要、需求文档)放入 `prd/{YYYY-MM-DD}/`(多文件,只读), 然后经过分析和讨论收敛, 产出 PRD 到 `prd/{YYYY-MM-DD}/{topic}.md`(**新约定**: 无 `-processed` 后缀), 状态从 **Draft → Ready**.
 
 > `prd/{date}/` 是 Layer 1 的**素材区**,**不是**独立 Layer。架构层只有 3 层(Layer 1/2/3),详见 [prd/README.md](prd/README.md)。
 
@@ -195,8 +203,10 @@ flowchart LR
 
 基于 Ready 状态的 PRD,产出:
 
-- `tech_design/{date}-{topic}/` (**Ready**): 7 个子文件——关键决策 + 数据模型 + API 契约 + 场景映射 + 时序图(可选) + 质量保证
+- `tech_design/{date}-{topic}/` (**Ready**): 双模式 — **v3** 6 子文件(关键决策 + 数据模型 + API 契约 + 场景映射 + 时序图可选 + 质量保证) 或 **v4** 4 子文件(README 综合描述 + ards 架构决策+方案对比+探索机制 + apis 接口契约+时序 + data-model)
 - `plan/{date}-{topic}/{topic}.md` (**Ready**): 变更清单 + 验证用例 + 业务约束 + 开发约束
+
+> **v3 → v4 选择**: 新建目录默认 v3, 显式声明 v4 时按 [schema/tech_design/ards.md](schema/tech_design/ards.md) + [schema/tech_design/apis.md](schema/tech_design/apis.md) 模板产出.
 
 **Tech Design 必填**:
 
@@ -268,7 +278,7 @@ flowchart LR
 
 | 当前 → 下一 | 触发条件(伪代码) | 校验命令 | 责任方 |
 |------------|------------------|----------|--------|
-| Draft → Ready (PRD) | `check-md-schema.sh <prd>` 返回 0 AND 提交信息含 `Reviewed-by:` | `scripts/check-md-schema.sh prd/{date}-processed/{topic}.md` | author + reviewer |
+| Draft → Ready (PRD) | `check-md-schema.sh <prd>` 返回 0 AND 提交信息含 `Reviewed-by:` | `scripts/check-md-schema.sh prd/{date}/{topic}.md` | author + reviewer |
 | Draft → Ready (TD) | `check-md-schema.sh <td_dir>` 返回 0 AND 所有子文件已 Ready | `scripts/check-md-schema.sh tech_design/{date}-{topic}/` | author + reviewer |
 | Draft → Ready (Plan) | `check-md-schema.sh <plan>` AND `check-traceability.sh` 返回 0 | `scripts/check-md-schema.sh plan/{date}-{topic}/` + `scripts/check-traceability.sh` | author + reviewer |
 | Ready → Implemented (PRD/TD/Plan) | **≥1 外部代码仓**:外部 TDD 全过 + 外部 PR merged + 人工回写 wiki 三件套状态 | 人工检查外部仓库 | 外部 reviewer + wiki 人工回写 |
@@ -326,7 +336,7 @@ flowchart TB
 
 #### SSD-Template 自身(0 关联代码仓库)
 
-- Step 1 产出:`prd/{date}-processed/{topic}.md` 状态 **Ready**
+- Step 1 产出:`prd/{date}/{topic}.md` 状态 **Ready** (无 `-processed` 后缀)
 - Step 2 产出:`tech_design/{date}-{topic}/*` 状态 **Ready**
 - Step 3 产出:`plan/{date}-{topic}/{topic}.md` 状态 **Ready**
 - 不进入 Implemented(无外部代码仓作为回写源)
@@ -386,7 +396,10 @@ flowchart TB
 | 文件 | 用途 |
 |------|------|
 | [schema/prd.md](schema/prd.md) | PRD 模板 |
-| [schema/tech_design/](schema/tech_design/) | Tech Design 模板(7 个子模板) |
+| [schema/tech_design/](schema/tech_design/) | Tech Design 模板 (v3 6 子文件 + v4 4 子文件) |
 | [schema/plan.md](schema/plan.md) | Plan 模板 |
+| [schema/test_case.md](schema/test_case.md) | Test Case 模板 (可选 Layer 4) |
+| [schema/prd-ledger.md](schema/prd-ledger.md) | 批次 PRD 台账模板 (可选 material/ 启用) |
+| [schema/prd-matrix.md](schema/prd-matrix.md) | PRD 关联矩阵模板 (多 PRD 协作启用) |
 | [new-factors.md](new-factors.md) | 深度概念参考 |
 | [legacy/](legacy/) | 历史参考(旧 7-schema 设计) |
