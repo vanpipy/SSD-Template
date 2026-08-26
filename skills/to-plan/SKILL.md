@@ -80,22 +80,22 @@ skill-role: procedure
 ```markdown
 ## 变更清单
 
-### 前端变更（qipda）
+### 前端变更（client）
 
 > KD-{n} / V-{n} 主要约束前端模块边界、UI 状态机、客户端校验、缓存策略
 
-#### Change #1: `qipda/app/services/auth.ts`
+#### Change #1: `client/app/services/auth.ts`
 **遵循决策**: KD-{n}
 **验证**: V-{n}
 
-#### Change #2: `qipda/packages/pillars-network-tunnel/src/interceptors/hmac.ts`
+#### Change #2: `client/packages/pillars-network-tunnel/src/interceptors/hmac.ts`
 [...]
 
-### 后端变更（busyming-mpos-facade）
+### 后端变更（server）
 
 > KD-{n} / V-{n} 主要约束服务端编排、签名校验、设备指纹、Feign 调用、网关出口
 
-#### Change #N: `busyming-mpos-facade/api/facade/read/LoginServiceClient.java`
+#### Change #N: `server/api/facade/read/LoginServiceClient.java`
 [...]
 
 ### 验证用例（V-{n} 跨仓覆盖，按场景聚合）
@@ -146,11 +146,11 @@ sed -n '/^## 1\. /,/^## 2\. /p' AGENTS.md
 
 **关键**——按 §1.5 强制分仓：
 
-1. **识别仓库**：从 AGENTS.md §1.1 读仓库清单（如 pos-wiki → `[qipda, busyming-mpos-facade]`）
+1. **识别仓库**：从 AGENTS.md §1.1 读仓库清单（如 SSD-Template → `[client, server]`）
 2. **分配 Change**：根据 TD 中提及的文件路径前缀分到对应仓
 3. **生成子标题**：
-   - `### 前端变更（qipda）`
-   - `### 后端变更（busyming-mpos-facade）`
+   - `### 前端变更（client）`
+   - `### 后端变更（server）`
    - `### 验证用例（V-{n} 跨仓覆盖，按场景聚合）`
 4. **路径加前缀**：所有文件路径加 `{仓库前缀}/`
 
@@ -189,9 +189,9 @@ echo "$content" > "$plan_dir/{topic}.md"
 | 只写正常路径 | 正常 + 异常 + 边界 3 类缺一不可 |
 | 单仓项目也按多仓分节 | 单仓不分节，1 级标题即可 |
 | 多仓项目不按仓分节 | **强制按仓分**（§1.5） |
-| Change 标题用裸路径（`app/services/auth.ts`）| 加仓库前缀（`qipda/app/services/auth.ts`）|
-| 用口语化引用（"qipda 仓库"）| 用仓库名（`qipda`）+ §1.2 格式 |
-| Change 粒度粗（"修改 Service 层"）| 精确到文件（`qipda/app/services/auth.ts`）|
+| Change 标题用裸路径（`app/services/auth.ts`）| 加仓库前缀（`client/app/services/auth.ts`）|
+| 用口语化引用（"client 仓库"）| 用仓库名（`client`）+ §1.2 格式 |
+| Change 粒度粗（"修改 Service 层"）| 精确到文件（`client/app/services/auth.ts`）|
 | 引用 `SC-N`（已废弃）| 用 `KD-N` / `V-N` / `FR-N` / `SYS-N` / `MOD-N` |
 
 ## Troubleshooting
@@ -254,12 +254,12 @@ grep -E "^### V-[0-9]+:" plan/{date}-{topic}/{topic}.md
 ```markdown
 ## 变更清单
 
-### 前端变更（qipda）
-#### Change #1: qipda/app/services/auth.ts
+### 前端变更（client）
+#### Change #1: client/app/services/auth.ts
 [...]
 
-### 后端变更（busyming-mpos-facade）
-#### Change #N: busyming-mpos-facade/api/...
+### 后端变更（server）
+#### Change #N: server/api/...
 [...]
 ```
 
@@ -305,19 +305,19 @@ Agent: 🟢 check-traceability.sh 返回 0
 ### Complex (多仓)
 
 ```
-User: /to-plan tech_design/2026-07-03-order-flow/
-Agent: AGENTS.md §1: [qipda, busyming-mpos-facade]
+User: /to-plan tech_design/2026-07-03-checkout-flow/
+Agent: AGENTS.md §1: [client, server]
 Agent: 读 TD 后识别：
-  - 前端 Change: qipda/app/views/CheckoutScreen.tsx (UI)
-  - 后端 Change: busyming-mpos-facade/api/controller/OrderController.java (服务端)
-  - 共享: busyming-mpos-facade/api/contract/OrderContract.java (接口契约)
+  - 前端 Change: client/app/views/CheckoutScreen.tsx (UI)
+  - 后端 Change: server/api/controller/CartController.java (服务端)
+  - 共享: server/api/contract/CartContract.java (接口契约)
 Agent: [MODE: to-plan] (grouping-by-repo)
 Agent: 强制分仓:
-  ### 前端变更（qipda）
-    #### Change #1: qipda/app/views/CheckoutScreen.tsx
-    #### Change #2: qipda/app/services/orderService.ts
-  ### 后端变更（busyming-mpos-facade）
-    #### Change #N: busyming-mpos-facade/api/controller/OrderController.java
+  ### 前端变更（client）
+    #### Change #1: client/app/views/CheckoutScreen.tsx
+    #### Change #2: client/app/services/cartService.ts
+  ### 后端变更（server）
+    #### Change #N: server/api/controller/CartController.java
   ### 验证用例（V-{n} 跨仓覆盖，按场景聚合）
     #### V-1: 正常下单流程（前/后端协同）
     #### V-2: 库存不足异常（后端校验）

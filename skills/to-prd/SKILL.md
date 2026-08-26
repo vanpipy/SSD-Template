@@ -51,7 +51,7 @@ skill-role: procedure
 | 依赖 | 路径 | 用途 |
 |------|------|------|
 | Schema 模板 | `schema/prd.md` | PRD 结构定义（v3 状态用 Ready） |
-| AGENTS.md | `AGENTS.md` §1 | 注入多仓上下文（如 pos-wiki 关联 qipda + busyming-mpos-facade） |
+| AGENTS.md | `AGENTS.md` §1 | 注入多仓上下文（如 SSD-Template 关联 client + server） |
 | 校验脚本 | `scripts/check-md-schema.sh` | 自动校验产出 PRD |
 | 原始素材 | `prd/{YYYY-MM-DD}/*.md` | Layer 0 只读输入 |
 
@@ -97,7 +97,7 @@ skill-role: procedure
 ### 3. Writing Phase
 
 - 输出路径：`prd/{YYYY-MM-DD}-processed/{topic}.md`
-- `topic` 命名规则：小写连字符（lowercase-with-hyphens），如 `order-flow` / `member-login`
+- `topic` 命名规则：小写连字符（lowercase-with-hyphens），如 `checkout-flow` / `member-login`
 - **不修改** Layer 0 原始文件
 
 ### 4. Validating Phase
@@ -179,7 +179,7 @@ grep -nE '\{[A-Z][A-Z_-]+\}|\{[A-Z_-]+ [A-Z_-]+\}' prd/2026-07-03-processed/{top
 - **Goal 项必须可观察**：避免"系统正常"、"响应快速"等模糊措辞
 - **Scenarios 至少 1 个异常**：从原始素材的"异常处理"段提取，写在 `But` 子句
 - **Out of Scope 至少 2 项**：从原始素材的"框架阶段" / "后续迭代"段提取
-- **topic 命名用小写连字符**：`order-flow` ✓，`order_flow` ✗，`orderFlow` ✗
+- **topic 命名用小写连字符**：`checkout-flow` ✓，`order_flow` ✗，`orderFlow` ✗
 - **跨文件引用 PRD 用相对路径**：`../../prd/{date}-processed/{topic}.md`
 - **多仓项目 PRD 仍可写**：`Out of Scope` 段注明"前端 / 后端边界"，为后续 TD/Plan 留接口
 
@@ -192,9 +192,9 @@ User: /to-prd 2026-07-03
 Agent: [MODE: to-prd] (reading)
 Agent: 📂 读取 prd/2026-07-03/login-raw.md（1 个原始文件）
 Agent: 📋 读取 schema/prd.md
-Agent: 🔧 读取 AGENTS.md §1（关联 qipda + busyming-mpos-facade）
+Agent: 🔧 读取 AGENTS.md §1（关联 client + server）
 Agent: [MODE: to-prd] (extracting)
-Agent: 提炼 Why：用户登录是 POS 必备功能，当前无统一入口...
+Agent: 提炼 Why：用户登录是基础必备功能，当前无统一入口...
 Agent: 提炼 Goal：手机号+验证码登录，2s 内完成...
 Agent: 提炼 Scenarios：正常路径 + 验证码错误 + 网络异常
 Agent: 提炼 Out of Scope：第三方登录（仅手机号）

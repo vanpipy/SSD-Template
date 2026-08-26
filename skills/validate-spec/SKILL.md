@@ -42,7 +42,7 @@ skill-role: tool
 | 依赖 | 路径 | 用途 |
 |------|------|------|
 | Scripts | `scripts/check-md-schema.sh` / `check-traceability.sh` / `check-naming.sh` | 3 个校验脚本 |
-| 工作目录 | pos-wiki 仓根目录 | scripts 假设此位置 |
+| 工作目录 | SSD-Template 仓根目录 | scripts 假设此位置 |
 
 ## Core Concept
 
@@ -163,11 +163,11 @@ ls plan/{date}-{topic}/
 
 **症状**：`./scripts/check-md-schema.sh: line N: ... No such file`
 
-**原因**：当前工作目录不是 pos-wiki 仓根目录
+**原因**：当前工作目录不是 SSD-Template 仓根目录
 
 **处理**：
 ```bash
-cd /home/leroy/Project/pos-wiki
+cd 仓库根
 ./scripts/check-md-schema.sh
 ```
 

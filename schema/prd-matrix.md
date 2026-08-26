@@ -16,14 +16,14 @@
 
 | 关系 | 含义 | 示例 |
 |------|------|------|
-| **supersede** | A 替代 B (B 应标记 Deprecated) | `staff-login-v2 → staff-login-v1` |
-| **inherit** | A 继承自 B (A 复用 B 的部分场景) | `order-flow → user-auth` |
+| **supersede** | A 替代 B (B 应标记 Deprecated) | `login-v2 → login-v1` |
+| **inherit** | A 继承自 B (A 复用 B 的部分场景) | `checkout-flow → user-auth` |
 | **depend** | A 依赖 B (B 不完成 A 不能完成) | `checkout-flow → cart` |
 | **shared** | A 与 B 共享某子模块 | `mobile-cart ∩ desktop-cart` |
-| **conflict** | A 与 B 互斥 (不能同时启用) | `payment-method-A ↔ payment-method-B` |
+| **conflict** | A 与 B 互斥 (不能同时启用) | `method-A ↔ method-B` |
 | **relate** | A 与 B 相关 (无强依赖, 仅供参考) | `notifications ↔ user-profile` |
-| **split-from** | A 从 B 拆分出来 (B 太大被拆分) | `user-profile-sso + user-profile-avatar ← user-profile` |
-| **merge-into** | A 合并入 B (A 太小被合并) | `user-profile-avatar → user-profile-sso` |
+| **split-from** | A 从 B 拆分出来 (B 太大被拆分) | `profile-sso + profile-avatar ← profile` |
+| **merge-into** | A 合并入 B (A 太小被合并) | `profile-avatar → profile-sso` |
 
 ---
 
@@ -34,9 +34,9 @@
 
 | # | 节点 A | 关系 | 节点 B | 备注 |
 |---|--------|------|--------|------|
-| 1 | PRD-20260819-01 | inherit | PRD-20260805-03 | 复用了 SSO 设计 |
+| 1 | PRD-20260819-01 | inherit | PRD-20260805-03 | 复用了上游设计 |
 | 2 | PRD-20260820-04 | supersede | PRD-20260810-01 | 新版替代旧版 |
-| 3 | PRD-20260821-02 | depend | PRD-20260819-05 | 依赖订单模块 |
+| 3 | PRD-20260821-02 | depend | PRD-20260819-05 | 依赖上游模块 |
 ```
 
 ---

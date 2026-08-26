@@ -61,7 +61,7 @@ skill-role: procedure
 | Schema 模板 | `schema/tech_design/*.md` | 7 子文件结构 |
 | AGENTS.md | §1 仓库清单 + §1.2 跨仓引用约定 | 多仓上下文 |
 | 校验脚本 | `scripts/check-md-schema.sh` | 自动校验 |
-| Code 仓 | 关联的 code 仓（如 qipda + busyming-mpos-facade）| 跨仓引用前缀 |
+| Code 仓 | 关联的 code 仓（如 client + server）| 跨仓引用前缀 |
 
 ## Core Concept
 
@@ -130,9 +130,9 @@ sed -n '/^## 1\. /,/^## 2\. /p' AGENTS.md
 从 AGENTS.md §1 解析：
 
 ```
-仓库清单: [qipda, busyming-mpos-facade]
-引用前缀: qipda/, busyming-mpos-facade/
-关联 AGENTS: ~/Project/qipda/AGENTS.md, ~/Project/busyming-mpos-facade/AGENTS.md
+仓库清单: [client, server]
+引用前缀: client/, server/
+关联 AGENTS: ~/Project/client/AGENTS.md, ~/Project/server/AGENTS.md
 ```
 
 把所有跨仓引用按 §1.2 格式化：
@@ -141,12 +141,12 @@ sed -n '/^## 1\. /,/^## 2\. /p' AGENTS.md
 # 错 ❌
 app/services/auth.ts
 api/facade/read/LoginServiceClient.java
-qipda 仓库
+client 仓库
 
 # 对 ✅
-qipda/app/services/auth.ts
-busyming-mpos-facade/api/facade/read/LoginServiceClient.java
-qipda (从 §1.1 仓库清单)
+client/app/services/auth.ts
+server/api/facade/read/LoginServiceClient.java
+client (从 §1.1 仓库清单)
 ```
 
 ### 4. Writing Phase
@@ -184,8 +184,8 @@ fi
 | 场景映射表漏 PRD 场景 | 全部 PRD Given/When/Then 必出现 |
 | 指标用模糊描述（"响应要快"）| 具体数字（P99 < 500ms）|
 | 外部接口无降级策略 | 每个外部调用必须有降级 |
-| 跨仓引用用裸路径（`app/services/auth.ts`）| 带仓库前缀（`qipda/app/services/auth.ts`）|
-| 跨仓引用口语化（"qipda 仓库"）| 用 §1.1 仓库清单名称 |
+| 跨仓引用用裸路径（`app/services/auth.ts`）| 带仓库前缀（`client/app/services/auth.ts`）|
+| 跨仓引用口语化（"client 仓库"）| 用 §1.1 仓库清单名称 |
 | 把数据用 `string` 泛指 | 用 TS / SQL / JSON Schema 具体类型 |
 | 错误码用 `4xx` 泛指 | 用具体值（`400` / `401` / `403`）|
 
@@ -236,13 +236,13 @@ grep "^## KD-" tech_design/{date}-{topic}/decisions.md
 | 术语 | data-model.md 写法 | api-contracts.md 写法 |
 |------|---------------------|------------------------|
 | 用户 | User | user |
-| 订单 | Order | order |
-| 店铺 | Shop | shop |
+| 商品 | Item | item |
+| 商家 | Merchant | merchant |
 ```
 
 ### Q5：跨仓引用没自动带前缀
 
-**症状**：api-contracts.md 写 `app/services/auth.ts`，应写 `qipda/app/services/auth.ts`
+**症状**：api-contracts.md 写 `app/services/auth.ts`，应写 `client/app/services/auth.ts`(对应 §1.1 B 行的本地路径)
 
 **排查**：检查是否读 AGENTS.md §1（injecting-context phase）
 
@@ -254,7 +254,7 @@ grep "^## KD-" tech_design/{date}-{topic}/decisions.md
 - **场景映射完整性**：PRD 每个 Given/When/Then 必出现，否则 Plan 验证用例会缺
 - **指标具体数字**：`P99 < 500ms` ✓，`响应快` ✗
 - **降级策略覆盖**：每个外部接口都有降级（触发条件 + 行为 + 影响）
-- **多仓项目**：跨仓引用从 §1.1 读前缀，不要硬编码"qipda/"
+- **多仓项目**：跨仓引用从 §1.1 读前缀，不要硬编码"client/"
 - **interactions.md 条件触发**：不强制创建，README 显式声明跳过即可
 - **Tech Design 状态**：v3 用 `Ready`（不是 `Implemented`/`Active`）
 
@@ -267,11 +267,11 @@ User: /to-tech-design prd/2026-07-03-processed/login.md
 Agent: [MODE: to-tech-design] (reading)
 Agent: 📂 读取 prd/2026-07-03-processed/login.md
 Agent: 📋 读取 schema/tech_design/*.md (7 个模板)
-Agent: 🔧 读取 AGENTS.md §1 (仓库: qipda + busyming-mpos-facade)
+Agent: 🔧 读取 AGENTS.md §1 (仓库: client + server)
 Agent: [MODE: to-tech-design] (structuring)
 Agent: 设计 7 子文件骨架：KD-1 (会话存储) / KD-2 (Token 刷新策略)
 Agent: [MODE: to-tech-design] (injecting-context)
-Agent: 跨仓引用前缀: qipda/, busyming-mpos-facade/
+Agent: 跨仓引用前缀: client/, server/
 Agent: [MODE: to-tech-design] (writing)
 Agent: ✅ 写 7 子文件到 tech_design/2026-07-03-login/
 Agent: [MODE: to-tech-design] (validating)
@@ -281,13 +281,13 @@ Agent: 🟢 check-md-schema.sh 返回 0
 ### Complex (多仓)
 
 ```
-User: /to-tech-design prd/2026-07-03-processed/order-flow.md
-Agent: PRD 涉及订单全链路,前后端都有变更
+User: /to-tech-design prd/2026-07-03/checkout-flow.md
+Agent: PRD 涉及全链路,前后端都有变更
 Agent: 设计骨架:
-  - KD-1: 订单状态机(前端维护 vs 后端控制)→ qipda 维护 UI 状态,busyming-mpos-facade 维护业务状态
-  - data-model: 3 个实体 (Order / OrderItem / Payment)
+  - KD-1: 状态机(前端维护 vs 后端控制)→ client 维护 UI 状态,server 维护业务状态
+  - data-model: 3 个实体 (Cart / CartItem / Payment)
   - api-contracts: 5 个端点
-    - POST qipda/app/services/order.ts → busyming-mpos-facade/api/controller/OrderController.java
+    - POST client/app/services/cart.ts → server/api/controller/CartController.java
 Agent: 跨仓引用自动按 §1.1 格式化
 ```
 

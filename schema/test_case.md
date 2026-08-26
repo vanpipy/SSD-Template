@@ -14,7 +14,7 @@
 | **主题** | `{topic}` | 测试用例主题, 与目录/文件名一致 |
 | **业务产品** | `[产品名]` | 哪个业务产品 (POS / ERP / CRM / ...) |
 | **目标平台** | `[Web / iOS / Android / 服务端 / 跨端]` | 测试运行平台 |
-| **来源** | `[prd/{date}/{topic}.md]` | 上游 PRD 路径 (仓内) 或 URL (仓外, 如 yuque) |
+| **来源** | `[prd/{date}/{topic}.md]` | 上游 PRD 路径 (仓内) 或 URL (仓外, 如 wiki/doc 系统) |
 | **来源 Tech Design** | `[tech_design/{date}-{topic}/README.md]` | 上游 Tech Design 路径 (可选) |
 | **来源 Plan** | `[plan/{date}-{topic}/{topic}.md]` | 上游 Plan 路径 (可选) |
 | **生成日期** | {YYYY-MM-DD} | 首次生成日期 |
