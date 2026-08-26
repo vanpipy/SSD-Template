@@ -9,13 +9,13 @@
 #   T5. 引用类型一致性 (引用类型只有 KD / V / FR / SYS / MOD 5 种, 已简化为 no-op)
 #   T9. test_cases 元信息上游引用存在性 (来源/Tech Design/Plan 行中的仓内路径, test_cases 目录存在才校验)
 #   T11. Plan 元信息「参考 Test Cases」引用存在性 (可选行, 填了才校验)
+#   T12. 跨层级联一致性 (父 PRD/TD Deprecated → 下游 TD/Plan 应同步降级; 通用项目级 state machine 一致性, 与 PRDS.md / README 矩阵无关)
 #
-# POS 专属检查 (与 PRDS.md 台账 / README 关联矩阵 / 跨层级联 相关) 不适用于 SSD-Template 通用模板, 不引入:
+# POS 专属检查 (与 PRDS.md 台账 / README 关联矩阵 / 跨仓 PR 编号 相关) 不适用于 SSD-Template 通用模板, 不引入:
 #   T6. PRDS.md 台账段 PRD-ID 唯一性
 #   T7. README 关联矩阵关系边表节点标识存在性 + 关系类型枚举
 #   T8. supersede 边 ↔ Deprecated 状态一致性
 #   T10. README TEST-ID 唯一性 + 登记行路径存在性
-#   T12. 跨层级联一致性 (上游 PRD/TD Deprecated, 下游应级联降级)
 #   T13. 新 PRD 关系边评估提示
 #
 # 用法:
@@ -235,6 +235,97 @@ while IFS= read -r pf; do
     esac
   done <<< "$refs"
 done < <(find plan -mindepth 2 -maxdepth 2 -type f -name '*.md' 2>/dev/null | sort)
+
+
+# --- T12: 跨层级联一致性 (父 PRD/TD Deprecated → 下游 TD/Plan 应同步降级) ---
+# 状态提取: 读文件首 30 行匹配 `> **状态**: Draft|Ready|Implemented|Deprecated` 模式
+# 通用项目级校验: 与 PRDS.md 台账 / README 关联矩阵无关, 任何用 state machine 的项目都适用
+get_state() {
+  local f="$1"
+  awk '/^> ?\*\*状态\*\*:?[ \t]*(Draft|Ready|Implemented|Deprecated)/ {
+    for (i=1; i<=NF; i++) if ($i ~ /^(Draft|Ready|Implemented|Deprecated)([|[:space:]]|$)/) { print $i; exit }
+  }' "$f"
+}
+
+# 路径规整: 仓内相对路径 (统一锚点, 避免相对/绝对混用导致 lookup miss)
+to_repo_rel() {
+  local abs="$1"
+  if command -v realpath >/dev/null 2>&1; then
+    realpath --relative-to=. "$abs" 2>/dev/null || echo "$abs"
+  else
+    local pwd_prefix
+    pwd_prefix="$(pwd)/"
+    if [[ "$abs" == "$pwd_prefix"* ]]; then
+      echo "${abs#$pwd_prefix}"
+    else
+      echo "$abs"
+    fi
+  fi
+}
+
+# 缓存: 路径 → 状态 (避免重复 IO)
+declare -A prd_states
+declare -A td_states
+while IFS= read -r pf; do
+  rel="${pf#./}"
+  prd_states["$rel"]="$(get_state "$pf")"
+done < <(find prd -mindepth 2 -maxdepth 2 -type f -name '*.md' 2>/dev/null | sort)
+while IFS= read -r td_dir; do
+  rel="${td_dir#./}"
+  tf="$td_dir/README.md"
+  td_states["$rel"]="$(get_state "$tf" 2>/dev/null)"
+done < <(find tech_design -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+
+# 检查 TD: 父 PRD Deprecated → TD 应同步
+while IFS= read -r td_dir; do
+  tf="$td_dir/README.md"
+  [[ -f "$tf" ]] || continue
+  prd_link=$(grep -oE '\.\./\.\./prd/[a-zA-Z0-9/_-]+\.md' "$tf" 2>/dev/null | head -1 || true)
+  [[ -z "$prd_link" ]] && continue
+  prd_abs="$(cd "$td_dir" && cd "$(dirname "$prd_link")" 2>/dev/null && pwd)/$(basename "$prd_link")" || continue
+  prd_rel="$(to_repo_rel "$prd_abs")"
+  parent_state="${prd_states[$prd_rel]:-}"
+  self_state="$(get_state "$tf")"
+  if [[ "$parent_state" == "Deprecated" && "$self_state" != "Deprecated" ]]; then
+    echo -e "${YELLOW}⚠${NC} $tf — 父 PRD 已 Deprecated ($prd_rel), TD 未同步降级 (当前: ${self_state:-未声明})"
+    errors=$((errors+1))
+  fi
+done < <(find tech_design -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+
+# 检查 Plan: 父 PRD 或父 TD Deprecated → Plan 应同步
+while IFS= read -r plan_dir; do
+  dir_base=$(basename "$plan_dir")
+  topic_name="${dir_base#[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-}"
+  pf="$plan_dir/${topic_name}.md"
+  [[ -f "$pf" ]] || continue
+  self_state="$(get_state "$pf")"
+
+  # 父 PRD
+  prd_link=$(grep -oE '\.\./\.\./prd/[a-zA-Z0-9/_-]+\.md' "$pf" 2>/dev/null | head -1 || true)
+  if [[ -n "$prd_link" ]]; then
+    prd_abs="$(cd "$plan_dir" && cd "$(dirname "$prd_link")" 2>/dev/null && pwd)/$(basename "$prd_link")" || true
+    if [[ -n "${prd_abs:-}" ]]; then
+      prd_rel="$(to_repo_rel "$prd_abs")"
+      parent_state="${prd_states[$prd_rel]:-}"
+      if [[ "$parent_state" == "Deprecated" && "$self_state" != "Deprecated" ]]; then
+        echo -e "${YELLOW}⚠${NC} $pf — 父 PRD 已 Deprecated ($prd_rel), Plan 未同步降级 (当前: ${self_state:-未声明})"
+        errors=$((errors+1))
+      fi
+    fi
+  fi
+
+  # 父 TD
+  td_link=$(grep -oE '\.\./\.\.?/tech_design/[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9_-]+' "$pf" 2>/dev/null | head -1 || true)
+  if [[ -n "$td_link" ]]; then
+    td_dirname=$(basename "$td_link")
+    td_path="tech_design/$td_dirname"
+    parent_state="${td_states[$td_path]:-}"
+    if [[ "$parent_state" == "Deprecated" && "$self_state" != "Deprecated" ]]; then
+      echo -e "${YELLOW}⚠${NC} $pf — 父 TD 已 Deprecated ($td_path), Plan 未同步降级 (当前: ${self_state:-未声明})"
+      errors=$((errors+1))
+    fi
+  fi
+done < <(find plan -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
 
 
 # --- 总结 ---
