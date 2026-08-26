@@ -155,7 +155,7 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的
 |------|------|------|------|------|
 | Step 0: 收集原始需求 | 外部输入 | 原始素材 | (只读) | `prd/{YYYY-MM-DD}/` 或 `material/{YYYY-MM-DD}/` (可选) |
 | Step 1: 加工为 PRD | `/to-prd <date>` | PRD | Ready | `prd/{date}/{topic}.md` (无 `-processed` 后缀) |
-| Step 2: PRD → Tech Design | `/to-tech-design <prd-path>` | Tech Design(v3 6 文件 / v4 4 文件) | Ready | `tech_design/{date}-{topic}/` |
+| Step 2: PRD → Tech Design | `/to-tech-design <prd-path>` | Tech Design(v3 6 必填+1 条件 / v4 4) | Ready | `tech_design/{date}-{topic}/` |
 | Step 3: Tech Design → Plan | `/to-plan <tech-design-dir>` | Plan | Ready | `plan/{date}-{topic}/{topic}.md` |
 | Step 4: TDD 执行(仅 ≥1 外部代码仓) | Plan | 代码 + 测试 | Ready → Implemented | 外部代码仓 |
 
