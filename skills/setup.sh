@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup.sh — 注册 pos-wiki skills 到各种 agent 的 skills 目录
+# setup.sh — 注册 SSD-Template skills 到各种 agent 的 skills 目录
 #
 # 默认注册到:
 #   ~/.claude/skills/    (Claude Code)
@@ -8,9 +8,9 @@
 #   ~/.cursor/skills/    (Cursor, 如存在)
 #
 # 用法:
-#   bash pos-wiki/skills/setup.sh                    # 注册到默认目录
-#   bash pos-wiki/skills/setup.sh --unregister       # 注销已注册 symlink
-#   bash pos-wiki/skills/setup.sh --target <dir>     # 注册到指定目录
+#   bash SSD-Template/skills/setup.sh                # 注册到默认目录
+#   bash SSD-Template/skills/setup.sh --unregister   # 注销已注册 symlink
+#   bash SSD-Template/skills/setup.sh --target <dir> # 注册到指定目录
 
 set -euo pipefail
 
