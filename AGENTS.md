@@ -284,6 +284,7 @@ bash <repo>/skills/setup.sh --target <dir>   # 注册到指定目录
 | 某功能的需求 | `prd/{YYYY-MM-DD}/{topic}.md` (新约定, 无 `-processed`) |
 | 某功能的设计 | `tech_design/{YYYY-MM-DD}-{topic}/` |
 | 某功能的实施计划 | `plan/{YYYY-MM-DD}-{topic}/{topic}.md` |
+| 某功能的测试用例(可选) | `test_cases/{YYYY-MM-DD}/{topic}.md`(层概览见 `test_cases/README.md`) |
 | 历史参考(已弃用方案) | `legacy/` |
 
 ---
