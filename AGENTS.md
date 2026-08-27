@@ -150,6 +150,8 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的
 > Step 0(收集原始需求) + Step 1(加工为 PRD) + Step 2(PRD → Tech Design) + Step 3(Tech Design → Plan) + Step 4(TDD 执行)
 >
 > **本项目 0 代码仓库,Step 4 (TDD) 跳过**——规格进入 `Ready` 终态即"完成"。
+>
+> **Layer 4 (`test_cases/`)** 是可选质量层,启用时通过 `/to-test-cases` 生成黑盒用例,作为 Plan V 用例的参考比照对象。
 
 | 步骤 | 输入 | 输出 | 状态 | 位置 |
 |------|------|------|------|------|
@@ -158,11 +160,13 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的
 | Step 2: PRD → Tech Design | `/to-tech-design <prd-path>` | Tech Design(v3 6 必填+1 条件 / v4 4) | Ready | `tech_design/{date}-{topic}/` |
 | Step 3: Tech Design → Plan | `/to-plan <tech-design-dir>` | Plan | Ready | `plan/{date}-{topic}/{topic}.md` |
 | Step 4: TDD 执行(仅 ≥1 外部代码仓) | Plan | 代码 + 测试 | Ready → Implemented | 外部代码仓 |
+| Layer 4(可选) 测试用例 | `/to-test-cases <prd-path> <td-dir>` | Test Cases(主/冒烟/要点) | Draft → Ready → Implemented | `test_cases/{date}/{topic}.md` |
 
 > 0 代码仓库时,规格完成(`Ready`)即终态,无 `Implemented` 回写。
 > **不产出 Draft 状态**——`to-prd` / `to-tech-design` / `to-plan` skill 完成后直接设 `Ready`。
-> 详细调用示例见 §3.7,Skill 注册见 §3.8。
-> **可选层**: `material/`(Layer 0 素材区)、`test_cases/`(Layer 4 质量层) 仅在项目启用时存在;不存在则跳过对应校验。
+> **Layer 4 例外**: Test Cases 初始产出 `Draft`,评审通过 + 要点伴生就位后升 `Ready`(见 §3.3)。
+> 详细调用示例见 §3.6,Skill 注册见 §3.7。
+> **可选层**: `material/`(Layer 0 素材区)、`test_cases/`(Layer 4 质量层)、`test-business/`(业务知识库) 仅在项目启用时存在;不存在则跳过对应校验。
 
 ### 3.2 命名规范
 
@@ -172,6 +176,7 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的
 - `tech_design/{YYYY-MM-DD}-{topic}/` — 日期 + topic 子文件夹
 - `plan/{YYYY-MM-DD}-{topic}/{topic}.md` — 日期 + topic 子文件夹 + 单文件
 - `test_cases/{YYYY-MM-DD}/{topic}.md` — 可选 Layer 4 质量层(项目启用时存在;允许 `-smoke` / `-key-points` 后缀)
+- `test-business/{product}/` — 可选业务知识库(`/to-test-cases` Step 2 自动创建;积累业务规则 + 已知陷阱 + 系统特定测试点)
 
 **topic 规则**:
 - 使用**小写连字符**
@@ -193,8 +198,10 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的
 | PRD | Draft | Ready | Step 1 完成所有门禁清单 |
 | Tech Design | Draft | Ready | Step 2 完成所有门禁清单 |
 | Plan | Draft | Ready | Step 3 完成所有门禁清单 |
+| Test Cases(可选) | Draft | Ready → Implemented | `/to-test-cases` 产出 Draft,评审通过 + `{topic}-key-points.md` 伴生 → Ready;执行通过 → Implemented(由 `/sync-status` 编排) |
 
-> **0 代码仓库**: 无 `Implemented` 终态。规格 Ready 即"完成"。
+> **0 代码仓库**: 无 `Implemented` 终态(规格侧)。规格 Ready 即"完成"。
+> Test Cases 状态由 `/sync-status` 编排(Implemented 回写 / Deprecated 级联 / 复审回退 Draft),独立于三件套生命周期。
 
 ### 3.4 门禁清单 (wiki 视角)
 
@@ -208,8 +215,9 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的
 | PRD | `schema/prd.md` 全文 | `/validate-spec` |
 | Tech Design | `schema/tech_design/README.md` + 6 子文件 | `/validate-spec` |
 | Plan | `schema/plan.md` 完成检查段 | `/validate-spec` |
+| Test Cases(可选) | `schema/test_case.md` 全文 | `/validate-spec`(目录存在时才校验) |
 
-**调用方式**:三件套 Ready 前,跑 `validate-spec` skill(自动跑全部 3 个 scripts),全部 `✓` 方可标 Ready。
+**调用方式**:三件套 Ready 前,跑 `validate-spec` skill(自动跑全部 3 个 scripts),全部 `✓` 方可标 Ready。Test Cases Ready 前同样跑一次(目录存在时)。
 
 ### 3.5 禁止行为
 
@@ -237,6 +245,19 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用 B / C 的
 /validate-spec
 ```
 
+> **Layer 4(可选)**——Test Cases 与状态编排:
+
+```bash
+# Test Cases: PRD + TD → 黑盒用例
+/to-test-cases <prd-path> <tech-design-dir>   # 例: /to-test-cases prd/2026-07-03/login.md tech_design/2026-07-03-login/
+
+# 状态编排:Implemented 回写 / Deprecated 级联 / 复审回退 Draft
+/sync-status implement <plan-path>           # 三件套 Implemented 回写
+/sync-status deprecate <prd-or-td-path>      # Deprecated 级联
+/sync-status rollback <prd-path>             # 复审回退 Draft
+/sync-status test-done <test-case-path>      # Test Cases Ready → Implemented
+```
+
 ### 3.7 Skill 注册
 
 skills 通过 `setup.sh` 注册到 agent 的 skills 目录(支持 claude / qoder / pi / cursor):
@@ -247,13 +268,13 @@ bash <repo>/skills/setup.sh --unregister     # 注销所有
 bash <repo>/skills/setup.sh --target <dir>   # 注册到指定目录
 ```
 
-注册后 agent 可识别 `/to-prd` / `/to-tech-design` / `/to-plan` / `/validate-spec` 命令。
+注册后 agent 可识别 `/to-prd` / `/to-tech-design` / `/to-plan` / `/validate-spec` / `/to-test-cases` / `/sync-status` 命令。
 
 ### 3.8 快速定位文件
 
 | 需要什么 | 去哪里找 |
 |----------|----------|
-| **执行工作流**(首选) | `skills/{to-prd,to-tech-design,to-plan,validate-spec}/SKILL.md` ★ |
+| **执行工作流**(首选) | `skills/{to-prd,to-tech-design,to-plan,validate-spec,to-test-cases,sync-status}/SKILL.md` ★ |
 | Skill 注册到 agent | `skills/setup.sh`(注册到 `~/.claude/skills/` 等) |
 | PRD 模板 | `schema/prd.md` |
 | Tech Design 模板 | `schema/tech_design/` (7 个子模板) |
