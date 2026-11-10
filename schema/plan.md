@@ -2,7 +2,7 @@
 
 > **状态**: Draft | Ready | Implemented
 > **来源 Tech Design**: [../tech_design/{YYYY-MM-DD}-{topic}/](../tech_design/{YYYY-MM-DD}-{topic}/README.md)
-> **来源 PRD**: [../../prd/{YYYY-MM-DD}-processed/{topic}.md](../../prd/{YYYY-MM-DD}-processed/{topic}.md)
+> **来源 PRD**: [../../prd/{YYYY-MM-DD}/{topic}.md](../../prd/{YYYY-MM-DD}/{topic}.md)
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
@@ -87,7 +87,7 @@ sequenceDiagram
 | 关键决策 | KD-{n} | `../tech_design/{topic}/decisions.md` | [ ] | Change #1 |
 | 时序图 | SYS-{n} | `../tech_design/{topic}/interactions.md` | [ ] | V-{n} |
 | 时序图 | MOD-{n} | `../tech_design/{topic}/interactions.md` | [ ] | V-{n} |
-| PRD 需求 | FR-XXX | `../../prd/{date}-processed/{topic}.md` | [ ] | V-{n} |
+| PRD 需求 | FR-XXX | `../../prd/{date}/{topic}.md` | [ ] | V-{n} |
 | 验证用例 | V-{n} | 本文件 | [ ] | Change #1 |
 
 **对账规则**:

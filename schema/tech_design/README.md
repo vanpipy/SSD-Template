@@ -1,7 +1,7 @@
 # Tech Design: {topic} (Index)
 
 > **状态**: Draft | Ready | Implemented
-> **来源 PRD**: [../../prd/{YYYY-MM-DD}-processed/{topic}.md](../../prd/{YYYY-MM-DD}-processed/{topic}.md)
+> **来源 PRD**: [../../prd/{YYYY-MM-DD}/{topic}.md](../../prd/{YYYY-MM-DD}/{topic}.md)
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
@@ -42,7 +42,7 @@
 - [ ] 摘要清晰,2-3 句话讲清楚方案
 - [ ] 必填文件全部存在且门禁清单通过
 - [ ] `interactions.md` 门禁清单已检查(创建或显式跳过,并在此处注明)
-- [ ] 所有跨文件引用 (KD, V, FR, SC, SYS, MOD) 已对账
+- [ ] 所有跨文件引用 (KD, V, FR, SYS, MOD) 已对账
 - [ ] 状态从 `Draft` 改为 `Ready`
 
 ---
