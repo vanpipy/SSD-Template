@@ -7,16 +7,21 @@
 #   T3. Plan KD-{n} 引用闭环 (每个 KD 在 TD 中存在: v4 ards.md / 存量 v3 decisions.md)
 #   T4. Plan Change #N ↔ V-{n} 双向引用闭环 (v3 Plan 严格: 每个 Change 至少 1 个 V,每个 V 至少 1 处 Change 关联; v2 仅查 Change 标题)
 #   T5. 引用类型一致性 (引用类型只有 KD / V / FR / SYS / MOD 5 种, 已简化为 no-op)
+#   T6. 台账 ID 唯一性 + ID 格式 (批次台账文件含 `## PRD台账` 段才校验; 见 schema/prd-ledger.md)
+#   T7. README 关系边表节点标识存在性 + 关系类型枚举 (8 类, 见 schema/prd-matrix.md)
+#   T8. supersede 边 ↔ Deprecated 状态一致性 (双向)
 #   T9. test_cases 元信息上游引用存在性 (来源/Tech Design/Plan 行中的仓内路径, test_cases 目录存在才校验)
+#   T10. README 用例登记表 TEST-ID 唯一性 + 登记行路径存在性
 #   T11. Plan 元信息「参考 Test Cases」引用存在性 (可选行, 填了才校验)
-#   T12. 跨层级联一致性 (父 PRD/TD Deprecated → 下游 TD/Plan 应同步降级; 通用项目级 state machine 一致性, 与 PRDS.md / README 矩阵无关)
+#   T12. 跨层级联一致性 (父 PRD/TD Deprecated → 下游 TD/Plan 应同步降级; 通用项目级 state machine 一致性, 与台账 / README 矩阵无关)
+#   T13. 新 PRD 关系边评估提示 (仅信息性, 不计违规)
 #
-# POS 专属检查 (与 PRDS.md 台账 / README 关联矩阵 / 跨仓 PR 编号 相关) 不适用于 SSD-Template 通用模板, 不引入:
-#   T6. PRDS.md 台账段 PRD-ID 唯一性
-#   T7. README 关联矩阵关系边表节点标识存在性 + 关系类型枚举
-#   T8. supersede 边 ↔ Deprecated 状态一致性
-#   T10. README TEST-ID 唯一性 + 登记行路径存在性
-#   T13. 新 PRD 关系边评估提示
+# 条件启用 (可选层, 缺失即跳过, 模板自身零实例 → 零违规):
+#   T6  台账文件: material/{date}/*.md 或 prd/{date}/*.md 中含 `## PRD台账` 段的批次台账
+#   T7/T8/T13  关联矩阵: 根 README.md 的 `## PRD关联矩阵` → `### 关系边表`
+#   T10  用例登记表: 根 README.md 中含 TEST-ID 的表格行
+#
+# 实现块标记统一置于行首 (`# --- T{n}`), 便于机器扫描「头部承诺 → 实现兑现」的覆盖度。
 #
 # 用法:
 #   ./scripts/check-traceability.sh
@@ -45,7 +50,7 @@ checked=0
 # 优化: 移除逐行读取（对 50+ 文件极慢），改为文件计数
 file_count=$(find prd tech_design plan -type f -name "*.md" 2>/dev/null | wc -l)
 
-# --- T1 + T3: PRD 场景覆盖 + Plan KD 闭环 ---
+# --- Plan 侧引用闭环 (T3 KD / T2 V / T4 Change↔V) ---
 while IFS= read -r plan_dir; do
   # 约定: plan/{date}-{topic}/{topic}.md — 文件名不含日期前缀
   dir_base=$(basename "$plan_dir")
@@ -66,7 +71,7 @@ while IFS= read -r plan_dir; do
   td_path="$(dirname "$plan_file")/$td_link"
   [[ ! -d "$td_path" ]] && td_path="${td_path%/*}"
 
-  # T3: KD 闭环 — v4 TD 锚点在 ards.md, 存量 v3 在 decisions.md (按存在性择一)
+# --- T3: KD 闭环 — v4 TD 锚点在 ards.md, 存量 v3 在 decisions.md (按存在性择一) ---
   kd_src=""
   if [[ -f "$td_path/ards.md" ]]; then
     kd_src="$td_path/ards.md"
@@ -83,7 +88,7 @@ while IFS= read -r plan_dir; do
     done < <(grep -oE 'KD-[0-9]+' "$plan_file" | sort -u)
   fi
 
-  # T2: V 闭环 — Plan 引用的 V-{n} 必须在"验证用例"段定义
+# --- T2: V 闭环 — Plan 引用的 V-{n} 必须在"验证用例"段定义 ---
   # lookbehind 排除 PV-001 等日志码的子串误匹配 (2026-08-07 pay-voice 演练发现)
   plan_vs=$(grep -oP '(?<![A-Za-z])V-[0-9]+' "$plan_file" | sort -u)
   while IFS= read -r v; do
@@ -94,7 +99,7 @@ while IFS= read -r plan_dir; do
     fi
   done <<< "$plan_vs"
 
-  # T4: Change ↔ V 双向引用闭环 — 支持 §1.5 多仓分组 (####) 和单仓 (###)
+# --- T4: Change ↔ V 双向引用闭环 — 支持 §1.5 多仓分组 (####) 和单仓 (###) ---
   #     v3 Plan (有 ## 变更索引): 严格双向
   #       正向: 每个 Change #N 段至少引用 1 个 V-{n}
   #       反向: 每个已定义 ### V-n: 至少被 1 处 Change 关联证据覆盖
@@ -327,6 +332,284 @@ while IFS= read -r plan_dir; do
   fi
 done < <(find plan -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
 
+
+# --- T6: 台账 ID 唯一性 + ID 格式 (可选层: 批次目录下的台账文件) ---
+# 台账列定义 (11 列) 与 ID 前缀约定 (PRD/TECH/TEST/PLAN) 见 schema/prd-ledger.md。
+LEDGER_ID_RE='^(PRD|TECH|TEST|PLAN)-[0-9]{8}-[0-9]{2}$'
+REL_TYPE_RE='^(supersede|inherit|depend|shared|conflict|relate|split-from|merge-into)$'
+# 实体文件节点标识: 仓内相对路径 (如 prd/{YYYY-MM-DD}/{topic}.md), 不含空格与 markdown 链接语法
+NODE_PATH_RE='^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$'
+
+# 台账文件发现: 只认批次目录 (material/{date}/*.md, prd/{date}/*.md) 与根 PRDS.md;
+# 层级 README (material/README.md 等) 不是台账, 不纳入。
+find_ledger_files() {
+  local out
+  out=$(find material prd -mindepth 2 -maxdepth 2 -type f -name '*.md' 2>/dev/null | sort)
+  if [[ -f PRDS.md ]]; then
+    out="${out}"$'\n'"PRDS.md"
+  fi
+  printf '%s\n' "$out"
+}
+
+# 提取 `## PRD台账` 段 (跳过围栏代码块内的同名标题)
+ledger_section() {
+  awk '
+    /^```/ { fence = !fence; next }
+    !fence && /^##[[:space:]]+PRD台账[[:space:]]*$/ { f=1; next }
+    !fence && f && /^#{1,6}[[:space:]]/ { exit }
+    f { print }
+  ' "$1" 2>/dev/null
+}
+
+# 由台账表头推算列号 (awk -F'|' 口径: 首个 '|' 之前为空字段, 故 # 列 = 2, ID 列 = 3)
+ledger_columns() {
+  awk -F'|' '
+    { id=0; st=0; mat=0
+      for (i=2; i<=NF-1; i++) {
+        c=$i; gsub(/^[ \t]+|[ \t]+$/,"",c)
+        if (c=="ID") id=i; else if (c=="状态") st=i; else if (c=="关联素材") mat=i
+      }
+      if (id) { printf "%d %d %d\n", id, (st?st:7), (mat?mat:9); exit } }
+  ' <<< "$1"
+}
+
+# 文档状态提取 (容忍 `> **状态**: X` 与 `**状态**: X` 两种写法)
+doc_state() {
+  local f="$1"
+  awk '/^[[:space:]]*>?[[:space:]]*\*\*状态\*\*/ {
+    if (match($0, /(Draft|Ready|Implemented|Deprecated)/)) { print substr($0, RSTART, RLENGTH); exit }
+  }' "$f" 2>/dev/null
+}
+
+declare -A ledger_id_owner=()    # 台账 ID → 所属台账文件
+declare -A ledger_id_state=()     # 台账 ID → 状态
+declare -A ledger_id_path=()      # 台账 ID → 关联素材解析出的仓内路径
+declare -A test_id_seen=()
+ledger_ready_ids=()
+ledger_deprecated_ids=()
+
+ledger_files=$(find_ledger_files)
+if [[ -n "$ledger_files" ]]; then
+  while IFS= read -r lf; do
+    [[ -n "$lf" && -f "$lf" ]] || continue
+    ledger_body=$(ledger_section "$lf")
+    [[ -z "$(grep -E '^\|' <<< "$ledger_body")" ]] && continue
+
+    cols=$(ledger_columns "$ledger_body")
+    if [[ -z "$cols" ]]; then
+      echo -e "${YELLOW}⚠${NC} $lf — 台账表未找到 \`ID\` 列, 跳过 ID 校验"
+      continue
+    fi
+    read -r id_col st_col mat_col <<< "$cols"
+    id_col="${id_col:-3}"; st_col="${st_col:-7}"; mat_col="${mat_col:-9}"
+    checked=$((checked+1))
+
+    while IFS= read -r row; do
+      [[ -z "$row" ]] && continue
+      lid=$(awk -F'|' -v c="$id_col" '{gsub(/^[ \t]+|[ \t]+$/,"",$c); print $c}' <<< "$row")
+      case "$lid" in
+        ""|"ID") continue ;;
+      esac
+      [[ "$lid" =~ ^:?-+:?$ ]] && continue
+      case "$lid" in *"["*|*"]"*) continue ;; esac
+
+      if [[ ! "$lid" =~ $LEDGER_ID_RE ]]; then
+        echo -e "${RED}✗${NC} $lf — 台账 ID 格式非法: '$lid' (期望 {PRD|TECH|TEST|PLAN}-{YYYYMMDD}-{NN})"
+        errors=$((errors+1))
+        continue
+      fi
+      if [[ -n "${ledger_id_owner[$lid]:-}" ]]; then
+        echo -e "${RED}✗${NC} $lf — 台账 ID 重复: $lid (已见于 ${ledger_id_owner[$lid]})"
+        errors=$((errors+1))
+        continue
+      fi
+      ledger_id_owner["$lid"]="$lf"
+
+      lst=$(awk -F'|' -v c="$st_col" '{gsub(/^[ \t]+|[ \t]+$/,"",$c); print $c}' <<< "$row")
+      ledger_id_state["$lid"]="$lst"
+      case "$lst" in
+        Ready) ledger_ready_ids+=("$lid") ;;
+        Deprecated) ledger_deprecated_ids+=("$lid") ;;
+      esac
+
+      # 关联素材 → 仓内路径 (用于台账 ID 与 PRD 实体文件关联; URL 与非 .md 不解析)
+      lmat=$(awk -F'|' -v c="$mat_col" '{gsub(/^[ \t]+|[ \t]+$/,"",$c); print $c}' <<< "$row")
+      lmat="${lmat//$'\x60'/}"
+      case "$lmat" in
+        ""|*://*) ;;
+        *.md)
+          cand=""
+          if [[ -f "$lmat" ]]; then
+            cand="$lmat"
+          elif [[ -f "$(dirname "$lf")/$lmat" ]]; then
+            cand="$(dirname "$lf")/$lmat"
+          fi
+          [[ -n "$cand" ]] && ledger_id_path["$lid"]="$cand"
+          ;;
+      esac
+    done < <(grep -E '^\|' <<< "$ledger_body")
+  done <<< "$ledger_files"
+fi
+
+# --- T7 + T8: README 关系边表节点标识存在性 + 关系类型枚举 + supersede ↔ Deprecated 一致性 ---
+# 关联矩阵为可选层: 根 README.md 含 `## PRD关联矩阵` → `### 关系边表` 才启用。
+# 关系类型 8 类见 schema/prd-matrix.md; 节点标识规范见 schema/prd-ledger.md (I-3)。
+matrix_enabled=false
+edge_section=""
+edge_rows=""
+if [[ -f README.md ]] && grep -qE '^##[[:space:]]+PRD关联矩阵' README.md; then
+  matrix_enabled=true
+  # 只取 `### 关系边表` 小节内容 (遇到下一个 `###`/`##` 标题即结束), 再剔除围栏内示例表。
+  edge_section=$(awk '
+    /^```/ { fence = !fence; next }
+    !fence && /^###[[:space:]]+关系边表[[:space:]]*$/ { e=1; next }
+    !fence && e && /^#{1,6}[[:space:]]/ { e=0 }
+    !fence && e { print }
+  ' README.md)
+  edge_rows=$(awk '/^\|/ {print}' <<< "$edge_section")
+fi
+
+if [[ "$matrix_enabled" == true && -n "$edge_rows" ]]; then
+  checked=$((checked+1))
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    [[ "$line" =~ ^[|][[:space:]]*:?-+ ]] && continue
+    node_a=$(awk -F'|' '{c=$3; gsub(/^[ \t]+|[ \t]+$/,"",c); gsub(/`/,"",c); print c}' <<< "$line")
+    rel=$(awk -F'|' '{c=$4; gsub(/^[ \t]+|[ \t]+$/,"",c); gsub(/`/,"",c); print c}' <<< "$line")
+    node_b=$(awk -F'|' '{c=$5; gsub(/^[ \t]+|[ \t]+$/,"",c); gsub(/`/,"",c); print c}' <<< "$line")
+    # 表头行与分隔行跳过
+    [[ "$node_a" == "节点 A" || "$node_a" == "节点A" ]] && continue
+    [[ -z "$node_a" && -z "$node_b" && -z "$rel" ]] && continue
+
+    # T7: 关系类型枚举 (8 类)
+    if [[ ! "$rel" =~ $REL_TYPE_RE ]]; then
+      echo -e "${RED}✗${NC} README.md 关系边表 — 非法关系类型: '$rel' (允许 8 类, 见 schema/prd-matrix.md)"
+      errors=$((errors+1))
+    fi
+
+    # T7: 节点标识存在性 (台账 ID 或仓内相对路径; 无法识别的形态只告警)
+    for node in "$node_a" "$node_b"; do
+      [[ -z "$node" ]] && continue
+      if [[ "$node" =~ $LEDGER_ID_RE ]]; then
+        if [[ -z "$ledger_files" ]]; then
+          echo -e "${YELLOW}⚠${NC} README.md 关系边表 — 台账层未启用 (无台账文件), 无法核对节点标识: $node"
+        elif [[ -z "${ledger_id_owner[$node]:-}" ]]; then
+          echo -e "${RED}✗${NC} README.md 关系边表 — 节点标识未在台账登记: $node"
+          errors=$((errors+1))
+        fi
+      elif [[ "$node" =~ $NODE_PATH_RE ]]; then
+        if [[ ! -e "$node" ]]; then
+          echo -e "${RED}✗${NC} README.md 关系边表 — 节点文件不存在: $node"
+          errors=$((errors+1))
+        fi
+      else
+        echo -e "${YELLOW}⚠${NC} README.md 关系边表 — 无法识别的节点标识: $node"
+      fi
+    done
+
+    # T8 正向: supersede A→B, 被替代者 B 必须是 Deprecated
+    #   B 可能是实体文件 (仓内路径) 或台账 ID (查台账状态列)
+    if [[ "$rel" == "supersede" ]]; then
+      if [[ "$node_b" =~ $NODE_PATH_RE && -f "$node_b" ]]; then
+        if [[ "$(doc_state "$node_b")" != "Deprecated" ]]; then
+          echo -e "${RED}✗${NC} README.md 关系边表 — $node_b 已被 $node_a 替代(supersede)但状态不是 Deprecated"
+          errors=$((errors+1))
+        fi
+      elif [[ "$node_b" =~ $LEDGER_ID_RE && -n "${ledger_id_owner[$node_b]:-}" ]]; then
+        if [[ "${ledger_id_state[$node_b]:-}" != "Deprecated" ]]; then
+          echo -e "${RED}✗${NC} README.md 关系边表 — $node_b 已被 $node_a 替代(supersede)但台账状态不是 Deprecated"
+          errors=$((errors+1))
+        fi
+      fi
+    fi
+  done <<< "$edge_rows"
+
+  # T8 反向: 已 Deprecated 的 PRD (实体文件或台账行) 必须有 supersede 边指向它
+  while IFS= read -r prd_f; do
+    [[ -f "$prd_f" ]] || continue
+    [[ "$(doc_state "$prd_f")" == "Deprecated" ]] || continue
+    if ! printf '%s\n' "$edge_rows" | awk -F'|' -v n="$prd_f" '
+      { gsub(/^[ \t]+|[ \t]+$/,"",$4); gsub(/^[ \t]+|[ \t]+$/,"",$5); gsub(/`/,"",$5)
+        if ($4=="supersede" && $5==n) found=1 }
+      END { exit found?0:1 }'; then
+      echo -e "${RED}✗${NC} $prd_f — 已 Deprecated 但 README 关系边表缺少指向它的 supersede 边"
+      errors=$((errors+1))
+    fi
+  done < <(find prd -mindepth 2 -maxdepth 2 -type f -name '*.md' 2>/dev/null | sort)
+
+  # T8 反向 (台账口径): 台账状态为 Deprecated 的 ID 必须有 supersede 边指向它
+  for did in "${ledger_deprecated_ids[@]:-}"; do
+    [[ -z "$did" ]] && continue
+    if ! printf '%s\n' "$edge_rows" | grep -qF "$did"; then
+      echo -e "${RED}✗${NC} README.md 关系边表 — 台账 ${did} 状态为 Deprecated 但无 supersede 边指向它"
+      errors=$((errors+1))
+    fi
+  done
+fi
+
+# --- T10: README 用例登记表 TEST-ID 唯一性 + 登记行路径存在性 ---
+# 用例登记表为可选层: 根 README.md 中首列 (或任一列) 含 TEST-ID 的表格行;
+# ID 格式 TEST-{YYYYMMDD}-{NN}。只扫表格行, 不扫正文散文。
+if [[ -f README.md ]]; then
+  test_rows=$(awk -F'|' '
+    /^```/ { fence = !fence; next }
+    !fence && /^\|/ {
+      for (i=2; i<=NF; i++) { c=$i; gsub(/^[ \t]+|[ \t]+$/,"",c); gsub(/`/,"",c); if (c ~ /^TEST-[0-9]/) { print; break } }
+    }' README.md)
+  if [[ -n "$test_rows" ]]; then
+    checked=$((checked+1))
+    while IFS= read -r row; do
+      [[ -z "$row" ]] && continue
+      tid=$(awk -F'|' '{for(i=2;i<=NF;i++){c=$i; gsub(/^[ \t]+|[ \t]+$/,"",c); gsub(/`/,"",c); if(c ~ /^TEST-/){print c; exit}}}' <<< "$row")
+      [[ -z "$tid" ]] && continue
+      if [[ ! "$tid" =~ ^TEST-[0-9]{8}-[0-9]{2}$ ]]; then
+        echo -e "${RED}✗${NC} README.md 用例登记表 — TEST-ID 格式非法: '$tid' (期望 TEST-{YYYYMMDD}-{NN})"
+        errors=$((errors+1))
+        continue
+      fi
+      if [[ -n "${test_id_seen[$tid]:-}" ]]; then
+        echo -e "${RED}✗${NC} README.md 用例登记表 — TEST-ID 重复: $tid"
+        errors=$((errors+1))
+      else
+        test_id_seen["$tid"]=1
+      fi
+      while IFS= read -r p; do
+        [[ -z "$p" ]] && continue
+        [[ "$p" == *"://"* ]] && continue
+        if [[ ! -e "$p" ]]; then
+          echo -e "${RED}✗${NC} README.md 用例登记表 — 登记行路径不存在: $p"
+          errors=$((errors+1))
+        fi
+      done < <(awk -F'|' '{for(i=2;i<=NF;i++){c=$i; gsub(/^[ \t]+|[ \t]+$/,"",c); gsub(/`/,"",c); if (c ~ /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/ && c ~ /\.md$/) print c}}' <<< "$row")
+    done <<< "$test_rows"
+  fi
+fi
+
+# --- T13: 新 PRD 关系边评估提示 (仅信息性, 不计违规) ---
+# Ready 的 PRD 若未出现在关系边表 → 提示评估关系 (独立主题可忽略), 不增加 errors。
+# 节点两种形态均覆盖: 实体文件路径 (prd/{date}/{topic}.md) 与台账 ID (PRD-{YYYYMMDD}-{NN})。
+if [[ "$matrix_enabled" == true ]]; then
+  new_no_edge=""
+  while IFS= read -r pf; do
+    [[ -f "$pf" ]] || continue
+    [[ "$(doc_state "$pf")" == "Ready" ]] || continue
+    if ! printf '%s\n' "$edge_rows" | grep -qF "$pf"; then
+      new_no_edge="$new_no_edge $pf"
+    fi
+  done < <(find prd -mindepth 2 -maxdepth 2 -type f -name '*.md' 2>/dev/null | sort)
+
+  # 台账口径: 状态为 Ready 的台账 ID 未出现在边表 → 同样提示
+  for rid in "${ledger_ready_ids[@]:-}"; do
+    [[ -z "$rid" ]] && continue
+    if ! printf '%s\n' "$edge_rows" | grep -qF "$rid"; then
+      new_no_edge="$new_no_edge $rid"
+    fi
+  done
+
+  if [[ -n "$new_no_edge" ]]; then
+    echo -e "${YELLOW}○${NC} T13 关系边评估提示 — 以下 Ready PRD 未出现在 README 关系边表 (独立主题可忽略; 如存在关系请登记边):${new_no_edge}"
+  fi
+fi
 
 # --- 总结 ---
 echo "---"

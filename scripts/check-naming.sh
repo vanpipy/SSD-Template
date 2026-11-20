@@ -8,7 +8,7 @@
 #   - plan/{YYYY-MM-DD}-{topic}/{topic}.md            (Layer 3, 文件名=目录 topic)
 #   - test_cases/{YYYY-MM-DD}/{topic}.md              (Layer 4, 可选 -smoke / -key-points 后缀, 目录存在才校验)
 #
-# topic 规则: 小写连字符 (lowercase-with-hyphens), 如 login / order-flow
+# topic 规则: 小写连字符 (lowercase-with-hyphens), 如 login / checkout-flow
 #
 # 用法:
 #   ./scripts/check-naming.sh                  # 检查整个仓库

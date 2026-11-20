@@ -1,0 +1,40 @@
+__pycache__/
+*.pyc
+
+# 实验工作期的临时探查产物 (不入库)
+.tmp-*
+
+# 实验工作期的可变运行态 (不入冻结提交)
+# baseline-commits.json 是**冻结文件**, 全程只读;
+# round-state.json 是 init 写的派生状态, 丢了可重跑重建。
+docs/efficacy/round-state.json
+
+# 实验期产出的轮次产物 (不入冻结提交)
+# 这些是**实验进行中**产生的观测记录, 不是冻结输入:
+#   rounds/<候选>-<臂>.checklist.md   该臂的验收检查表填写稿
+#   rounds/<候选>-<臂>.review.txt     该臂的人工评审记录
+#   rounds/<候选>-<臂>.measure.json   该臂的单轮观测量
+#   summary.json                      聚合结果 (SEI)
+# 冻结提交里定死的是**检查表模板** (docs/efficacy/checklists/*.checklist.md),
+# 那 10 份在冻结集内, 只读。两臂的填写稿是运行产物, 不进冻结集。
+# 不忽略的话, 一旦有人在冻结后跑一轮, 就会在冻结仓里落下未跟踪文件,
+# 冻结提交与工作区的差异就多出一块, 冻结状态不再可核对。
+docs/efficacy/rounds/
+docs/efficacy/summary.json
+
+# 实验期产出的门禁归档 (不入冻结提交)
+# 每轮每臂一份: docs/efficacy/gates/archives/<轮次>/<臂>/
+# 内容是那一轮那一臂的门禁产物副本 + manifest (归属元数据 + sha256)。
+# 性质与 rounds/ 相同: 实验进行中才产生, 冻结时还不存在, 不进冻结集。
+# 但 scripts/gate_archive.py 进冻结集 —— 它是「怎么归档」的约定, 属于尺子。
+docs/efficacy/gates/archives/
+
+# 实验期产出的规格产出 (不入冻结提交)
+# SSD 臂的 PRD / TD / Plan 落在 docs/efficacy/spec-output/<轮次>/<臂>/,
+# 供 T_spec_minutes 量耗时 (FORMULA.md §3.5.1)。
+# 性质同上: 实验进行中才产生, 不进冻结集。
+# 注意: 这是**产出**仓 (本仓 A), 不是需求真源仓 (merchandising-spec, 只读)。
+docs
+deep
+material
+

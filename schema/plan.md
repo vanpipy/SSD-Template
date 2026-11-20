@@ -1,8 +1,8 @@
 # Plan: {主题}
 
 > **状态**: Draft | Ready | Implemented
-> **来源 Tech Design**: [../tech_design/{YYYY-MM-DD}-{topic}/](../tech_design/{YYYY-MM-DD}-{topic}/README.md)
-> **来源 PRD**: [../../prd/{YYYY-MM-DD}-processed/{topic}.md](../../prd/{YYYY-MM-DD}-processed/{topic}.md)
+> **来源 Tech Design**: [../../tech_design/{YYYY-MM-DD}-{topic}/](../../tech_design/{YYYY-MM-DD}-{topic}/README.md)
+> **来源 PRD**: [../../prd/{YYYY-MM-DD}/{topic}.md](../../prd/{YYYY-MM-DD}/{topic}.md)
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
@@ -81,14 +81,19 @@ sequenceDiagram
 ## 跨文件引用对账 (Cross-Reference Reconciliation)
 
 > 验证本 Plan 引用的所有外部标识符**都存在且指向正确**——漏一个会导致实现走偏
+>
+> **路径深度**: Plan 位于 `plan/{YYYY-MM-DD}-{topic}/{topic}.md`, 到 `tech_design/` 是**两级**, 统一写 `../../tech_design/`。
+>
+> **代际自适应**: Tech Design 有 v4 / v3 两代, 按目录内文件存在性判定(存在 `ards.md` 或 `apis.md` → v4)。
+> 下表「来源」列同时给出两代落点, 按本 Plan 实际引用的 TD 代际勾选对应那一行。
 
 | 引用类型 | 标识 | 来源 | 已对账 | 备注 |
 |----------|------|------|--------|------|
-| 关键决策 | KD-{n} | `../tech_design/{topic}/decisions.md` | [ ] | Change #1 |
-| 时序图 | SYS-{n} | `../tech_design/{topic}/interactions.md` | [ ] | V-{n} |
-| 时序图 | MOD-{n} | `../tech_design/{topic}/interactions.md` | [ ] | V-{n} |
-| PRD 需求 | FR-XXX | `../../prd/{date}-processed/{topic}.md` | [ ] | V-{n} |
-| 验证用例 | V-{n} | 本文件 | [ ] | Change #1 |
+| 关键决策 | KD-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/ards.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/decisions.md` | [ ] | Change #1 |
+| 时序图 | SYS-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/apis.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/interactions.md` | [ ] | V-1 |
+| 时序图 | MOD-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/apis.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/interactions.md` | [ ] | V-1 |
+| PRD 需求 | FR-XXX | `../../prd/{YYYY-MM-DD}/{topic}.md` | [ ] | V-1 |
+| 验证用例 | V-1 | 本文件 | [ ] | Change #1 |
 
 **对账规则**:
 - 每一行都必须勾选 `[x]`
@@ -164,8 +169,8 @@ sequenceDiagram
 - [ ] **约束满足** — 业务约束 + 开发约束全部满足
 
 ### 引用层(对应"跨文件引用对账"表)
-- [ ] **KD 引用对账** — 所有 KD-{n} 在 `tech_design/{topic}/decisions.md` 中存在
-- [ ] **MOD/SYS 引用对账** — 所有时序图在 `tech_design/{topic}/interactions.md` 中存在
+- [ ] **KD 引用对账** — 所有 KD-{n} 在 `../../tech_design/{YYYY-MM-DD}-{topic}/ards.md` (v4) 或 `../../tech_design/{YYYY-MM-DD}-{topic}/decisions.md` (v3) 中存在
+- [ ] **MOD/SYS 引用对账** — 所有时序图在 `../../tech_design/{YYYY-MM-DD}-{topic}/apis.md` (v4) 或 `../../tech_design/{YYYY-MM-DD}-{topic}/interactions.md` (v3) 中存在
 - [ ] **V 引用闭环** — 每个 V 用例有对应 Change,每个 Change 至少 1 个 V
 
 ### 流程层

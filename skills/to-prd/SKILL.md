@@ -50,7 +50,7 @@ skill-role: procedure
 
 | 依赖 | 路径 | 用途 |
 |------|------|------|
-| Schema 模板 | `schema/prd.md` | PRD 结构定义（v3 状态用 Ready） |
+| Schema 模板 | `schema/prd.md` | PRD 结构定义（状态枚举 Draft / Ready / Implemented / Deprecated） |
 | AGENTS.md | `AGENTS.md` §1 | 注入多仓上下文（如 SSD-Template 关联 client + server） |
 | 校验脚本 | `scripts/check-md-schema.sh` | 自动校验产出 PRD |
 | 原始素材 | `prd/{YYYY-MM-DD}/*.md` | Layer 0 只读输入 |
@@ -114,14 +114,14 @@ skill-role: procedure
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 用 `Active` 状态字段 | 用 `Ready`（v3 术语） |
+| 用 `Active` 状态字段 | 用 `Ready`（`schema/prd.md` 状态枚举） |
 | 写模糊 Goal（"支持 XX"、"完成 XX"）| 写可观察 Goal（"输入手机号后，2s 内返回会员信息"） |
 | 只写正常场景 | 必须 ≥1 异常场景（`But` 子句） |
 | 省略 Out of Scope | ≥2 项明确不做 |
 | 修改 Layer 0 原始文件 | 只读，不动 |
 | 添加 schema 之外的章节 | 严格按 schema 5 段 |
 | 复审日期写 `{YYYY-MM-DD}` 占位符 | 写真实日期 |
-| 用旧字段名 `来源 Prd` | 用 v3 字段名 `来源 Raw` |
+| 用旧字段名 `来源 Prd` | 用现行字段名 `来源 Raw` |
 
 ## Troubleshooting
 
@@ -169,13 +169,13 @@ grep -nE '\{[A-Z][A-Z_-]+\}|\{[A-Z_-]+ [A-Z_-]+\}' prd/2026-07-03/{topic}.md
 
 **症状**：报 `AES-256` / `SHA-256` 等为非法引用
 
-**说明**：实际是业务值（AES-256 加密算法），不是引用。脚本在 v3 已简化 T5（只扫描白名单引用 KD/V/FR/SYS/MOD），不应再误报。
+**说明**：实际是业务值（AES-256 加密算法），不是引用。脚本已简化 T5（只扫描白名单引用 KD/V/FR/SYS/MOD），不应再误报。
 
-**处理**：如果是真实误报，把 T5 检查放回 `[[ -f scripts/check-traceability.sh ]] && ./scripts/check-traceability.sh`；如仍误报，检查脚本是否更新到 v3 双模式补丁。
+**处理**：如果是真实误报，把 T5 检查放回 `[[ -f scripts/check-traceability.sh ]] && ./scripts/check-traceability.sh`；如仍误报，检查脚本是否更新到双模式补丁。
 
 ## Tips
 
-- **PRD 状态字段**必填 `Ready`（v3 统一术语，与 schema/prd.md 一致）
+- **PRD 状态字段**必填 `Ready`（`schema/prd.md` 统一术语）
 - **Goal 项必须可观察**：避免"系统正常"、"响应快速"等模糊措辞
 - **Scenarios 至少 1 个异常**：从原始素材的"异常处理"段提取，写在 `But` 子句
 - **Out of Scope 至少 2 项**：从原始素材的"框架阶段" / "后续迭代"段提取
@@ -231,7 +231,7 @@ bash <repo>/skills/setup.sh
 
 ## Related Skills
 
-- `to-tech-design`：PRD → Tech Design（v3 7 子文件 / v4 4 子文件，opt-in 选代际）
+- `to-tech-design`：PRD → Tech Design（默认 v4 四子文件; v3 存量六子文件需显式 opt-in）
 - `to-plan`：Tech Design → Plan（强制按仓分组 Change）
 - `validate-spec`：跑全部校验脚本
 
@@ -239,6 +239,6 @@ bash <repo>/skills/setup.sh
 
 - <repo>/AGENTS.md §1（多仓上下文）
 - <repo>/AGENTS.md §3（三步工作流 Step 1）
-- <repo>/schema/prd.md（v3 模板）
-- <repo>/scripts/check-md-schema.sh（v3 双模式校验）
+- <repo>/schema/prd.md（PRD 模板）
+- <repo>/scripts/check-md-schema.sh（PRD / TD 双模式校验）
 - <repo>/HOW_TO_USE.md（完整工作流）
