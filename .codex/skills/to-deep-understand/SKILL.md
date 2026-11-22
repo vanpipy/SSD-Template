@@ -211,13 +211,13 @@ python3 scripts/deep-scan.py
 | 凭记忆写 SHA 或行号 | 锚点必须真实可解析; 拿不准就不写锚点 |
 | 写具体仓库目录名或专有系统名 | 用 AGENTS.md §1.1 的通用标识 |
 | 在本轮改 `prd/` / `tech_design/` / `plan/` 内容 | 本 skill 只写 `deep/` |
-| 跑 git commit/push | 产物何时提交由用户决定, 本 skill 不落 commit |
+| 跑 git commit/push | 产物何时提交由用户决定, 本 skill 不落 commit。**Symphony 编排路径**: 提交动作按仓根 `WORKFLOW.md` §8 执行 |
 
 ## 禁止行为 (Agent 权限边界)
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定 |
+| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定。**Symphony 编排路径例外**: 在 Symphony 给你的工作区 + `spec/{issue-identifier}-{topic}` 分支上, 按仓根 `WORKFLOW.md` §8 提交与推送是**授权动作**; 仍禁止 push 主分支 / merge / 伪造评审 |
 | 代答 `Q-{n}` 开放问题 | 登记问题, 等人工/产品确认 |
 | 编造 SHA / 行号 / handle / 专有系统名 | 锚点必须真实可解析; 拿不准就不写 |
 | 静默覆盖旧模型结论 | 登记 `C-{n}`, 双方保留 |

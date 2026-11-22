@@ -4,7 +4,7 @@ description: >-
   产出符合仓库约定的 commit message 并执行提交 (辅助工具, 不属于规格流水线)。Use when 需要把本次产出的规格文件提交进版本控制,
   或需要写一条带 Reviewed-by: trailer 的规范提交信息。格式为 <type>(<scope>): <摘要> + 正文 + Reviewed-by: + Issue:;
   Reviewed-by 的值只能取自产物文件 ## 复审 (Review) 段里人工填写的 > **评审人**, 产物仍是 Draft 时不写该 trailer。
-  agent 不得自行编造评审人 handle, 不得自行 push, 不做 PR 合并。
+  agent 不得自行编造评审人 handle; Symphony 编排路径下推送到本 issue 专用分支是授权动作(见下方硬规则与仓根 `WORKFLOW.md` §8), 仍不做 PR 合并。
 ---
 
 # commit
@@ -73,9 +73,8 @@ Issue: <issue 标识>
 
 1. **值的唯一来源**: 本次提交涉及的产物文件, 其 `## 复审 (Review)` 段里**人工填写**的 `> **评审人**`。
 2. **产物仍是 `Draft`（评审三行未由人工签署）时**:
-   - **不写 `Reviewed-by:` trailer**;
-   - 在 trailer 的位置写明「评审未签署, Reviewed-by 待人工回写」;
-   - 并在 workpad（`.symphony/workpad.md`）里记一条, 说明该提交尚无评审签署。
+   - **`Reviewed-by:` 整行不写**; commit message 里连这一行都不出现, 也不写 `Reviewed-by: 待人工回写` 这类占位;
+   - 并在 workpad（`.symphony/workpad.md`）里记一条: 「评审未签署, Reviewed-by 待人工回写」。
 3. **不得伪造**: agent 不得自行编造任何评审人 handle, 不得用 agent 自己的 handle 冒充评审, 也**不得从别的 issue 的产物里抄**评审人。
 4. **只出现在 commit message 里**: trailer **不得**写进产物文件的 `## 复审 (Review)` 段; 那会伪造评审痕迹, 使未签署的产物看起来已评审。
 5. **多个产物**各自评审人不同 ⇒ 逐行列出 (`Reviewed-by: a` / `Reviewed-by: b`), 每个值都来自各自产物的 Review 段。
@@ -107,7 +106,7 @@ git commit -F .git/COMMIT_EDITMSG.tmp
 | 把 `Reviewed-by:` 写进产物的 Review 段 | trailer 只出现在 commit message |
 | 产物仍是 `Draft` 时照写 trailer | 按硬规则第 2 条: 不写 trailer + workpad 记一条 |
 | `git add -A` | 显式列出本次产出的路径 |
-| `git push` | 只提交; 是否推送由人决定 |
+| `git push` | 只提交; 是否推送由人决定。**Symphony 编排路径**: 允许推送到 `spec/{issue-identifier}-{topic}` 分支(仓根 `WORKFLOW.md` §8); 禁止推主分支 / merge |
 | 建 PR / 合并 PR | 评审与合并由人完成 |
 | 自行翻 `Ready` / `Implemented` | 只写 `Draft` |
 | 留下 `{...}` 占位符 | 填真实值, 不适用就删整行 |

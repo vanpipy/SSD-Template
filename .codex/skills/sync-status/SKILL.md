@@ -147,7 +147,7 @@ T12 报「上游已 Deprecated 但本文档仍 Ready/Implemented」即漏级联�
 | 三件套分批回写 `Implemented` | 三层同时回写（一致性规则）|
 | 级联时删除/改写下游内容 | 只改状态行与备注, 内容保留待重审 |
 | 手改 `test_cases/_index.md` / README 统计块 | 跑对应脚本再生成 |
-| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定 |
+| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定。**Symphony 编排路径例外**: 在 Symphony 给你的工作区 + `spec/{issue-identifier}-{topic}` 分支上, 按仓根 `WORKFLOW.md` §8 提交与推送是**授权动作**; 仍禁止 push 主分支 / merge / 伪造评审 |
 | 修改 `schema/**` 下的模板 | 只读 `schema/` |
 
 ## Anti-Patterns

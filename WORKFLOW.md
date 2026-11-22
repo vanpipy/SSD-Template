@@ -34,6 +34,7 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
   model: MiniMax-M3.1-Flash
   api_key_env: MINIMAX_CN_API_KEY
   credentials_plugin: true
+  turn_timeout_ms: 2700000              # 单个 turn 的超时(45 min)。实测一个真实 turn > 15 min
 ---
 
 <!--
@@ -97,14 +98,14 @@ Symphony 工作契约 —— 仓根唯一真源。
 
 ## 3. 硬禁止
 
-以下 12 条**不可协商**,违反即视为本轮任务失败:
+以下 13 条**不可协商**,违反即视为本轮任务失败:
 
 1. **不写 `Implemented`,也不写 `Ready`。** 你的状态上限是 `Draft`(权威表见 §5)。
 2. **不自动合并 PR**:不调用 `gh pr merge`,不调用任何合并 API,不关闭 PR。合并是人的动作。
 3. **不改 `schema/**`**:模板是合同不是产物。唯一例外是 issue 显式要求「更新工作流规范」。
 4. **不改别人的产物**:只写本 issue 目标层、本 topic 的文件;不碰同层其它 topic,不碰其它层的既有文件。
 5. **不伪造评审**:不自己填 `> **评审人**` / `> **评审日期**` / `> **评审结论**`,不自己编 `Reviewed-by:` trailer,
-   不用自己的 handle 冒充人工评审。
+   不用自己的 handle 冒充人工评审,**也不写 `Reviewed-by: 待人工回写` 这类占位 trailer** —— 没签署就整行不写(§8)。
 6. **不伪造证据**:不编造 SHA、行号、仓库标识、handle。查不到就不写该锚点(见 §8)。
 7. **不留占位符**:`{topic}` `{YYYY-MM-DD}` `{github-handle}` `{n}` `{code}` 等模板占位符必须替换为真实内容,
    或把整行删掉。
@@ -114,6 +115,8 @@ Symphony 工作契约 —— 仓根唯一真源。
     与 `test_cases/_index.md` 的 `<!-- test-index:begin -->` … `<!-- test-index:end -->` 区间。
 11. **不自造状态名,不引入 `Implementing`** 之类的中间态:状态只有四个值(见 §5)。
 12. **不改契约文件**:`WORKFLOW.md` / `AGENTS.md` / `README.md` / `HOW_TO_USE.md` 默认不动,除非 issue 显式要求。
+13. **不越权写 git**:commit / push 只发生在 **Symphony 给你的这个工作区**与**本 issue 的专用分支**(`spec/{issue-identifier}-{topic}`)上;
+    不 push 到主分支、不 merge、不改全局 git 配置、不动工作区以外的仓库、不改 `scripts/**` 与门禁配置。
 
 ## 4. 目标层工作流
 
@@ -190,8 +193,10 @@ Symphony 工作契约 —— 仓根唯一真源。
 | `scripts/check-doc-links.py` | **每次都跑** | 仓内受版本控制的 Markdown 相对链接死链 |
 | `scripts/check-line-endings.sh` | **每次都跑** | 受版本控制的文本文件不得含 CR(行尾统一 LF) |
 | `scripts/check-repo-baseline.sh` | 仅 Layer 2(且仓内登记了关联代码仓时) | Tech Design `## 实现基线` 的 6 列快照 |
-| `scripts/sync-prd.sh --check` | 仓内启用了 PRD 台账时 | README 统计块与实际制品一致 |
-| `scripts/sync-test-index.sh --check` | 仅 Layer 4 | `test_cases/_index.md` 与用例元信息一致 |
+| `scripts/sync-prd.sh` | **每次都跑**(写模式, 幂等) | 机械登记 PRD 台账(可选层)+ 重生成根 README 统计块 |
+| `scripts/sync-prd.sh --check` | 只读复查 | 统计块 / 台账与实际制品一致 |
+| `scripts/sync-test-index.sh` | 启用 Layer 4 时跑(写模式, 幂等) | 重生成 `test_cases/_index.md` |
+| `scripts/sync-test-index.sh --check` | 只读复查 | 用例索引与用例元信息一致 |
 | `scripts/deep-scan.py` | 仅当仓内启用 `deep/` 底座时 | 理解底座台账 |
 
 执行规则:
@@ -203,6 +208,9 @@ Symphony 工作契约 —— 仓根唯一真源。
   **全仓所有层都没有制品** → 退出码 1(「本仓没有任何规格产物,门禁无从校验」)。
 - **缺下游层不是违规**:只有 PRD、或只有 PRD + TD 的仓必须能过追溯门禁;但**有下游却缺上游是违规**(例如有 Plan 却没有 TD)。
 - 跑门禁时带 `NO_COLOR=1`;需要机器消费时加 `--json`。
+- **统计块 / 台账 / 用例索引不一致**(`sync-prd.sh --check` 或 `sync-test-index.sh --check` 退出 1,提示「已过期」)→
+  跑**写模式** `bash scripts/sync-prd.sh`(或 `bash scripts/sync-test-index.sh`)重新生成, 再 `--check` 复查。
+  写模式是**幂等**的:同一份制品跑两次结果一致。**不得手改**统计块 / `_index.md` / 台账内容 —— 那是再生块,手改会被下一次写覆盖。
 - 修不动就**如实报告 exit 1 / exit 2 的原始输出**,不要伪造「已通过」。
 
 ## 7. 产出格式
@@ -228,6 +236,9 @@ Symphony 工作契约 —— 仓根唯一真源。
 **分支**:从主分支切出 `spec/{issue-identifier}-{topic}`(Symphony 工作区目录名 = issue 标识)。
 **只提交本层产物**:显式列出要加入版本控制的路径,不要 `git add -A`(工作区里可能有你的临时文件)。
 
+**作用域**:commit / push 只发生在 **Symphony 给你的这个工作区**与**本 issue 的专用分支**上 —— 这是 Symphony 自主运行的前提(评审方看的是 PR diff)。
+交互式会话里提交由人自己做,不要自行 commit。**禁止**:push 到主分支、merge、伪造评审签署、动工作区以外的仓库。
+
 **提交信息**格式:
 
 ```text
@@ -240,7 +251,8 @@ Issue: {{ issue.identifier }}
 ```
 
 - `Reviewed-by:` 的值**只能**取自产物文件 `## 复审 (Review)` 段里**人工填写的** `> **评审人**`。
-- 若复审三行尚未由人工签署(产物仍是 `Draft`):**不写 `Reviewed-by:` trailer**,并在 workpad 里说明这一点。
+- 若复审三行尚未由人工签署(产物仍是 `Draft`):**`Reviewed-by:` 整行不写** —— commit message 里连这一行都不要出现,
+  也不写 `Reviewed-by: 待人工回写` 这类占位;在 workpad 里说明「评审未签署, Reviewed-by 待人工回写」。
   **不要用 agent 自己的 handle 冒充评审**(§3 第 5 条)。
 - `Issue:` trailer 固定写当前 issue 标识。
 
@@ -259,8 +271,8 @@ Issue: {{ issue.identifier }}
    状态行是 `Draft`。
 2. **门禁全绿**:§6 中该层要求的脚本全部退出码 0。把**实际命令与退出码**写进 workpad。
    任何一个非 0,要么修好,要么(确实是环境问题)如实报告 exit 2 —— 不要把非 0 说成通过。
-3. **提交并推送**:分支 `spec/{issue-identifier}-{topic}` 上有且仅有本轮需要的提交;除 workpad 之类临时文件外,
-   工作区没有未提交的改动。
+3. **提交并推送**:在 Symphony 工作区的 `spec/{issue-identifier}-{topic}` 分支上有且仅有本轮需要的提交;
+   除 workpad 之类临时文件外,工作区没有未提交的改动。**不 push 主分支、不 merge**(§3 第 13 条)。
 4. **状态停在 `Draft`**,没有代写 `Ready` / `Implemented`。
 5. **汇报**:输出「产物路径 + 门禁命令与退出码 + 当前状态 + 遗留问题 + 需要人做什么(评审签署 / 合并 PR /
    回写 `Implemented`)」。

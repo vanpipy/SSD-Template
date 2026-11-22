@@ -186,14 +186,14 @@ LC_ALL=C.UTF-8 bash scripts/sync-prd.sh
 | 收敛台账行 / 产出 PRD | 那是 `.codex/skills/to-prd/SKILL.md` 的职责 |
 | 在本 skill 里写死某个外部平台的抓取逻辑 | 外部抓取交给**项目自定义 skill**; 模板零外部工具依赖 |
 | 用模板外的来源值（如具体平台名）| `来源` 只有 `local` / `external` / `internal` |
-| 跑 git commit/push | 本 skill 只改工作区文件 |
+| 跑 git commit/push | 本 skill 只改工作区文件。**Symphony 编排路径**: 提交动作按仓根 `WORKFLOW.md` §8 执行 |
 | 把台账行状态改成 `Ready` / `Implemented` | 台账只登记与 `Draft` 一致的状态; 判定权在人 |
 
 ## 禁止行为 (Agent 权限边界)
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定 |
+| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定。**Symphony 编排路径例外**: 在 Symphony 给你的工作区 + `spec/{issue-identifier}-{topic}` 分支上, 按仓根 `WORKFLOW.md` §8 提交与推送是**授权动作**; 仍禁止 push 主分支 / merge / 伪造评审 |
 | 把台账状态写成 `Ready` / `Implemented` | 只登记与 `Draft` 一致的状态 |
 | 编造 `提出人` handle / URL / 抓取结果 | 识别不到就保持 `[待补]` 并点名 |
 | 修改 `schema/**` 下的模板 | 只读 `schema/prd-ledger.md` / `schema/prd-matrix.md` |

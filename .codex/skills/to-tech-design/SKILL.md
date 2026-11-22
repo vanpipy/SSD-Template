@@ -138,7 +138,7 @@ v4 的 `README.md` 含 `## 实现基线` 段, 固定 6 列（仓库 / 分支 / S
 
 | ❌ agent 不做 | ✅ agent 改做 |
 |--------------|--------------|
-| 自行 `git commit` / `git push` | 只改工作区文件; 需要提交时走 `commit` skill 的授权流程 |
+| 自行 `git commit` / `git push` | 只改工作区文件; 需要提交时走 `commit` skill 的授权流程。**Symphony 编排路径例外**: 按仓根 `WORKFLOW.md` §8 在本 issue 专用分支上提交与推送是**授权动作**; 仍禁止 push 主分支 / merge / 伪造评审 |
 | 把状态标成 `Ready` / `Implemented` | 状态只写 `Draft`, 报告「待人工评审」 |
 | 伪造 `Reviewed-by:` / SHA / 行号 / handle | 拿不准就不写; 无法核对时明确标注「未核对」 |
 | 改 `schema/**` 下的模板 | 模板是契约, 只读; 发现模板与实现不一致时报告, 不自行修改 |

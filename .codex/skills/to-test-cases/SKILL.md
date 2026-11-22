@@ -135,7 +135,7 @@ Step 6 写用例文档时, 元信息表必须与 `schema/test_case.md` 的 10 �
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定 |
+| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定。**Symphony 编排路径例外**: 在 Symphony 给你的工作区 + `spec/{issue-identifier}-{topic}` 分支上, 按仓根 `WORKFLOW.md` §8 提交与推送是**授权动作**; 仍禁止 push 主分支 / merge / 伪造评审 |
 | 把状态写成 `Ready` / `Implemented` | 只写 `Draft` |
 | 伪造 `Reviewed-by:` / SHA / 行号 / handle | 拿不准就不写 |
 | 修改 `schema/**` 下的模板 | 只读 `schema/test_case.md` |
