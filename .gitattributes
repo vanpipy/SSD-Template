@@ -1,0 +1,24 @@
+# 仓库内文本一律以 LF 存储与检出。
+#
+# 原因:门禁脚本(check-*.sh / sync-*.sh)由 Symphony 的 hooks.after_create 与
+# GitHub Actions 以 POSIX sh 执行。Windows 检出若带 CRLF,POSIX bash 会把
+# `set -o pipefail` 之类的行解析成带 \r 的命令,导致脚本「退出码 0 且无任何
+# 输出」——静默空转,CI 显示通过而一个检查都没跑。
+#
+# 与 core.autocrlf 的关系:.gitattributes 优先级高于 core.autocrlf,
+# 因此本文件是跨平台一致性的唯一真源。
+
+* text=auto eol=lf
+
+# 明确标注为二进制的类型(避免被 text=auto 误判)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
