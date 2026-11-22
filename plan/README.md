@@ -11,7 +11,7 @@ plan/
     └── {topic}.md             ← 内容文件,文件名 = 目录名里的 topic
 ```
 
-**子文件夹命名**: `{YYYY-MM-DD}-{简短主题}`,小写连字符。
+**子文件夹命名**: `{YYYY-MM-DD}-{简短主题}`,日期 `^[0-9]{4}-[0-9]{2}-[0-9]{2}$` + topic `^[a-z0-9]+(-[a-z0-9]+)*$`,小写字母与数字、中划线分隔。
 **文件命名**: `{简短主题}.md`,必须与目录名中的 topic 一致。
 
 ## 放什么
@@ -44,11 +44,11 @@ plan/
 ```markdown
 ## 变更清单
 
-#### B 变更
+#### {仓库标识} 变更
 
-> KD-1 / V-1 主要约束 B 仓的接口编排与入参校验
+> KD-1 / V-1 主要约束 {仓库标识} 仓的接口编排与入参校验
 
-#### Change #1: `B/api/controller/SessionController.java`
+#### Change #1: `{标识}/{路径}`
 **遵循决策**: KD-1
 **验证**: V-1
 ```
@@ -57,7 +57,8 @@ plan/
 
 ## 状态
 
-`Ready → Implemented`。0 关联代码仓时停留在 `Ready`,标记 "Awaiting TDD in external code repo"。
+`Draft → Ready → Implemented`。**agent 的写入上限是 `Draft`**;`Ready` 由人工在 `## 复审 (Review)` 段签署三行后写入。
+0 关联代码仓时停留在 `Ready`,标记 "Awaiting TDD in external code repo"。
 
 ## 模板
 

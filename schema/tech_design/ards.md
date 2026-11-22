@@ -5,6 +5,7 @@
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态行, 由人工统一翻转, agent 不得自行改写。
 > **v4 必填子文件**: 架构决策的**唯一落点**。方向选择 + 方案对比 (Solution Space) + 关键决策 (KD) + 探索记录 (OQ/Spikes/Pivot) + 选定 vs 实际代码 Gap 对比 + 补全建议 + 风险 + 回滚考量.
 > 回答两个问题: 「为什么选这个方案」(对比与理由) 和 「落地后与现状差多少」(Gap 与补全).
 
@@ -14,12 +15,14 @@
 
 > 每个 TD 必须显式回答"为什么选这个方案", **不是**直接给方向. 按实现状态选择深度:
 
-| TD 状态 | 深度 | 要求 |
+| 实现现状 | 深度 | 要求 |
 |----------|------|------|
 | **未实现** (无任何代码) | 深度 | Solution Space ≥ 3 候选方案 + Spikes ≥ 3 + Pivot Triggers ≥ 3 |
 | **部分实现 + trade-off** | 中度 | Solution Space ≥ 2 候选方案 + trade-off 缓解 + Spikes + Pivot |
 | **已实现 (核心完整)** | 轻度 | Solution Space ≥ 2 候选方案 (回填) + 未来 TODO + Pivot |
 | **实现完整 + 无 TODO** | N/A | 1 段说明"已实现, 无探索", 其余段落可省略 |
+
+> 上表的「实现现状」指**代码实现成熟度**, 与层生命周期状态 (Draft / Ready / Implemented / Deprecated) 是两件事, 不得混用。
 
 **本 TD 声明**: [未实现 / 部分实现 / 已实现 / 实现完整] → 按 [深度 / 中度 / 轻度 / N/A] 填写
 

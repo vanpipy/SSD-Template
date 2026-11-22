@@ -1,12 +1,16 @@
 # Tech Design: {topic} (Index)
 
-> **状态**: Draft | Ready | Implemented
+> **状态**: Draft | Ready | Implemented | Deprecated
 > **来源 PRD**: [../../prd/{YYYY-MM-DD}/{topic}.md](../../prd/{YYYY-MM-DD}/{topic}.md)
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
-> **v4 结构**: TD 目录固定 4 子文件。README.md (综合描述) / ards.md (架构决策 + 方案对比) / apis.md (接口契约 + 时序交互) / data-model.md (ER 图 + 数据结构).
-> **存量 v3 模板**: [./v3/](./v3/NOTES.md) (7 个子模板, 仅存量 / fork 项目按需取用; 目录说明见 [NOTES.md](./v3/NOTES.md)).
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一, 不得自造状态名。
+> **状态推进**: agent 可写上限 = `Draft`;`Ready` 由**人工 reviewer** 在 `## 复审 (Review)` 签署后翻转;`Implemented` 仅人工在外部代码仓 PR merged 后回写(PRD / Tech Design / Plan 三件套**必须同时**回写);上游转 `Deprecated` 时, 引用本 TD 的 Plan / Test Case 一并 `Deprecated`。
+> **状态口径**: 本 README 的状态行是**本 TD 目录的唯一状态源**, 子文件 (ards.md / apis.md / data-model.md) 的状态行跟随本文件。
+
+> **默认代际 = v4**: 新建 TD 目录**一律**用 v4, 固定 4 子文件 —— README.md (综合描述) / ards.md (架构决策 + 方案对比) / apis.md (接口契约 + 时序交互) / data-model.md (ER 图 + 数据结构)。
+> **存量 v3 (仅显式 opt-in)**: [./v3/](./v3/NOTES.md) (7 个子模板, 仅维护**存量** v3 TD 目录或 fork 项目显式 opt-in 时按需取用; 目录说明见 [NOTES.md](./v3/NOTES.md))。
 
 ---
 
@@ -161,7 +165,18 @@
 - [ ] 质量指标全部为具体数字, 且每个量化指标有冷启动 / 首笔保护答案
 - [ ] 所有跨文件引用 (KD-1 / KD-2 / V / FR / SYS / MOD) 已对账
 - [ ] README 计数复核: 本文件与各子文件中的行数、KD 数、OQ 数、约束数、风险数按当前内容重新统计, 不沿袭旧值
-- [ ] 状态从 `Draft` 改为 `Ready`
+- [ ] `## 复审 (Review)` 三行已由**人工 reviewer** 填写, 状态从 `Draft` 改为 `Ready`
+
+---
+
+## 复审 (Review)
+
+> 本段是**机器必填段**。三行(`评审人` / `评审日期` / `评审结论`)是**评审签署**载体 —— `Draft` 阶段清空, 升 `Ready` 前由**人工 reviewer** 填写真值并翻转状态, agent 不得自行填写或翻转。
+> Tech Design 的 `Implemented` 仅在外部代码仓 PR merged 后由**人工**回写, 且 PRD / Tech Design / Plan 三件套必须同时回写。
+
+> **评审人**: {github-handle}
+> **评审日期**: {YYYY-MM-DD}
+> **评审结论**: {通过 / 有条件通过 / 需返工}
 
 ---
 

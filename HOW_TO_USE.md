@@ -1,5 +1,9 @@
 # SSD-Template 使用指南
 
+> **契约唯一真源** = 仓根 [WORKFLOW.md](WORKFLOW.md)(编排配置 + agent 工作契约)。
+> 本指南讲**怎么用**;`WORKFLOW.md` 讲**agent 必须怎么做**。两者冲突时以 `WORKFLOW.md` 为准。
+> 参考资料可信度排序:`WORKFLOW.md` > `schema/**` 模板 > [AGENTS.md](AGENTS.md) > 本文件 > [README.md](README.md)。
+
 ## 核心理念
 
 ### Why-First
@@ -45,14 +49,15 @@
 
 当有新的需求时:
 
-1. **收集原始需求** 将原始描述或文件引用放入 `prd/{YYYY-MM-DD}/`(多文件), 或启用 `material/{YYYY-MM-DD}/` 可选层
-2. **Step 1: 加工为 PRD** 读 `prd/{YYYY-MM-DD}/`, 产出 PRD 到 `prd/{YYYY-MM-DD}/{topic}.md`(Ready)
-3. **Step 2: PRD → Tech Design** 产出多文件 Tech Design 到 `tech_design/{YYYY-MM-DD}-{topic}/`(Ready, v4 默认 4 子文件)
-4. **Step 3: Tech Design → Plan** 产出 Plan 到 `plan/{YYYY-MM-DD}-{topic}/{topic}.md`(Ready → Implemented)
-5. **执行 TDD** 按 Plan 的验证用例进入 Red → Green → Refactor
+1. **Step 0: 收集原始需求** 将原始描述或文件引用放入 `prd/{YYYY-MM-DD}/`(多文件),或启用 `material/{YYYY-MM-DD}/` 可选层
+2. **Step 1: 加工为 PRD** 读 `prd/{YYYY-MM-DD}/`,产出 PRD 到 `prd/{YYYY-MM-DD}/{topic}.md`
+3. **Step 2: PRD → Tech Design** 产出多文件 Tech Design 到 `tech_design/{YYYY-MM-DD}-{topic}/`(v4 默认 4 子文件)
+4. **Step 3: Tech Design → Plan** 产出 Plan 到 `plan/{YYYY-MM-DD}-{topic}/{topic}.md`
+5. **Step 4: 执行 TDD** 按 Plan 的验证用例进入 Red → Green → Refactor(仅 ≥1 关联代码仓时)
 
-> 可选 Layer 4: `test_cases/{YYYY-MM-DD}/{topic}.md`(项目启用时存在, 配合 [schema/test_case.md](schema/test_case.md) 模板产出)
-> 可选素材区: `material/{YYYY-MM-DD}/`(见 [material/README.md](material/README.md))
+> 可选 Layer 4:`test_cases/{YYYY-MM-DD}/{topic}.md`(项目启用时存在,配合 [schema/test_case.md](schema/test_case.md) 模板产出)
+> 可选素材区:`material/{YYYY-MM-DD}/`(见 [material/README.md](material/README.md))
+> **状态起点**:agent 产出的三层规格状态是 `Draft`;`Ready` 由人工评审签署后写入(见下方状态流转)。
 
 ### 遇到问题时
 
@@ -62,6 +67,7 @@
 - **多仓项目怎么写 Plan?** 见 [AGENTS.md](AGENTS.md) §1.5 多仓 Plan 编排
 - **怎么声明设计基于的代码现状?** 见 [AGENTS.md](AGENTS.md) §1.6 实现基线
 - **怎么引用代码现状作为证据?** 见 [AGENTS.md](AGENTS.md) §1.7 证据锚点
+- **agent 到底能写什么、不能写什么?** 见 [AGENTS.md](AGENTS.md) §3.3 状态流转 与 `WORKFLOW.md` §3 硬禁止
 
 ### 状态流转
 
@@ -79,7 +85,7 @@ stateDiagram-v2
         state "Deprecated" as p_x
 
         [*] --> p_d
-        p_d --> p_r: 5 项门禁 [x] + reviewer
+        p_d --> p_r: 门禁全绿 + 人工评审签署
         p_r --> p_i: 外部代码仓 PR merged → 人工回写 wiki
         p_r --> p_x: 需求废弃
         p_i --> p_x: 复审决定废弃
@@ -94,7 +100,7 @@ stateDiagram-v2
         state "Deprecated" as t_x
 
         [*] --> t_d
-        t_d --> t_r: v4 4 子文件门禁 [x] + 跨引用 [x]
+        t_d --> t_r: v4 4 子文件门禁 + 跨引用闭环 + 人工签署
         t_r --> t_i: 外部代码仓 PR merged → 人工回写 wiki
         t_r --> t_x: 父 PRD 废弃
         t_i --> t_x: 复审决定废弃
@@ -109,7 +115,7 @@ stateDiagram-v2
         state "Deprecated" as pl_x
 
         [*] --> pl_d
-        pl_d --> pl_r: 跨引用 [x] + 4 段门禁
+        pl_d --> pl_r: 跨引用闭环 + 完成检查 + 人工签署
         pl_r --> pl_i: 外部代码仓 PR merged → 人工回写 wiki
         pl_r --> pl_x: 父 PRD/TD 废弃
         pl_i --> pl_x: 复审决定废弃
@@ -117,9 +123,10 @@ stateDiagram-v2
     }
 ```
 
+> **agent 的权限天花板 = `Draft`**。`Ready` / `Implemented` / `Deprecated` 三个状态由**人**决定。
 > **0 关联代码仓库**:规格停留在 Ready,标记 "Awaiting TDD in external code repo"(本仓库为纯 wiki)
 > **≥1 关联外部代码仓库**:外部代码仓(位于本仓库**之外**)PR merged 后,人工回写 wiki 状态进入 Implemented
-> **Deprecated**:3 层均支持(v3 起统一加入,旧 schema 仅 PRD 支持)
+> **Deprecated**:3 层均支持,上游废弃时下游级联
 
 ## 目录组织(核心 4 个文件夹 + 可选层)
 
@@ -172,7 +179,7 @@ tech_design/
     # └── quality.md           ← 指标 + 降级 + 错误(必填)
 ```
 
-## 三步工作流
+## 5 步工作流
 
 ```mermaid
 flowchart LR
@@ -180,17 +187,21 @@ flowchart LR
     B -->|Step 1| C[PRD]
     C -->|Step 2| D[Tech Design]
     D -->|Step 3| E[Plan]
-    E -->|交接| F[外部代码仓 TDD]
+    E -->|Step 4 交接| F[外部代码仓 TDD]
     F -->|外部 PR merged + 人工回写 wiki| G[wiki 标 Implemented]
     F -->|0 关联代码仓| H[停留 Ready]
 ```
 
-### Step 1: 原始素材 → Layer 1 PRD
+### Step 0: 收集原始需求
 
-将原始素材(用户抱怨、会议纪要、需求文档)放入 `prd/{YYYY-MM-DD}/`(多文件,只读), 然后经过分析和讨论收敛, 产出 PRD 到 `prd/{YYYY-MM-DD}/{topic}.md`, 状态从 **Draft → Ready**.
+原始素材(用户抱怨、会议纪要、需求文档)放入 `prd/{YYYY-MM-DD}/`(多文件,**只读**)。
+项目需要独立的素材暂存区 + 批次 PRD 台账时,启用 [material/README.md](material/README.md) 描述的可选素材区。
 
 > `prd/{YYYY-MM-DD}/` 是 Layer 1 的**素材区**,**不是**独立 Layer。架构层只有 3 层(Layer 1/2/3),详见 [prd/README.md](prd/README.md)。
-> 项目需要独立的素材暂存区 + 批次 PRD 台账时,启用 [material/README.md](material/README.md) 描述的可选素材区。
+
+### Step 1: 原始素材 → Layer 1 PRD
+
+经过分析和讨论收敛,产出 PRD 到 `prd/{YYYY-MM-DD}/{topic}.md`,状态 `Draft`,评审签署后转 `Ready`。
 
 **转换关系**:
 - **1:1**: 一份原始文档对应一个 PRD
@@ -198,20 +209,24 @@ flowchart LR
 - **N:1**: 多份原始文档合成一个 PRD
 - **N:N**: 更复杂的 1→N→M 组合
 
-**PRD 必填**:
+**PRD 必填**(机器必填 5 段,权威定义见 [schema/prd.md](schema/prd.md)):
 
-- **为什么**: 一句话说明问题和目的
-- **目标**: 可验证的成功标准
-- **场景**: Given/When/Then,覆盖正常路径 + 至少一个异常
-- **不在范围**: 明确不做的内容
-- **复审**: still_matters / should_keep / can_delete(防止 feature rot)
+- **为什么 (Why)**: 一句话说明问题和目的
+- **目标 (Goal)**: 可验证的成功标准(须含可勾选项 `- [ ]`)
+- **场景 (Scenarios)**: Given/When/Then,覆盖正常路径 + 至少一个异常(`**But**`)
+- **不在范围内 (Out of Scope)**: 明确不做的内容
+- **复审 (Review)**: 评审签署三行 + still_matters / should_keep / can_delete 三问(防止 feature rot)
 
-### Step 2: 设计 + 计划 (PRD → Tech Design → Plan)
+> `## 链接 (Links)` 与 `## 变更记录 (Change Log)` 是**推荐段**,不参与机器校验;用得到就写,不用可省。
 
-基于 Ready 状态的 PRD,产出:
+### Step 2: PRD → Layer 2 Tech Design
 
-- `tech_design/{YYYY-MM-DD}-{topic}/` (**Ready**): **v4 默认** 4 子文件(README 综合描述 + ards 架构决策/方案对比/探索机制 + apis 接口契约/枚举/时序 + data-model ER 图)
-- `plan/{YYYY-MM-DD}-{topic}/{topic}.md` (**Ready**): 变更索引 + 变更清单 + TDD 流程 + 跨文件引用对账 + 验证用例 + 业务约束 + 开发约束 + 完成检查
+基于状态为 `Ready` 的 PRD,产出 `tech_design/{YYYY-MM-DD}-{topic}/`(**v4 默认** 4 子文件):
+
+- **README.md** — 综合描述 + `## 场景映射` + `## 实现基线`
+- **ards.md** — 架构决策 / 方案对比 / 探索机制 / Gap
+- **apis.md** — 接口契约 / 枚举速查 / 时序图
+- **data-model.md** — ER 图 / 数据结构明细
 
 > **代际选择**:v4 是**默认代际**,新建目录一律按 v4 产出。v3(6 子文件 + 条件 interactions)是**存量 / 显式 opt-in**,校验脚本保留 v3 分支但**不迁移**存量目录。
 > v4 模板见 [schema/tech_design/ards.md](schema/tech_design/ards.md) + [schema/tech_design/apis.md](schema/tech_design/apis.md)。
@@ -219,10 +234,15 @@ flowchart LR
 **Tech Design 必填**:
 
 - **关键决策 (KD)**: 方向选择 / 方案对比 / OQ / Spikes / Pivot / Enforced by
-- **场景映射**: PRD 场景 → 组件/动作/数据模型
+- **场景映射**: PRD 场景 → 组件/动作/数据模型(PRD 的每个场景都要被映射)
 - **实现基线**: 设计所基于的代码现状快照(见 [AGENTS.md](AGENTS.md) §1.6)
 - **指标**: 具体数字(不是模糊描述)
 - **降级策略**: 异常情况下的行为
+
+### Step 3: Tech Design → Layer 3 Plan
+
+基于状态为 `Ready` 的 Tech Design,产出 `plan/{YYYY-MM-DD}-{topic}/{topic}.md`(**Ready**):
+变更索引 + 变更清单 + TDD 流程 + 跨文件引用对账 + 验证用例 + 业务约束 + 开发约束 + 完成检查。
 
 **Plan 必填**:
 
@@ -234,13 +254,13 @@ flowchart LR
 - **开发约束**: 并发/事务/幂等性/重试/超时
 - **完成检查**: 4 段(实现层 / 验证层 / 引用层 / 流程层)
 
-> ⚠️ **设计原则**: Plan 是"实施指南",不是"替代实现"。
+> ⚠️ **设计原则**:Plan 是"实施指南",不是"替代实现"。
 > 变更描述用文字说明策略和约束,指导参与的 agent 写出代码。
 > 完整代码在 TDD 阶段产出,不是提前写在 Plan 里。
 
 > **多仓项目**:变更清单按仓分组,组标题为 `#### {仓库标识} 变更`,Change 路径带 `{标识}/` 前缀,V 用例按场景聚合。完整规则见 [AGENTS.md](AGENTS.md) §1.5。
 
-### Step 3: 执行 (Plan → TDD → src/)
+### Step 4: 执行 (Plan → TDD → 外部代码仓)
 
 按 Plan 进入 TDD 循环:
 
@@ -275,6 +295,8 @@ flowchart LR
 
 ### 状态值枚举
 
+**全层统一 4 值**,不得自造状态名:
+
 | 层 | Draft | Ready | 终态 | Deprecated |
 |----|-------|----------------|------|------------|
 | PRD | Draft | Ready | Implemented | Deprecated |
@@ -283,28 +305,46 @@ flowchart LR
 
 > **术语分层**:
 > - **三件套 = Implemented** 3 层状态机统一终态;Plan 侧重"已被消费/执行完毕",PRD / Tech Design 侧重"对应代码已落地到生产(已实施)"
-> - **Deprecated** v1 仅 PRD 支持,v3 起 3 层统一加入
+> - **Deprecated** 3 层统一支持;上游废弃时下游级联
 
-### 转换触发条件(可机器验证)
+### 转换触发条件
 
-> **所有触发条件已由 `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` 强制校验**(见 G1)
-> 勾选 [x] 只是声明,实际准入条件是脚本返回 0。
+> **脚本只强制「格式与追溯」,不强制「状态判定」。**
+> `scripts/check-md-schema.sh` 校验的是必填段、状态枚举取值、占位符清零与**阶段感知**(`Ready` 阶段复审段三行必须是真值);
+> `scripts/check-traceability.sh` 校验的是跨层引用闭环与 `Deprecated` 级联一致性。
+> **脚本无法判定评审的实质**:`Draft → Ready` 取决于人是否真的评审过,`Ready → Implemented` 取决于外部 PR 是否真的 merged,
+> `* → Deprecated` 取决于是否真的废弃。这三件事一律由**人**决定,门禁只提供"可评审"的保证。
 
-| 当前 → 下一 | 触发条件(伪代码) | 校验命令 | 责任方 |
-|------------|------------------|----------|--------|
-| Draft → Ready (PRD) | `check-md-schema.sh <prd>` 返回 0 AND 提交信息含 `Reviewed-by:` | `scripts/check-md-schema.sh prd/{YYYY-MM-DD}/{topic}.md` | author + reviewer |
-| Draft → Ready (TD) | `check-md-schema.sh <td_dir>` 返回 0 AND 所有子文件已 Ready | `scripts/check-md-schema.sh tech_design/{YYYY-MM-DD}-{topic}/` | author + reviewer |
-| Draft → Ready (Plan) | `check-md-schema.sh <plan>` AND `check-traceability.sh` 返回 0 | `scripts/check-md-schema.sh plan/{YYYY-MM-DD}-{topic}/{topic}.md` + `scripts/check-traceability.sh` | author + reviewer |
-| Ready → Implemented (PRD/TD/Plan) | **≥1 外部代码仓**:外部 TDD 全过 + 外部 PR merged + 人工回写 wiki 三件套状态 | 人工检查外部仓库 | 外部 reviewer + wiki 人工回写 |
+| 当前 → 下一 | 触发条件 | 校验命令 | 责任方 |
+|------------|---------|----------|--------|
+| — → Draft (PRD / TD / Plan) | 产物写完 + 该层门禁全绿 | `scripts/check-naming.sh` + `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` | **agent** |
+| Draft → Ready (PRD) | `check-md-schema.sh <prd>` 返回 0 **且** 人工在 `## 复审 (Review)` 段填入 `> **评审人**` / `> **评审日期**` / `> **评审结论**` 三行 | `scripts/check-md-schema.sh prd/{YYYY-MM-DD}/{topic}.md` | 人工 reviewer |
+| Draft → Ready (TD) | `check-md-schema.sh <td_dir>` 返回 0 **且** 所有子文件状态就绪 **且** 人工签署复审段 | `scripts/check-md-schema.sh tech_design/{YYYY-MM-DD}-{topic}/` | 人工 reviewer |
+| Draft → Ready (Plan) | `check-md-schema.sh <plan>` 与 `check-traceability.sh` 均返回 0 **且** 人工签署复审段 | `scripts/check-md-schema.sh plan/{YYYY-MM-DD}-{topic}/{topic}.md` + `scripts/check-traceability.sh` | 人工 reviewer |
+| Ready → Implemented (PRD/TD/Plan) | **≥1 外部代码仓**:外部 TDD 全过 + 外部 PR merged + 人工回写 wiki 三件套状态 | 人工检查外部仓库(无脚本) | 外部 reviewer + wiki 人工回写 |
 | Ready (停留) | **0 关联代码仓**:无外部回写源 | N/A | (无动作) |
-| * → Deprecated | 需求废弃 / 复审决定废弃 | 人工决策 | reviewer |
+| * → Deprecated | 需求废弃 / 复审决定废弃 | 人工决策(级联一致性由 `scripts/check-traceability.sh` 兜底) | 人工 reviewer |
+
+**评审签署载体**(Ready 的机器可核验依据):
+
+```markdown
+## 复审 (Review)
+
+> **评审人**: {github-handle}
+> **评审日期**: YYYY-MM-DD
+> **评审结论**: 通过 / 不通过(附理由)
+```
+
+> 三行必须填**真值**,不能留占位符。`Draft` 阶段三行**留空**(段本身存在),由人签署。
+> 提交信息里的 `Reviewed-by:` trailer 是评审动作的**记录**,取值只能来自人工填写的 `> **评审人**`;它**不是**门禁依据。
 
 **三件套一致性规则**(Ready → Implemented 转换):
 - PRD / Tech Design / Plan 三个状态**必须同时**进入 Implemented(不允许单层先 Implemented)
 - 状态转换由**人类手动**回写 wiki,**不**自动触发(避免外部 PR merged 与 wiki 状态不一致)
 
-> **scripts 使用方法**:根目录跑 `./scripts/check-md-schema.sh` + `./scripts/check-traceability.sh` + `./scripts/check-naming.sh`,三个脚本全返回 0 即三件套 Ready。
-> 项目有关联代码仓时,额外跑 `./scripts/check-repo-baseline.sh` 核对 Tech Design 的实现基线(见 [AGENTS.md](AGENTS.md) §1.6)。
+> **scripts 使用方法**:统一用 `bash scripts/<name>.sh` 调用(不要用 `./`;脚本从自身位置推导仓根,任何 cwd 都可以)。
+> 根目录跑 `bash scripts/check-naming.sh` + `bash scripts/check-md-schema.sh` + `bash scripts/check-traceability.sh`,三个脚本全返回 0 即"可评审"。
+> 项目有关联代码仓时,额外跑 `bash scripts/check-repo-baseline.sh` 核对 Tech Design 的实现基线(见 [AGENTS.md](AGENTS.md) §1.6)。
 
 ### 跨层协调规则
 
@@ -346,14 +386,14 @@ flowchart TB
 | **本仓库 / 本 wiki** | 始终是规格文档仓库,**永远不会**变成代码仓 |
 | **0 关联代码仓库** | 本 wiki 未关联任何外部代码仓库(纯文档项目) |
 | **≥1 关联代码仓库** | 本 wiki 关联了 N 个**外部**代码仓库(代码仓位于本仓库**之外**) |
-| **外部代码仓** | 独立 Git 仓库 / monorepo 子目录,通过 `{仓库前缀}/path` 跨仓引用(详见 AGENTS.md §1.2) |
+| **外部代码仓** | 独立 Git 仓库 / monorepo 子目录,通过 `{仓库标识}/{path}` 跨仓引用(详见 [AGENTS.md](AGENTS.md) §1.2) |
 | **wiki 的 Implemented** | 外部代码仓 PR merged 后,**人工回写**到本 wiki 的镜像状态 |
 
-#### SSD-Template 自身(0 关联代码仓库)
+#### 本模板自身(0 关联代码仓库)
 
-- Step 1 产出:`prd/{YYYY-MM-DD}/{topic}.md` 状态 **Ready**
-- Step 2 产出:`tech_design/{YYYY-MM-DD}-{topic}/*` 状态 **Ready**(v4 默认 4 子文件)
-- Step 3 产出:`plan/{YYYY-MM-DD}-{topic}/{topic}.md` 状态 **Ready**
+- Step 1 产出:`prd/{YYYY-MM-DD}/{topic}.md` 状态 **Draft**(评审后 Ready)
+- Step 2 产出:`tech_design/{YYYY-MM-DD}-{topic}/*` 状态 **Draft**(评审后 Ready,v4 默认 4 子文件)
+- Step 3 产出:`plan/{YYYY-MM-DD}-{topic}/{topic}.md` 状态 **Draft**(评审后 Ready)
 - 不进入 Implemented(无外部代码仓作为回写源)
 - Tech Design 的 `## 实现基线` 段写「不适用: 本项目无关联代码仓」(见 [AGENTS.md](AGENTS.md) §1.6)
 
@@ -361,9 +401,9 @@ flowchart TB
 
 > 外部代码仓**独立**于本仓库,本仓库保持纯 wiki 状态:
 
-- 按 `AGENTS.md §A 定制指南` 在 §1.1 登记外部代码仓清单(仓库地址 / 主要语言 / 角色)
-- 跨仓引用统一使用 `{仓库前缀}/path` 写法(如 `B/app/services/auth.ts`)
-- Step 5 (TDD) 在**外部代码仓**内执行,**不**在本仓库
+- 按 [AGENTS.md](AGENTS.md) §4.A 定制指南 在 §1.1 登记外部代码仓清单(仓库地址 / 主要语言 / 角色)
+- 跨仓引用统一使用 `{仓库标识}/{path}` 写法
+- Step 4 (TDD) 在**外部代码仓**内执行,**不**在本仓库
 - 外部 PR merged 后,由人类**人工回写**本 wiki 三件套状态为 Implemented
 - 维护"外部代码仓 → 本 wiki"的状态同步规则
 
@@ -382,7 +422,7 @@ flowchart TB
 
 **结论**:`Implementing` 中间态为流程增加了 **+1 张状态图 + 1 套转换规则 + 1 个跨仓写权限**,但解决的全是 code repo 自己能解决的问题。
 
-**唯一例外**:仅当 ≥2 个 code agent 同时从同一 wiki 拉活**且无 git 协调能力**时(罕见),才需要 `Implementing` 中间态 + 显式调度。参见 [AGENTS.md §A fork 启动模式选项](AGENTS.md#fork-时可选step-4-启动模式)。
+**唯一例外**:仅当 ≥2 个 code agent 同时从同一 wiki 拉活**且无 git 协调能力**时(罕见),才需要 `Implementing` 中间态 + 显式调度。参见 [AGENTS.md](AGENTS.md) §4.A 的 fork 启动模式选项。
 
 ## 何时升级
 
@@ -401,12 +441,25 @@ flowchart TB
 
 | 层 | 门禁清单位置 | 自动校验 |
 |----|-------------|---------|
-| PRD | [`schema/prd.md`](schema/prd.md) 全文 + `scripts/check-md-schema.sh` | ✓ |
-| Tech Design | [`schema/tech_design/README.md`](schema/tech_design/README.md) + 各子文件"门禁清单"段 + `scripts/check-md-schema.sh` | ✓ |
-| Plan | [`schema/plan.md`](schema/plan.md) 完成检查段 + `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` | ✓ |
+| PRD | [schema/prd.md](schema/prd.md) 全文 + `scripts/check-md-schema.sh` | ✓ |
+| Tech Design | [schema/tech_design/README.md](schema/tech_design/README.md) + 各子文件"门禁清单"段 + `scripts/check-md-schema.sh` | ✓ |
+| Plan | [schema/plan.md](schema/plan.md) 完成检查段 + `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` | ✓ |
 | 实现基线(可选) | Tech Design `## 实现基线` 段 + `scripts/check-repo-baseline.sh` | ✓(有关联代码仓时) |
 
-**调用方式**:三件套 Ready 前,根目录跑 `./scripts/check-md-schema.sh && ./scripts/check-traceability.sh && ./scripts/check-naming.sh`,全返回 0 方可标 Ready。
+**脚本总表**(退出码:`0` = 通过,`1` = 存在违规,`2` = 调用 / 环境错误):
+
+| 脚本 | 什么时候跑 | 查什么 |
+|------|------------|--------|
+| `scripts/check-naming.sh` | **每次都跑** | 目录 / 文件命名与层结构形状 |
+| `scripts/check-md-schema.sh` | **每次都跑** | 必填段、状态枚举、阶段感知(草稿 / 评审 / 终态) |
+| `scripts/check-traceability.sh` | **每次都跑** | 跨层引用闭环(KD / V / FR / SYS / MOD) |
+| `scripts/check-doc-links.py` | **每次都跑** | 仓内受版本控制的 Markdown 相对链接死链 |
+| `scripts/check-line-endings.sh` | **每次都跑** | 受版本控制的文本文件不得含 CR(行尾统一 LF) |
+| `scripts/check-repo-baseline.sh` | 有关联代码仓时 | Tech Design `## 实现基线` 的 6 列快照 |
+| `scripts/sync-prd.sh --check` | 启用了 PRD 台账时 | README 统计块与实际制品一致 |
+| `scripts/sync-test-index.sh --check` | 仅 Layer 4 | `test_cases/_index.md` 与用例元信息一致 |
+
+**调用方式**:三件套 Ready 前跑上表前 5 个脚本,全返回 0 方可提交评审;`Ready` 由人工签署复审段后写入。
 
 ## 可选层
 
@@ -417,15 +470,16 @@ flowchart TB
 | 素材区 | [material/](material/README.md) | 原始素材暂存 + 批次 PRD 台账 | 建 `material/` 目录 | Layer 0(可选) |
 | PRD 台账 | `material/{YYYY-MM-DD}/PRDS.md` | 11 列台账,追踪素材到 PRD 的流转 | 建台账文件 | 模板见 [schema/prd-ledger.md](schema/prd-ledger.md) |
 | PRD 关联矩阵 | 根 [README.md](README.md) 的「PRD关联矩阵」章节 | 8 类 PRD 关系边 | 在关系边表追加行 | 模板见 [schema/prd-matrix.md](schema/prd-matrix.md) |
-| 测试用例 | [test_cases/](test_cases/README.md) | Layer 4 黑盒用例 | 建 `test_cases/` 目录 | 跑 `/to-test-cases` |
-| 理解底座 | `deep/` | 主题模型 / 消歧 / 时间线 | 建 `deep/` 目录 | 跑 `/to-deep-understand` |
+| 测试用例 | [test_cases/](test_cases/README.md) | Layer 4 黑盒用例 | 建 `test_cases/` 目录 | 用 `to-test-cases` skill 生成 |
+| 理解底座 | `deep/` | 主题模型 / 消歧 / 时间线 | 建 `deep/` 目录 | 用 `to-deep-understand` skill 生成 |
 
-> 各层的启用方式、文件结构与校验口径见对应层 README。`/validate-spec` **不校验** `deep/` 内容。
+> 各层的启用方式、文件结构与校验口径见对应层 README。`validate-spec` skill **不校验** `deep/` 内容。
 
 ## 相关文件
 
 | 文件 | 用途 |
 |------|------|
+| [WORKFLOW.md](WORKFLOW.md) | **契约唯一真源**:编排配置 + agent 工作契约 |
 | [README.md](README.md) | 仓库入口(总览 + 规格统计 + PRD 关联矩阵) |
 | [AGENTS.md](AGENTS.md) | 仓库操作契约(仓库清单 / 跨仓引用 / 多仓 Plan / 基线 / 证据锚点) |
 | [schema/prd.md](schema/prd.md) | PRD 模板 |
@@ -434,6 +488,6 @@ flowchart TB
 | [schema/test_case.md](schema/test_case.md) | Test Case 模板 (可选 Layer 4) |
 | [schema/prd-ledger.md](schema/prd-ledger.md) | 批次 PRD 台账模板 (可选 material/ 启用) |
 | [schema/prd-matrix.md](schema/prd-matrix.md) | PRD 关联矩阵模板 (多 PRD 协作启用) |
-| [docs/mechanism-contract.md](docs/mechanism-contract.md) | 通用机制契约(吸收取舍 + 验收标准) |
+| [.codex/skills/](.codex/skills/) | 8 个 skill 定义(仓内随仓库分发) |
+| [ARCHIVE.md](ARCHIVE.md) | 已移出仓内的历史目录指针 |
 | [new-factors.md](new-factors.md) | 深度概念参考 |
-| [legacy/](legacy/) | 历史参考(旧 7-schema 设计) |

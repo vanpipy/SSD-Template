@@ -7,20 +7,21 @@
 
 ## 元信息 (Metadata)
 
-> 字段名**严格统一**, 校验脚本按这些字段名抓取值. 顺序不限, 但建议按本模板顺序排列.
+> 字段名**严格统一**, 校验脚本按这些字段名抓取值(取「字段」列的下一个单元格作为「值」)。顺序不限, 但建议按本模板顺序排列.
+> 「必填」列: ✓ = `scripts/check-md-schema.sh` 的元信息 7 必填行(主题 / 业务产品 / 目标平台 / 来源 / 生成日期 / 状态 / 用例总数);可选 = 不参与门禁, 有则填, 无则留空或删除整行.
 
-| 字段 | 值 | 说明 |
-|------|-----|------|
-| **主题** | `{topic}` | 测试用例主题, 与目录/文件名一致 |
-| **业务产品** | `[产品名]` | 哪个业务产品 (POS / ERP / CRM / ...) |
-| **目标平台** | `[Web / iOS / Android / 服务端 / 跨端]` | 测试运行平台 |
-| **来源** | `[prd/{date}/{topic}.md]` | 上游 PRD 路径 (仓内) 或 URL (仓外, 如 wiki/doc 系统) |
-| **来源 Tech Design** | `[tech_design/{date}-{topic}/README.md]` | 上游 Tech Design 路径 (可选) |
-| **来源 Plan** | `[plan/{date}-{topic}/{topic}.md]` | 上游 Plan 路径 (可选) |
-| **生成日期** | {YYYY-MM-DD} | 首次生成日期 |
-| **最后更新** | {YYYY-MM-DD} | 最近一次更新日期 |
-| **状态** | Draft | Draft / Ready / Implemented / Deprecated |
-| **用例总数** | {n} | 本文件包含的用例总数 (主+冒烟合计) |
+| 字段 | 值 | 必填 | 说明 |
+|------|-----|------|------|
+| **主题** | `{topic}` | ✓ | 测试用例主题, 与目录/文件名一致 |
+| **业务产品** | `[产品名]` | ✓ | 哪个业务产品 (POS / ERP / CRM / ...) |
+| **目标平台** | `[Web / iOS / Android / 服务端 / 跨端]` | ✓ | 测试运行平台 |
+| **来源** | `[prd/{date}/{topic}.md]` | ✓ | 上游 PRD 路径 (仓内) 或 URL (仓外, 如 wiki/doc 系统) |
+| **来源 Tech Design** | `[tech_design/{date}-{topic}/README.md]` | 可选 | 上游 Tech Design 路径 |
+| **来源 Plan** | `[plan/{date}-{topic}/{topic}.md]` | 可选 | 上游 Plan 路径 |
+| **生成日期** | {YYYY-MM-DD} | ✓ | 首次生成日期 |
+| **最后更新** | {YYYY-MM-DD} | 可选 | 最近一次更新日期 |
+| **状态** | Draft | ✓ | Draft / Ready / Implemented / Deprecated |
+| **用例总数** | {n} | ✓ | 本文件包含的用例总数 (主+冒烟合计) |
 
 **关联 PRD 场景**: [../../prd/{YYYY-MM-DD}/{topic}.md](../../prd/{YYYY-MM-DD}/{topic}.md)
 **关联 Tech Design**: [../../tech_design/{YYYY-MM-DD}-{topic}/README.md](../../tech_design/{YYYY-MM-DD}-{topic}/README.md)
@@ -30,12 +31,25 @@
 
 ## 状态机约定
 
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一, 不得自造状态名。
+> **状态推进**: agent 可写上限 = `Draft`;`Ready` 由**人工 reviewer** 在 `## 复审 (Review)` 签署后翻转;`Implemented` 仅人工在用例实际执行通过后回写;上游转 `Deprecated` 时, 本文件一并 `Deprecated`(级联)。
+
 | 状态 | 含义 | 校验约束 |
 |------|------|----------|
-| **Draft** | 初稿, 内容可能不全 | 无 |
-| **Ready** | 内容完整, 评审通过 | 必须伴生 `{topic}-key-points.md` |
-| **Implemented** | 用例已实际执行过 | 必须伴生 `{topic}-key-points.md` |
-| **Deprecated** | 已废弃, 不再维护 | 无 |
+| **Draft** | 初稿, 内容可能不全 | 无(评审三行可留空) |
+| **Ready** | 内容完整, 评审通过 | 必须伴生 `{topic}-key-points.md`; `## 复审 (Review)` 三行已签署 |
+| **Implemented** | 用例已实际执行过 | 必须伴生 `{topic}-key-points.md`; 仅人工回写 |
+| **Deprecated** | 已废弃, 不再维护 | 无; 上游 `Deprecated` 时**级联**转入 |
+
+---
+
+## 复审 (Review)
+
+> 本段是**机器必填段**。三行(`评审人` / `评审日期` / `评审结论`)是**评审签署**载体 —— `Draft` 阶段清空, 升 `Ready` 前由**人工 reviewer** 填写真值并翻转状态, agent 不得自行填写或翻转。
+
+> **评审人**: {github-handle}
+> **评审日期**: {YYYY-MM-DD}
+> **评审结论**: {通过 / 有条件通过 / 需返工}
 
 ---
 
@@ -116,8 +130,9 @@
 
 ## 门禁清单 (Completion Gate)
 
-- [ ] 元信息 7 必填行填写完整 (主题/业务产品/目标平台/来源/生成日期/状态/用例总数)
-- [ ] 状态枚举值合法 (Draft/Ready/Implemented/Deprecated)
+- [ ] 元信息 7 必填行填写完整 (主题/业务产品/目标平台/来源/生成日期/状态/用例总数); 3 个可选项 (来源 Tech Design / 来源 Plan / 最后更新) 有则填、无则留空
+- [ ] 状态枚举值合法 (Draft/Ready/Implemented/Deprecated 四值之一, 不自造状态名)
+- [ ] `## 复审 (Review)` 三行已由**人工 reviewer** 填写, 状态从 `Draft` 改为 `Ready`
 - [ ] `## 用例总览` 段存在, 含 P0/P1/P2 数量统计
 - [ ] 每个 TC 有 完整 5 段 (用例名/前置条件/测试步骤/关联/等级)
 - [ ] 关联 PRD 场景 + V-{n} + KD-{n} 编号

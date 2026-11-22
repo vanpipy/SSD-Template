@@ -1,0 +1,166 @@
+# spec-check.yml — 规格门禁 CI(契约 M8)
+#
+# 门禁顺序(契约 M8 固定):
+#   git config core.autocrlf false
+#   → check-line-endings.sh → check-naming.sh → check-md-schema.sh → check-traceability.sh
+#   → check-repo-baseline.sh → check-doc-links.py → sync-prd.sh → sync-test-index.sh --check
+#
+# 三条硬规则:
+#   1. 门禁**永不全量跳过**: 即使本次 diff 没碰任何制品目录, 也照常跑完(只打 notice)。
+#   2. 「本仓没有任何 PRD 制品」= 失败(不允许空洞绿灯)。
+#   3. 每个门禁步骤都断言「退出码为 0 且 stdout 非空」—— 防止脚本静默空转被当成绿灯。
+#
+# 关于 sync-prd.sh:
+#   台账里存在「待分析 / 待抓取 / 孤儿」行时, sync-prd.sh 的退出码是 1, 那是**工作状态**
+#   (material/README.md 的既定语义), 不是规格违规 —— 若直接按退出码判红, 台账一启用 CI 就会常年红。
+#   因此本步骤采用「写模式(幂等) + 漂移比对」: 只对「统计块/台账与实际制品不一致」判红。
+#   `git status --porcelain` 同时覆盖已跟踪文件的改动**与**新建的未跟踪台账文件
+#   (单用 `git diff` 看不到未跟踪文件)。
+
+name: spec-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  spec-gates:
+    name: 规格门禁
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 关闭 autocrlf(保证工作区行尾与 blob 一致)
+        run: git config core.autocrlf false
+
+      - name: 记录本次改动范围(仅通知, 不用于跳过门禁)
+        id: scope
+        run: |
+          set -uo pipefail
+          BASE=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+          fi
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="$(git rev-list --max-parents=0 HEAD 2>/dev/null || true)"
+          fi
+          echo "base_sha=$BASE" >> "$GITHUB_OUTPUT"
+          CHANGED=""
+          if [ -n "$BASE" ]; then
+            CHANGED="$(git diff --name-only "$BASE" "$GITHUB_SHA" 2>/dev/null || true)"
+          fi
+          {
+            echo "### 本次改动的路径"
+            echo '```'
+            echo "$CHANGED"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if printf '%s\n' "$CHANGED" | grep -qE '^(prd|tech_design|plan|test_cases|material)/'; then
+            echo "::notice::本次 diff 触及制品目录。"
+          else
+            echo "::notice::本次 diff 未触及任何制品目录(prd/ tech_design/ plan/ test_cases/ material/) — 门禁仍全量执行(契约 M8: 门禁不得跳过)。"
+          fi
+
+      - name: 行尾检查(禁止 CR)
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(bash scripts/check-line-endings.sh 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::check-line-endings.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+
+      - name: 命名与层结构检查
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(bash scripts/check-naming.sh 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::check-naming.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+
+      - name: 字段与状态机检查
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(bash scripts/check-md-schema.sh 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::check-md-schema.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+
+      - name: 追溯检查
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(bash scripts/check-traceability.sh 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::check-traceability.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+
+      - name: 实现基线检查
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(bash scripts/check-repo-baseline.sh 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::check-repo-baseline.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+
+      - name: 文档链接检查
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(python3 scripts/check-doc-links.py 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::check-doc-links.py 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+
+      - name: PRD 台账登记 + 统计块核对(写模式幂等 + 漂移比对)
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(bash scripts/sync-prd.sh 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          # rc=1 = 台账存在待办行(工作状态, 不是规格违规, 见 material/README.md)
+          [ "$rc" -le 1 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::sync-prd.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+          drift="$(git status --porcelain -- README.md material/)"
+          if [ -n "$drift" ]; then
+            echo "::error::统计块/台账与提交态不一致 — 请在本地运行 \`bash scripts/sync-prd.sh\` 并把结果一起提交:"
+            printf '%s\n' "$drift"
+            exit 1
+          fi
+
+      - name: 用例索引核对(只读)
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(bash scripts/sync-test-index.sh --check 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::sync-test-index.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+
+      - name: "断言: 本仓至少存在 1 个 PRD 制品(禁止空洞绿灯)"
+        run: |
+          set -uo pipefail
+          count=0
+          for f in prd/*/*.md; do
+            [ -f "$f" ] || continue
+            case "$f" in */README.md|*/_index.md) continue ;; esac
+            count=$((count + 1))
+          done
+          if [ "$count" -lt 1 ]; then
+            echo "::error::本仓没有任何 PRD 制品(prd/{YYYY-MM-DD}/{topic}.md), 门禁无从校验 —— 拒绝空洞绿灯。"
+            exit 1
+          fi
+          echo "✓ PRD 制品数: $count"

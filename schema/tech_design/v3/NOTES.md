@@ -1,9 +1,10 @@
 # Tech Design v3 模板 (存量 / 显式 opt-in)
 
-> **状态**: Legacy — 保留供存量项目与 fork 项目取模板, **不是默认代际**。
+> **代际**: Legacy — 保留供存量项目与 fork 项目取模板, **不是默认代际**。
 > **默认代际**: v4 — 见 [../README.md](../README.md) / [../ards.md](../ards.md) / [../apis.md](../apis.md) / [../data-model.md](../data-model.md)。
 >
 > **本文件是说明文档, 不是模板**。模板文件是同目录下除 `NOTES.md` 外的 7 个 `.md`。
+> **本文件不使用层生命周期状态**: 它不是层产物, 因此不写 `> **状态**:` 行(层状态只有 Draft / Ready / Implemented / Deprecated 四值, 见 [../README.md](../README.md))。
 
 ## 本目录是什么
 

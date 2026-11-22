@@ -1,113 +1,232 @@
 #!/usr/bin/env python3
-"""检查 docs/efficacy/ 下的 Markdown 链接与锚点是否可达。
+"""check-doc-links.py — 仓内 Markdown 相对链接检查（死链门禁）
 
-只做**链接可达性**这一件事, 不检查内容正确性。
+职责(契约 M1 / M8):
+  - 扫描**全仓**受版本控制的 Markdown 文件, 解析相对链接, 报告**死链**(目标文件不存在)。
+  - 模板占位路径(`{topic}` / `{YYYY-MM-DD}` / `{仓库标识}` 等任何含 `{}` 的路径)**不是错误**。
+  - 行号锚点(`#L12`)**不是错误**(只校验文件部分存在)。
+  - 段内锚点(`#小节标题`)解析不到时只报 ⚠ 警告, 不改退出码(避免中文标题 slug 误报)。
+  - 外部链接(http/https/mailto/协议相对)**不检查**(无网络, 契约 M12 禁止网络访问)。
 
-- 文件链接: 目标文件必须存在 (相对本文件所在目录)。
-- 锚点链接: 目标文件里必须有对应标题, 且锚点 slug 按 GitHub 的规则计算。
-
-GitHub 锚点规则:
-    标题转小写 -> 去掉行内代码的反引号与强调星号 -> 删掉标点
-    (保留字母数字、下划线、连字符、CJK) -> 空格换成连字符。
-
-    注意: 连字符本身**保留**, 所以标题里的 ` - ` (空格-连字符-空格)
-    会变成 `--` (两个连字符), 而不是 `-`。这是本脚本存在的理由:
-    之前人工拼的锚点在这个细节上错了三处。
+退出码(契约 M1): 0=无死链 1=存在死链 2=调用错误 / 环境错误
 
 用法:
-    python3 scripts/check-doc-links.py           # 全部检查
-    python3 scripts/check-doc-links.py --quiet   # 只在失败时输出
+    scripts/check-doc-links.py [--json] [--root DIR]
 
-退出码: 0 = 全部可达, 1 = 有断链, 2 = 用法错误。
+依赖: 仅 Python 3 标准库(契约 M9: shell 门禁不得依赖 python; 本脚本是独立程序,
+      由 CI 的 python3 直接执行)。
 """
-import glob
+
+from __future__ import annotations
+
+import argparse
+import json
 import os
 import re
+import subprocess
 import sys
+import unicodedata
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DOC_DIR = os.path.join(ROOT, "docs", "efficacy")
-
-# Markdown 行内链接: [文本](目标) 或 [文本](目标#锚点)
-LINK_RE = re.compile(r"\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
-HEADING_RE = re.compile(r"^#{1,6}\s+(.+?)\s*$", re.M)
-
-
-def gh_slug(heading):
-    """按 GitHub 的规则算标题锚点。"""
-    s = heading.strip().lower()
-    # 去掉行内代码的反引号与强调星号
-    s = s.replace("`", "").replace("*", "").replace("_", "_")
-    # 删掉标点, 保留字母数字、下划线、连字符、CJK
-    s = re.sub(r"[^\w\s\u4e00-\u9fff-]", "", s, flags=re.UNICODE)
-    # 空格换成连字符 (连字符本身保留, 所以 " - " 会变成 "--")
-    return s.replace(" ", "-")
+# Markdown 链接: [text](target) / [text](<target>) / [text](target "title")
+LINK_RE = re.compile(r"\[[^\]]*\]\(\s*(<[^>]*>|[^)\s]+)(?:\s+(?:\"[^\"]*\"|'[^']*'))?\s*\)")
+# 标题行: # / ## / ### ...
+HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$", re.MULTILINE)
+# 占位符: 路径任意一段含 {..}
+PLACEHOLDER_RE = re.compile(r"\{[^{}]*\}")
+# 行号锚点: #L12 / #L12-L20
+LINE_ANCHOR_RE = re.compile(r"^L\d+(-L?\d+)?$")
+EXTERNAL_RE = re.compile(r"^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|//)")
 
 
-def collect_anchors(path):
-    """收集一个文件里所有标题的锚点。"""
-    with open(path, encoding="utf-8") as fh:
-        text = fh.read()
-    return {gh_slug(m.group(1)) for m in HEADING_RE.finditer(text)}
+def git_tracked_md(root: str) -> list[str] | None:
+    """返回受版本控制的 .md 文件相对路径; 不是 git 仓库时返回 None。"""
+    try:
+        out = subprocess.run(
+            ["git", "-C", root, "ls-files", "-z", "--", "*.md"],
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if out.returncode != 0:
+        return None
+    files = [p.decode("utf-8", "replace") for p in out.stdout.split(b"\0") if p]
+    return files or []
 
 
-def main():
-    quiet = "--quiet" in sys.argv
-    docs = sorted(glob.glob(os.path.join(DOC_DIR, "*.md")))
-    if not docs:
-        print(f"没有找到文档: {DOC_DIR}", file=sys.stderr)
+def walk_md(root: str) -> list[str]:
+    """非 git 场景: 遍历目录树收集 .md。"""
+    skip_dirs = {".git", ".swarm", "node_modules", ".venv", "venv", "__pycache__"}
+    found: list[str] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+        for name in filenames:
+            if name.lower().endswith(".md"):
+                full = os.path.join(dirpath, name)
+                found.append(os.path.relpath(full, root).replace(os.sep, "/"))
+    return found
+
+
+def gh_slug(text: str) -> str:
+    """GitHub 风格标题 slug(小写、去标点、空格转连字符、保留 CJK)。"""
+    text = re.sub(r"`([^`]*)`", r"\1", text)
+    text = re.sub(r"\*\*([^*]*)\*\*", r"\1", text)
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = text.strip().lower()
+    out = []
+    for ch in text:
+        if ch.isalnum() or ch in "-_" or ord(ch) > 0x7F:
+            out.append(ch)
+        elif ch in " \t":
+            out.append("-")
+        elif unicodedata.category(ch).startswith("P") or unicodedata.category(ch).startswith("S"):
+            continue
+        else:
+            out.append(ch)
+    slug = "".join(out)
+    slug = re.sub(r"-{2,}", "-", slug).strip("-")
+    return slug
+
+
+def read_text(path: str) -> str:
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        return fh.read()
+
+
+def collect_anchors(text: str) -> set[str]:
+    anchors = set()
+    for _, title in HEADING_RE.findall(text):
+        anchors.add(gh_slug(title))
+    for m in re.finditer(r"<a\s+(?:id|name)=\"([^\"]+)\"", text):
+        anchors.add(m.group(1).lower())
+    return anchors
+
+
+def is_placeholder(path: str) -> bool:
+    return bool(PLACEHOLDER_RE.search(path))
+
+
+def check_file(root: str, rel: str, errors: list[str], warnings: list[str], stats: dict) -> None:
+    full = os.path.join(root, rel.replace("/", os.sep))
+    if not os.path.isfile(full):
+        return
+    text = read_text(full)
+    anchors_cache: dict[str, set[str]] = {}
+    base_dir = os.path.dirname(full)
+    for match in LINK_RE.finditer(text):
+        raw = match.group(1).strip()
+        if raw.startswith("<") and raw.endswith(">"):
+            raw = raw[1:-1]
+        if not raw:
+            continue
+        if EXTERNAL_RE.match(raw):
+            continue
+        stats["links"] += 1
+        line_no = text.count("\n", 0, match.start()) + 1
+
+        target, _, fragment = raw.partition("#")
+        fragment = fragment.strip()
+
+        if not target:
+            # 同文件锚点
+            if fragment and not LINE_ANCHOR_RE.match(fragment):
+                if rel not in anchors_cache:
+                    anchors_cache[rel] = collect_anchors(text)
+                if gh_slug(fragment) not in anchors_cache[rel]:
+                    warnings.append(f"{rel}:{line_no} — 段内锚点在本文件找不到: #{fragment}")
+            continue
+
+        # 绝对路径 / Windows 盘符 → 不检查
+        if target.startswith("/") or re.match(r"^[a-zA-Z]:[\\/]", target):
+            continue
+
+        # 模板占位路径 → 不是错误
+        if is_placeholder(target):
+            continue
+
+        decoded = target.split("?", 1)[0].split("#", 1)[0]
+        decoded = decoded.replace("%20", " ")
+        resolved = os.path.normpath(os.path.join(base_dir, decoded.replace("/", os.sep)))
+        if not os.path.exists(resolved):
+            errors.append(f"{rel}:{line_no} — 死链: {raw} (目标不存在)")
+            continue
+        # 行号锚点 → 只校验文件存在
+        if fragment and LINE_ANCHOR_RE.match(fragment):
+            continue
+        if fragment:
+            tgt_rel = os.path.relpath(resolved, root).replace(os.sep, "/")
+            if tgt_rel not in anchors_cache:
+                try:
+                    anchors_cache[tgt_rel] = collect_anchors(read_text(resolved))
+                except OSError:
+                    anchors_cache[tgt_rel] = set()
+            if gh_slug(fragment) not in anchors_cache[tgt_rel]:
+                warnings.append(f"{rel}:{line_no} — 段内锚点在目标文件中找不到: {raw}")
+
+
+def main(argv: list[str]) -> int:
+    # Windows 控制台默认 GBK, 直接打印 ✓/✗/中文会抛 UnicodeEncodeError; 强制 UTF-8 输出
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+    parser = argparse.ArgumentParser(
+        prog="check-doc-links.py",
+        description="检查仓内 Markdown 相对链接(死链)",
+    )
+    parser.add_argument("--json", action="store_true", help="输出 JSON")
+    parser.add_argument("--root", default=None, help="仓库根目录(默认: 脚本所在目录的父目录)")
+    args = parser.parse_args(argv)
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    root = args.root or os.path.dirname(script_dir)
+    if not os.path.isdir(root):
+        sys.stderr.write(f"✗ --root 目录不存在: {root}\n")
         return 2
+    root = os.path.abspath(root)
 
-    anchors_by_file = {os.path.basename(p): collect_anchors(p) for p in docs}
+    files = git_tracked_md(root)
+    tracked = files is not None
+    if files is None:
+        files = walk_md(root)
 
-    broken = []
-    n_links = 0
-    for p in docs:
-        with open(p, encoding="utf-8") as fh:
-            lines = fh.read().splitlines()
-        rel = os.path.relpath(p, ROOT)
-        for lineno, line in enumerate(lines, 1):
-            # 跳过围栏代码块里的内容
-            if line.lstrip().startswith("```"):
-                continue
-            for m in LINK_RE.finditer(line):
-                target = m.group(2)
-                if target.startswith(("http://", "https://", "mailto:")):
-                    continue
-                n_links += 1
-                if "#" in target:
-                    rel_path, frag = target.split("#", 1)
-                else:
-                    rel_path, frag = target, None
-                base = os.path.basename(rel_path)
-                if not rel_path:
-                    # 纯锚点链接, 指向本文件
-                    if frag and frag not in anchors_by_file[os.path.basename(p)]:
-                        broken.append((rel, lineno, target,
-                                      f"本文件的锚点 '{frag}' 不存在"))
-                    continue
-                if base not in anchors_by_file:
-                    full = os.path.join(os.path.dirname(p), rel_path)
-                    if not os.path.isfile(full):
-                        broken.append((rel, lineno, target, "目标文件不存在"))
-                    continue
-                if frag and frag not in anchors_by_file[base]:
-                    broken.append((rel, lineno, target,
-                                  f"锚点 '{frag}' 不在 {base} 里"))
+    errors: list[str] = []
+    warnings: list[str] = []
+    stats = {"links": 0}
+    for rel in sorted(files):
+        check_file(root, rel, errors, warnings, stats)
 
-    if broken:
-        print(f"[FAIL] {len(broken)} 处断链 (共检查 {n_links} 条链接):",
-              file=sys.stderr)
-        for rel, lineno, target, why in broken:
-            print(f"  - {rel}:{lineno}", file=sys.stderr)
-            print(f"      {target}", file=sys.stderr)
-            print(f"      <- {why}", file=sys.stderr)
-        return 1
+    status = "violation" if errors else "pass"
+    exit_code = 1 if errors else 0
 
-    if not quiet:
-        print(f"[OK] {len(docs)} 个文档, {n_links} 条链接全部可达")
-    return 0
+    if args.json:
+        print(json.dumps({
+            "script": "check-doc-links.py",
+            "root": root,
+            "status": status,
+            "exit_code": exit_code,
+            "error_count": len(errors),
+            "warning_count": len(warnings),
+            "checked_files": len(files),
+            "links": stats["links"],
+            "tracked_files": tracked,
+            "errors": errors,
+            "warnings": warnings,
+        }, ensure_ascii=False))
+    else:
+        for w in warnings:
+            print(f"⚠ {w}")
+        for e in errors:
+            print(f"✗ {e}")
+        if errors:
+            print(f"✗ 发现 {len(errors)} 条死链 (检查 {len(files)} 个文件, {stats['links']} 条链接)")
+        else:
+            print(f"✓ 文档链接检查通过 (检查 {len(files)} 个文件, {stats['links']} 条链接)")
+
+    return exit_code
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

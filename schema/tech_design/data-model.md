@@ -1,10 +1,11 @@
 # Data Model: {topic} (ER 图 + 数据结构)
 
-> **状态**: Draft | Ready | Implemented
+> **状态**: Draft | Ready | Implemented | Deprecated
 > **来源**: [./README.md](./README.md)
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态行, 由人工统一翻转, agent 不得自行改写。
 > **v4 必填子文件**: 数据模型的**唯一落点**。ER 图 + 数据结构明细 + 约束 + 与 PRD 场景的关系。
 > **无变更时**: 必须保留显式声明句 `无数据模型变更: [一句话原因]`, 校验脚本据此放行。
 

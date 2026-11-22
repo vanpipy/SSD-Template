@@ -1,9 +1,11 @@
 # API Contracts: {topic}
 
-> **状态**: Draft | Ready
+> **状态**: Draft | Ready | Implemented | Deprecated
 > **来源**: [./README.md](./README.md)
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
+
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态行, 由人工统一翻转, agent 不得自行改写。
 >
 > **升级条件**: 如果 API 数 > 5 或跨服务,改用 `contracts/` 子目录,每个 API 一个文件 (`contracts/{module}.md`)
 

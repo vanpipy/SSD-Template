@@ -14,6 +14,7 @@ __pycache__/
 # ── Symphony 本地工作区(若在仓内跑) ───────────────────────
 /workspace/
 /symphony-workspaces/
+/.symphony/
 
 # ── 历史归档(已移出仓库,仅保留指针) ──────────────────────
 /docs/efficacy/

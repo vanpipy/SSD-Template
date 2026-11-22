@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # check-repo-baseline.sh — 校验 Tech Design README 的「实现基线」表
 #
-# 目的:
-#   防止 TD 以过期 commit 或错误分支作为实现结论(把已实现写成「待建」、
-#   把无 DDL 写成结论而仓库已有建表脚本)。
-#
 # 规约 (见 AGENTS.md §1.6):
 #   - 每个 tech_design/{date}-{topic}/README.md 必须包含 `## 实现基线` 段
 #   - 表头固定 6 列: | 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |
@@ -16,86 +12,106 @@
 #
 # 仓库 → 本地路径的映射**从 AGENTS.md §1.1「本地路径」列解析**, 脚本内不硬编码任何仓名。
 #
-# 用法:
-#   ./scripts/check-repo-baseline.sh                 # 检查整个仓库
-#   ./scripts/check-repo-baseline.sh path/to/td-dir  # 检查单个 TD 目录
-#   ./scripts/check-repo-baseline.sh --max-age-days 30
+# 可移植性(契约 M9):
+#   - 不依赖 GNU `date -d` / BSD `date -j -f`; 两者都不可用时用 POSIX 历法近似换算,
+#     并打印**降级提示**(该换算只影响「基线是否过期」的 ⚠ 判断)
+#   - 不用 `find -mindepth/-maxdepth`
 #
-# 退出码:
-#   0 = 全部通过(可含 ⚠)
-#   1 = 发现 ✗
-#   2 = 调用错误
+# 用法:
+#   scripts/check-repo-baseline.sh [--json] [--root DIR] [--max-age-days N] [TARGET]
+#
+# 退出码: 0=通过 1=违规 2=调用错误 / 环境错误
 
 set -uo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
+SCRIPT_PATH=$0
+SCRIPT_DIR=$(cd -- "$(dirname -- "$SCRIPT_PATH")" >/dev/null 2>&1 && pwd)
+DEFAULT_ROOT=$(dirname -- "$SCRIPT_DIR")
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SCRIPT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-MAX_AGE_DAYS=7
+JSON=0
+ROOT=""
 TARGET=""
-STORE_ROOT="$SCRIPT_ROOT"
-AGENTS_FILE=""
+MAX_AGE_DAYS=7
+NO_COLOR=${NO_COLOR:-0}
+STAGE_OVERRIDE=""
 
-usage() {
-  sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'
-}
-
-# --- 定位被检 store 根目录与 AGENTS.md ---
-# 被检目标可能是别的仓库(本仓只提供脚本), 因此 AGENTS.md 必须**从目标向上找**,
-# 而不是固定用脚本所在仓。找不到时退化为脚本自身仓, 后续仓库解析全部降级为 ⚠。
-find_store_root() {
-  local start="$1" dir=""
-  if [[ -f "$start" ]]; then
-    dir="$(cd "$(dirname "$start")" && pwd)"
-  else
-    dir="$(cd "$start" && pwd 2>/dev/null)" || dir=""
-  fi
-  [[ -n "$dir" ]] || return 0
-  local probe="$dir"
-  while [[ -n "$probe" && "$probe" != "/" ]]; do
-    if [[ -f "$probe/AGENTS.md" ]]; then
-      printf '%s' "$probe"
-      return 0
-    fi
-    probe="$(dirname "$probe")"
-  done
-  # 目标树内没有 AGENTS.md → 用脚本自身仓
-  printf '%s' "$SCRIPT_ROOT"
-}
-
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
+    --json) JSON=1 ;;
+    --root)
+      [ $# -ge 2 ] || { printf '✗ --root 需要目录参数\n' >&2; exit 2; }
+      ROOT="$2"; shift ;;
+    --root=*) ROOT="${1#--root=}" ;;
+    --stage)
+      [ $# -ge 2 ] || { printf '✗ --stage 需要参数\n' >&2; exit 2; }
+      STAGE_OVERRIDE=$(printf '%s' "$2" | tr 'A-Z' 'a-z'); shift ;;
+    --stage=*) STAGE_OVERRIDE=$(printf '%s' "${1#--stage=}" | tr 'A-Z' 'a-z') ;;
     --max-age-days)
-      [[ $# -ge 2 ]] || { usage >&2; exit 2; }
-      MAX_AGE_DAYS="$2"
-      shift 2
-      ;;
-    -h|--help) usage; exit 0 ;;
-    -*) echo -e "${RED}✗ 未知参数: $1${NC}" >&2; usage >&2; exit 2 ;;
-    *) TARGET="$1"; shift ;;
+      [ $# -ge 2 ] || { printf '✗ --max-age-days 需要数字参数\n' >&2; exit 2; }
+      MAX_AGE_DAYS="$2"; shift ;;
+    --max-age-days=*) MAX_AGE_DAYS="${1#--max-age-days=}" ;;
+    --help|-h)
+      printf '用法: %s [--json] [--root DIR] [--stage STAGE] [--max-age-days N] [TARGET]\n' "$SCRIPT_PATH"; exit 0 ;;
+    -*) printf '✗ 未知参数: %s\n' "$1" >&2; exit 2 ;;
+    *) [ -z "$TARGET" ] && TARGET="$1" || { printf '✗ 只能指定一个 TARGET\n' >&2; exit 2; } ;;
   esac
+  shift
 done
 
-TARGET="${TARGET%/}"
-
-# 未指定目标 → 默认检查脚本所在仓 (fork 后本仓即被检 store)
-if [[ -z "$TARGET" ]]; then
-  TARGET="$SCRIPT_ROOT"
+if [ -n "$STAGE_OVERRIDE" ]; then
+  case "$STAGE_OVERRIDE" in
+    draft|deprecated|ready|implemented) : ;;
+    *) printf '✗ --stage 取值非法: %s (可用: draft|ready|implemented|deprecated)\n' "$STAGE_OVERRIDE" >&2; exit 2 ;;
+  esac
 fi
 
-if [[ -e "$TARGET" ]]; then
-  STORE_ROOT="$(find_store_root "$TARGET")"
-fi
-AGENTS_FILE="$STORE_ROOT/AGENTS.md"
+case "$MAX_AGE_DAYS" in
+  ''|*[!0-9]*) printf '✗ --max-age-days 必须是整数: %s\n' "$MAX_AGE_DAYS" >&2; exit 2 ;;
+esac
 
-errors=0
-warnings=0
-checked=0
+[ -n "$ROOT" ] || ROOT="$DEFAULT_ROOT"
+if [ ! -d "$ROOT" ]; then
+  printf '✗ --root 目录不存在: %s\n' "$ROOT" >&2
+  exit 2
+fi
+ROOT=$(cd -- "$ROOT" >/dev/null 2>&1 && pwd -P)
+
+# 相对 TARGET 一律按 ROOT 解析(与其余门禁脚本的 CLI 语义一致)
+if [ -n "$TARGET" ]; then
+  case "$TARGET" in
+    /*) ;;
+    *) TARGET="$ROOT/$TARGET" ;;
+  esac
+fi
+AGENTS_FILE="$ROOT/AGENTS.md"
+
+if [ "$NO_COLOR" = "1" ]; then
+  C_ERR=''; C_WARN=''; C_OK=''; C_DIM=''; C_RESET=''
+else
+  C_ERR=$'\033[0;31m'; C_WARN=$'\033[0;33m'; C_OK=$'\033[0;32m'; C_DIM=$'\033[0;36m'; C_RESET=$'\033[0m'
+fi
+
+ERRORS=()
+WARNINGS=()
+NOTES=()
+
+err()  { ERRORS+=("$1"); [ "$JSON" -eq 1 ] || printf '%s✗%s %s\n' "$C_ERR" "$C_RESET" "$1"; }
+warn() { WARNINGS+=("$1"); [ "$JSON" -eq 1 ] || printf '%s⚠%s %s\n' "$C_WARN" "$C_RESET" "$1"; }
+note() { NOTES+=("$1"); [ "$JSON" -eq 1 ] || printf '%s·%s %s\n' "$C_DIM" "$C_RESET" "$1"; }
+ok()   { [ "$JSON" -eq 1 ] || printf '%s✓%s %s\n' "$C_OK" "$C_RESET" "$1"; }
+
+json_escape() {
+  awk 'BEGIN{ORS=""} { if (NR>1) printf "\\n"; gsub(/\\/,"\\\\"); gsub(/"/,"\\\""); gsub(/\t/,"\\t"); gsub(/\r/,"\\r"); printf "%s", $0 }'
+}
+json_str_array() {
+  local first=1 item
+  printf '['
+  for item in "$@"; do
+    if [ "$first" -eq 1 ]; then first=0; else printf ','; fi
+    printf '"%s"' "$(printf '%s' "$item" | json_escape)"
+  done
+  printf ']'
+}
 
 trim() {
   local s="$1"
@@ -104,31 +120,47 @@ trim() {
   printf '%s' "$s"
 }
 
+# --- 日期换算: 优先 GNU date -d, 其次 BSD date -j -f, 最后 POSIX 历法近似 ---
+DATE_MODE=""
 day_epoch() {
   local d="$1"
-  if date -d "$d" +%s >/dev/null 2>&1; then
-    date -d "$d" +%s
-  elif date -j -f "%Y-%m-%d" "$d" +%s >/dev/null 2>&1; then
-    date -j -f "%Y-%m-%d" "$d" +%s
-  else
-    printf '0'
+  if [ -z "$DATE_MODE" ]; then
+    if date -d "$d" +%s >/dev/null 2>&1; then DATE_MODE="gnu"
+    elif date -j -f "%Y-%m-%d" "$d" +%s >/dev/null 2>&1; then DATE_MODE="bsd"
+    else DATE_MODE="posix"; fi
+    if [ "$DATE_MODE" = "posix" ]; then
+      note "当前环境的 date 不支持 -d / -j -f, 已降级为 POSIX 历法换算(仅影响「基线是否过期」的 ⚠ 判断, 误差约 ±1 天)"
+    fi
   fi
+  case "$DATE_MODE" in
+    gnu) date -d "$d" +%s 2>/dev/null ;;
+    bsd) date -j -f "%Y-%m-%d" "$d" +%s 2>/dev/null ;;
+    posix)
+      awk -v d="$d" 'BEGIN{
+        split(d, a, "-");
+        y=a[1]+0; m=a[2]+0; dd=a[3]+0;
+        if (m <= 2) { y -= 1; m += 12 }
+        era = int((y >= 0 ? y : y-399) / 400);
+        yoe = y - era*400;
+        doy = int((153*(m-3)+2)/5) + dd-1;
+        doe = yoe*365 + int(yoe/4) - int(yoe/100) + doy;
+        print (era*146097 + doe - 719468)*86400;
+      }'
+      ;;
+  esac
 }
 
 # --- 解析 AGENTS.md §1.1「仓库清单」表 → 标识 → 本地路径 ---
-# 表格形态: | 标识 | 仓库 | Git URL | 本地路径 | 角色 | ... |
-# 标识列可加粗 (**A**); 本地路径列可能是 ./ 或 ../foo/ 形式。
-# §1.1 缺失或表头不匹配时返回空, 后续所有仓库解析降级为 ⚠ 跳过。
+REPO_PATHS=""
+MAP_LOADED=0
 parse_repo_map() {
-  [[ -f "$AGENTS_FILE" ]] || return 0
+  [ -f "$AGENTS_FILE" ] || return 0
   awk '
-    # 只在 §1.1 小节内取表 (§1.1 的 #### 子标题不算结束)
     /^#{1,4}[[:space:]]+1\.1[[:space:]]/ { sec=1; next }
     sec && /^#{1,3}[[:space:]]/ { sec=0 }
     !sec { next }
     /^\|/ {
       n=split($0, c, "|")
-      # 表头探测 (hid/hlp 是本行临时量; id/lp 是确定下来的列号, 后续行复用)
       hid=-1; hlp=-1
       for (i=1; i<=n; i++) {
         v=c[i]; gsub(/^[ \t]+|[ \t]+$/,"",v); gsub(/\*\*/,"",v)
@@ -149,35 +181,37 @@ parse_repo_map() {
   ' "$AGENTS_FILE"
 }
 
-declare -A repo_paths=()
-map_loaded=false
-while IFS=$'\t' read -r kind k v; do
+while IFS="$(printf '\t')" read -r kind k v; do
   case "$kind" in
-    HDR) map_loaded=true ;;
+    HDR) MAP_LOADED=1 ;;
     ROW)
-      [[ "$v" == "—" || "$v" == "-" || -z "$v" ]] && continue
-      repo_paths["$k"]="$v"
+      case "$v" in "—"|"-"|"") continue ;; esac
+      REPO_PATHS="$REPO_PATHS $k=$v"
       ;;
   esac
 done < <(parse_repo_map)
 
-# 标识 → 绝对本地路径 (相对路径按仓根解析; ./ 指本仓自身)
-repo_dir() {
-  local key="$1"
-  local p="${repo_paths[$key]:-}"
-  [[ -z "$p" ]] && { printf ''; return 0; }
+repo_path_of() {
+  local key="$1" p
+  p=$(printf '%s' "$REPO_PATHS" | tr ' ' '\n' | grep "^${key}=" | head -1 | cut -d= -f2-)
+  [ -z "$p" ] && return 0
   case "$p" in
     /*) printf '%s' "$p" ;;
-    ./*|../*) printf '%s/%s' "$STORE_ROOT" "${p#./}" ;;
-    *)  printf '%s/%s' "$STORE_ROOT" "$p" ;;
+    ./*|../*) printf '%s/%s' "$ROOT" "${p#./}" ;;
+    *) printf '%s/%s' "$ROOT" "$p" ;;
   esac
 }
 
-check_readme() {
-  local readme="$1"
-  local td_dir="$2"
+repo_registered() {
+  case " $REPO_PATHS " in *" $1="*) return 0 ;; esac
+  return 1
+}
 
-  local section
+# --- 单个 TD README 校验 ---
+CHECKED=0
+check_readme() {
+  local readme="$1" rel section rows repo branch sha date items status
+  rel=${readme#"$ROOT"/}
   section=$(awk '
     /^```/ { fence = !fence; next }
     !fence && /^##[[:space:]]+实现基线/ { f=1; next }
@@ -185,165 +219,227 @@ check_readme() {
     f { print }
   ' "$readme" 2>/dev/null)
 
-  if [[ -z "$section" ]]; then
-    echo -e "${RED}✗${NC} $readme — 缺少 \`## 实现基线\` 段 (AGENTS.md §1.6 门禁)"
-    errors=$((errors+1))
-    return
+  if [ -z "$section" ]; then
+    err "$rel — 缺少 \`## 实现基线\` 段 (AGENTS.md §1.6 门禁)"
+    return 1
   fi
 
-  # 「不适用」声明: 无表格行 + 声明文本 → 按 ○ 跳过 (0 代码仓项目)
-  if ! grep -qE '^\|' <<< "$section"; then
-    if grep -qE '不适用|N/A|无关联代码仓' <<< "$section"; then
-      echo -e "○ $readme — 实现基线不适用（已声明）"
-    else
-      echo -e "${RED}✗${NC} $readme — \`## 实现基线\` 段既无表格行也无「不适用」声明"
-      errors=$((errors+1))
+  if ! printf '%s\n' "$section" | grep -qE '^\|'; then
+    if printf '%s\n' "$section" | grep -qE '不适用|N/A|无关联代码仓'; then
+      note "$rel — 实现基线不适用(已声明), 跳过"
+      return 0
     fi
-    return
+    err "$rel — \`## 实现基线\` 段既无表格行也无「不适用」声明"
+    return 1
   fi
 
-  local rows=0
+  rows=0
   while IFS= read -r line; do
-    [[ "$line" == \|* ]] || continue
-    [[ "$line" =~ ^\|[[:space:]]*:?-+ ]] && continue
+    [ -z "$line" ] && continue
+    case "$line" in \|*) ;; *) continue ;; esac
+    case "$line" in \|*[:space:]-*) ;; esac
+    printf '%s' "$line" | grep -qE '^\|[[:space:]]*:?-+' && continue
 
-    local row="${line#|}"
+    row="${line#|}"
     row="${row%|}"
-    local repo branch sha date items status
     IFS='|' read -r repo branch sha date items status <<< "$row"
 
-    repo="$(trim "${repo//\`/}")"
-    branch="$(trim "${branch//\`/}")"
-    sha="$(trim "${sha//\`/}")"
-    date="$(trim "${date//\`/}")"
-    items="$(trim "${items//\`/}")"
-    status="$(trim "${status//\`/}")"
+    repo=$(trim "${repo//\`/}")
+    branch=$(trim "${branch//\`/}")
+    sha=$(trim "${sha//\`/}")
+    date=$(trim "${date//\`/}")
+    items=$(trim "${items//\`/}")
+    status=$(trim "${status//\`/}")
 
-    [[ "$repo" == "仓库" || "$repo" == "repo" ]] && continue
-    [[ -z "$repo" ]] && continue
+    case "$repo" in "仓库"|repo|"") continue ;; esac
 
     rows=$((rows+1))
-    checked=$((checked+1))
+    CHECKED=$((CHECKED+1))
 
-    if [[ -z "$sha" || -z "$branch" ]]; then
-      echo -e "${RED}✗${NC} $readme — \`$repo\` 缺分支或 SHA"
-      errors=$((errors+1))
+    if [ -z "$sha" ] || [ -z "$branch" ]; then
+      err "$rel — \`$repo\` 缺分支或 SHA"
       continue
     fi
-
-    if [[ -z "$items" ]]; then
-      echo -e "${RED}✗${NC} $readme — \`$repo\` 缺「核对项」"
-      errors=$((errors+1))
+    if [ -z "$items" ]; then
+      err "$rel — \`$repo\` 缺「核对项」"
     fi
 
-    # 核对日期: 格式必须是 YYYY-MM-DD (与仓库是否检出无关)
     local d
-    d="$(grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' <<< "$date" | head -1 || true)"
-    if [[ -z "$d" ]]; then
-      echo -e "${RED}✗${NC} $readme — \`$repo\` 核对日期缺失或格式非 YYYY-MM-DD"
-      errors=$((errors+1))
+    d=$(printf '%s\n' "$date" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
+    if [ -z "$d" ]; then
+      err "$rel — \`$repo\` 核对日期缺失或格式非 YYYY-MM-DD"
     fi
 
-    if [[ "$status" =~ 待补|TODO|✗|❌ ]]; then
-      echo -e "${RED}✗${NC} $readme — \`$repo\` 状态为 \`$status\`，基线未完结"
-      errors=$((errors+1))
-    fi
+    case "$status" in
+      *待补*|*TODO*|*✗*|*❌*)
+        err "$rel — \`$repo\` 状态为 \`$status\`, 基线未完结"
+        continue
+        ;;
+    esac
 
     # 状态 ○ = 不适用 / 跳过 → 不做仓存在性校验
-    if [[ "$status" == "○" ]]; then
-      continue
-    fi
+    [ "$status" = "○" ] && continue
 
-    # 标识未在 AGENTS.md §1.1 登记 → ⚠ 并跳过存在性校验
-    if [[ -z "${repo_paths[$repo]:-}" ]]; then
-      if [[ "$map_loaded" == true ]]; then
-        echo -e "${YELLOW}⚠${NC} $readme — 仓库标识 \`$repo\` 未在 AGENTS.md §1.1 登记，跳过存在性校验"
+    if ! repo_registered "$repo"; then
+      if [ "$MAP_LOADED" -eq 1 ]; then
+        warn "$rel — 仓库标识 \`$repo\` 未在 AGENTS.md §1.1 登记, 跳过存在性校验"
       else
-        echo -e "${YELLOW}⚠${NC} $readme — AGENTS.md §1.1 仓库清单不可解析，跳过 \`$repo\` 存在性校验"
+        warn "$rel — AGENTS.md §1.1 仓库清单不可解析, 跳过 \`$repo\` 存在性校验"
       fi
-      warnings=$((warnings+1))
       continue
     fi
 
     local path
-    path="$(repo_dir "$repo")"
+    path=$(repo_path_of "$repo")
     if ! git -C "$path" rev-parse --git-dir >/dev/null 2>&1; then
-      echo -e "${YELLOW}⚠${NC} $readme — 仓库 \`$repo\` 本地未检出 ($path)，跳过存在性校验"
-      warnings=$((warnings+1))
+      warn "$rel — 仓库 \`$repo\` 本地未检出 ($path), 跳过存在性校验"
       continue
     fi
-
     if ! git -C "$path" cat-file -e "${sha}^{commit}" >/dev/null 2>&1; then
-      echo -e "${RED}✗${NC} $readme — \`$repo@$sha\` 在本地不存在"
-      errors=$((errors+1))
+      err "$rel — \`$repo@$sha\` 在本地不存在"
       continue
     fi
 
-    # 分支头与基线 SHA 不一致 → ⚠ (允许有意钉住)
     local sha_full ref="" head_full
-    sha_full="$(git -C "$path" rev-parse "${sha}^{commit}")"
+    sha_full=$(git -C "$path" rev-parse "${sha}^{commit}")
     for candidate in "refs/remotes/origin/$branch" "refs/heads/$branch" "$branch"; do
       if git -C "$path" rev-parse --verify --quiet "$candidate" >/dev/null 2>&1; then
-        ref="$candidate"
-        break
+        ref="$candidate"; break
       fi
     done
-    if [[ -n "$ref" ]]; then
-      head_full="$(git -C "$path" rev-parse "$ref")"
-      if [[ "$sha_full" != "$head_full" ]]; then
+    if [ -n "$ref" ]; then
+      head_full=$(git -C "$path" rev-parse "$ref")
+      if [ "$sha_full" != "$head_full" ]; then
         local head_short
-        head_short="$(git -C "$path" rev-parse --short "$ref")"
-        echo -e "${YELLOW}⚠${NC} $readme — \`$repo\` 基线 \`$sha\` 落后于 \`$branch\` 头 \`$head_short\`（有意钉住请忽略）"
-        warnings=$((warnings+1))
+        head_short=$(git -C "$path" rev-parse --short "$ref")
+        warn "$rel — \`$repo\` 基线 \`$sha\` 落后于 \`$branch\` 头 \`$head_short\`(有意钉住请忽略)"
       fi
     fi
 
-    # 核对日期新鲜度 (格式已在前面校验过)
-    if [[ -n "$d" ]]; then
+    if [ -n "$d" ]; then
       local epoch now age
-      epoch="$(day_epoch "$d")"
-      now="$(date +%s)"
-      if [[ "$epoch" =~ ^[0-9]+$ ]] && (( epoch > 0 )); then
+      epoch=$(day_epoch "$d")
+      now=$(date +%s)
+      if printf '%s' "$epoch" | grep -Eq '^[0-9]+$' && [ "$epoch" -gt 0 ] 2>/dev/null; then
         age=$(( (now - epoch) / 86400 ))
-        if (( age > MAX_AGE_DAYS )); then
-          echo -e "${YELLOW}⚠${NC} $readme — \`$repo\` 基线已 $age 天未复核（阈值 ${MAX_AGE_DAYS} 天）"
-          warnings=$((warnings+1))
+        if [ "$age" -gt "$MAX_AGE_DAYS" ]; then
+          warn "$rel — \`$repo\` 基线已 $age 天未复核(阈值 ${MAX_AGE_DAYS} 天)"
         fi
       fi
     fi
   done <<< "$section"
 
-  if (( rows == 0 )); then
-    echo -e "${RED}✗${NC} $readme — \`## 实现基线\` 段没有有效表格行"
-    errors=$((errors+1))
-  else
-    echo -e "${GREEN}✓${NC} $readme — 实现基线 $rows 行"
+  if [ "$rows" -eq 0 ]; then
+    err "$rel — \`## 实现基线\` 段没有有效表格行"
+    return 1
   fi
+  ok "$rel — 实现基线 $rows 行"
+  return 0
 }
 
-if [[ -f "$TARGET" && "$(basename "$TARGET")" == "README.md" ]]; then
-  # 显式指定了 README.md 文件 → 当作单个 TD 的 README 校验
-  check_readme "$TARGET" "$(dirname "$TARGET")"
-elif [[ -d "$TARGET" && -d "$TARGET/tech_design" ]]; then
-  # 仓根或含 tech_design/ 的目录 → 扫描全部 TD README
-  while IFS= read -r readme; do
-    check_readme "$readme" "$(dirname "$readme")"
-  done < <(find "$TARGET/tech_design" -mindepth 2 -maxdepth 2 -name README.md -type f 2>/dev/null | sort)
-elif [[ -d "$TARGET" && -f "$TARGET/README.md" && "$(basename "$TARGET")" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}- ]]; then
-  # 单个 TD 目录 (tech_design/{date}-{topic}/)
-  check_readme "$TARGET/README.md" "$TARGET"
-elif [[ -d "$TARGET" ]]; then
-  echo -e "${YELLOW}○${NC} 未找到 tech_design/ 或 TD 目录，跳过（无可校验的基线段）"
+# --- 目标解析与执行 ---
+TD_READMES=""
+has_any_artifact() {
+  local f d dn bn
+  if [ -d "$ROOT/prd" ]; then
+    for f in "$ROOT"/prd/*/*.md; do
+      [ -f "$f" ] || continue
+      d=$(dirname -- "$f"); dn=$(basename -- "$d"); bn=$(basename -- "$f" .md)
+      printf '%s' "$dn" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' || continue
+      printf '%s' "$bn" | grep -Eq '^[a-z0-9]+(-[a-z0-9]+)*$' || continue
+      return 0
+    done
+  fi
+  if [ -d "$ROOT/tech_design" ]; then
+    for d in "$ROOT"/tech_design/*/; do
+      [ -d "$d" ] || continue
+      dn=$(basename -- "$d")
+      printf '%s' "$dn" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(-[a-z0-9]+)*$' || continue
+      return 0
+    done
+  fi
+  if [ -d "$ROOT/plan" ]; then
+    for d in "$ROOT"/plan/*/; do
+      [ -d "$d" ] || continue
+      dn=$(basename -- "$d")
+      printf '%s' "$dn" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(-[a-z0-9]+)*$' || continue
+      return 0
+    done
+  fi
+  if [ -d "$ROOT/test_cases" ]; then
+    for f in "$ROOT"/test_cases/*/*.md; do
+      [ -f "$f" ] || continue
+      d=$(dirname -- "$f"); dn=$(basename -- "$d"); bn=$(basename -- "$f" .md)
+      printf '%s' "$dn" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' || continue
+      case "$bn" in *-key-points) continue ;; esac
+      return 0
+    done
+  fi
+  return 1
+}
+
+if [ -n "$TARGET" ]; then
+  if [ ! -e "$TARGET" ]; then
+    printf '✗ TARGET 不存在: %s\n' "$TARGET" >&2
+    exit 2
+  fi
+  case "$TARGET" in
+    */README.md)
+      check_readme "$TARGET"
+      ;;
+    *)
+      if [ -d "$TARGET/tech_design" ]; then
+        for d in "$TARGET"/tech_design/*/; do
+          [ -d "$d" ] || continue
+          dn=$(basename -- "$d")
+          printf '%s' "$dn" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(-[a-z0-9]+)*$' || continue
+          d=${d%/}
+          [ -f "$d/README.md" ] && check_readme "$d/README.md"
+        done
+      elif [ -f "$TARGET/README.md" ]; then
+        check_readme "$TARGET/README.md"
+      else
+        note "未找到 tech_design/ 或 TD 目录, 跳过(无可校验的基线段)"
+      fi
+      ;;
+  esac
 else
-  echo -e "${RED}✗ 路径不存在: $TARGET${NC}" >&2
-  exit 2
+  TD_COUNT=0
+  if [ -d "$ROOT/tech_design" ]; then
+    for d in "$ROOT"/tech_design/*/; do
+      [ -d "$d" ] || continue
+      dn=$(basename -- "$d")
+      printf '%s' "$dn" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(-[a-z0-9]+)*$' || continue
+      d=${d%/}
+      [ -f "$d/README.md" ] || continue
+      TD_COUNT=$((TD_COUNT+1))
+      check_readme "$d/README.md"
+    done
+  fi
+  if [ "$TD_COUNT" -eq 0 ]; then
+    if has_any_artifact; then
+      note "tech_design 层没有 Tech Design 制品, 跳过实现基线校验(该层无制品)"
+    else
+      err "本仓没有任何规格产物,门禁无从校验"
+    fi
+  fi
 fi
 
-echo "---"
-if (( errors > 0 )); then
-  echo -e "${RED}✗ 实现基线校验: $errors 项违规, $warnings 项警告, 共 $checked 行${NC}"
-  exit 1
-fi
+ERRC=${#ERRORS[@]}
+WARNC=${#WARNINGS[@]}
+if [ "$ERRC" -gt 0 ]; then STATUS="violation"; EXIT=1; else STATUS="pass"; EXIT=0; fi
 
-echo -e "${GREEN}✓ 实现基线校验: $checked 行全部通过${NC} ($warnings 项警告)"
-exit 0
+if [ "$JSON" -eq 1 ]; then
+  printf '{"script":"check-repo-baseline.sh","root":"%s","status":"%s","exit_code":%d,"error_count":%d,"warning_count":%d,"checked":%d,"stage_override":"%s","errors":%s,"warnings":%s,"notes":%s}\n' \
+    "$(printf '%s' "$ROOT" | json_escape)" "$STATUS" "$EXIT" "$ERRC" "$WARNC" "$CHECKED" "$STAGE_OVERRIDE" \
+    "$(json_str_array "${ERRORS[@]+"${ERRORS[@]}"}")" \
+    "$(json_str_array "${WARNINGS[@]+"${WARNINGS[@]}"}")" \
+    "$(json_str_array "${NOTES[@]+"${NOTES[@]}"}")"
+else
+  if [ "$ERRC" -gt 0 ]; then
+    printf '✗ 实现基线校验: %d 项违规, %d 项警告, 共 %d 行\n' "$ERRC" "$WARNC" "$CHECKED"
+  else
+    ok "实现基线校验: $CHECKED 行全部通过 ($WARNC 项警告)"
+  fi
+fi
+exit $EXIT

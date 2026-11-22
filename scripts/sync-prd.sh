@@ -1,472 +1,497 @@
 #!/usr/bin/env bash
-# sync-prd.sh — L1 PRD 台账机械登记 + 根 README 统计块再生成（幂等）
+# sync-prd.sh — PRD 台账登记 + 规格统计同步(幂等)
 #
-# 职责:
-#   - 扫描 material/{YYYY-MM-DD}/ 素材区，为未登记的素材补「骨架行」到批次台账
-#   - 批次台账不存在 → 按 schema/prd-ledger.md 模板创建 (含 `## PRD台账` 段)
-#   - 报告哨兵: 待分析 (优先级=待定 或 提出人=[待补]) / 待抓取 (来源=external 且有 URL 但创建时间为空) / 孤儿行
-#   - 统计回写: 幂等再生根 README.md 的 `<!-- prd-stats:begin -->` … `<!-- prd-stats:end -->` 块
-#
-# 边界 (硬约束):
-#   - 确定性脚本: 幂等, 无 LLM, **无网络**, 无外部平台依赖
-#   - `来源` 枚举只有 3 个: local / external / internal —— 模板**不内置任何抓取器**
-#   - 不执行任何 git 写操作
-#   - 台账 11 列定义见 schema/prd-ledger.md; 统计块格式见 docs/mechanism-contract.md I-1
-#
-# 用法 (仓库根目录):
-#   ./scripts/sync-prd.sh              # 巡检全部批次
-#   ./scripts/sync-prd.sh 2026-08-05   # 只处理指定批次
+# 职责边界(契约 M12):
+#   - **不写**仓根的其它顶层文档(AGENTS.md / HOW_TO_USE.md / new-factors.md …)。M12 的禁令
+#     只针对「顶层文档」。
+#   - **写**两处, 且仅这两处:
+#       1) 可选层 `material/{YYYY-MM-DD}/PRDS.md` — 批次台账: 补登骨架行 + 标记待办行
+#          (schema/prd-ledger.md 的 11 列格式; 见 material/README.md)
+#       2) 根 `README.md` 的 `<!-- prd-stats:begin -->` … `<!-- prd-stats:end -->` 标记块
+#          —— 标记块之外的内容永不触碰
+#   - 不做任何 git 写操作, 只改工作区文件。
 #
 # 退出码:
-#   0 = 无待办
-#   1 = 存在待分析 / 待抓取 / 孤儿行
-#   2 = 调用 / 环境错误
+#   0 = 台账与统计块都已同步, 且没有待办行
+#   1 = 存在待办行(待分析 / 待抓取 / 孤儿) —— 工作状态信号, 不是规格违规;
+#       `--check` 下还表示统计块/台账与实际制品不一致(漂移)
+#   2 = 调用/环境错误
+#   CI 因此**不**按本脚本的退出码判红(台账有「待分析」是常态),
+#   改为「写模式(幂等) + git diff --exit-code -- README.md material/」比对漂移。
+#
+# 用法:
+#   scripts/sync-prd.sh [--json] [--root DIR] [--check]
+#
+# 可移植性(契约 M9):
+#   - 不用 `find -mindepth/-maxdepth`; 全深度扫描 + 形状判定
+#   - 不用 GNU 专有 date 选项; 时间戳用 POSIX `date '+%Y-%m-%d %H:%M'`
 
 set -uo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
+SCRIPT_PATH=$0
+SCRIPT_DIR=$(cd -- "$(dirname -- "$SCRIPT_PATH")" >/dev/null 2>&1 && pwd)
+DEFAULT_ROOT=$(dirname -- "$SCRIPT_DIR")
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-STORE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$STORE_ROOT" || exit 2
+JSON=0
+ROOT=""
+CHECK_MODE=0
+NO_COLOR=${NO_COLOR:-0}
 
-SCHEMA="schema/prd-ledger.md"
-LEDGER_NAME="PRDS.md"
-BATCH_RE='^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
-# `来源` 枚举 —— 只有 3 个, 不含任何具体外部平台名
-SOURCE_ENUM_RE='^(local|external|internal)$'
-
-BATCH_FILTER=""
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
-    -h|--help)
-      sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'
-      exit 0
-      ;;
-    -*) echo -e "${RED}✗ 未知参数: $1${NC}" >&2; exit 2 ;;
-    *) BATCH_FILTER="$1"; shift ;;
+    --json) JSON=1 ;;
+    --check) CHECK_MODE=1 ;;
+    --root)
+      [ $# -ge 2 ] || { printf '✗ --root 需要目录参数\n' >&2; exit 2; }
+      ROOT="$2"; shift ;;
+    --root=*) ROOT="${1#--root=}" ;;
+    --help|-h)
+      printf '用法: %s [--json] [--root DIR] [--check]\n' "$SCRIPT_PATH"; exit 0 ;;
+    -*) printf '✗ 未知参数: %s\n' "$1" >&2; exit 2 ;;
+    *) printf '✗ 不接受位置参数: %s\n' "$1" >&2; exit 2 ;;
   esac
+  shift
 done
 
-# --- 可选层: 无素材区 → 无事可做, 干净跳过 (退出码 0) ---
-if [[ ! -d material ]]; then
-  echo -e "${YELLOW}○${NC} 未启用素材区 (material/ 不存在), 跳过台账同步"
-  echo "---"
-  echo -e "${GREEN}✓ PRD台账同步: 无待办${NC}"
-  exit 0
+[ -n "$ROOT" ] || ROOT="$DEFAULT_ROOT"
+if [ ! -d "$ROOT" ]; then
+  printf '✗ --root 目录不存在: %s\n' "$ROOT" >&2
+  exit 2
+fi
+ROOT=$(cd -- "$ROOT" >/dev/null 2>&1 && pwd -P)
+
+if [ "$NO_COLOR" = "1" ]; then
+  C_ERR=''; C_WARN=''; C_OK=''; C_DIM=''; C_RESET=''
+else
+  C_ERR=$'\033[0;31m'; C_WARN=$'\033[0;33m'; C_OK=$'\033[0;32m'; C_DIM=$'\033[0;36m'; C_RESET=$'\033[0m'
 fi
 
-total_batches=0
-material_total=0
-ledger_total=0
-added_total=0
-pending_analysis_total=0
-pending_fetch_total=0
-orphan_total=0
-errors=0
-nonstandard=""
+ERRORS=()
+WARNINGS=()
+NOTES=()
 
-trim() {
-  local s="$1"
-  s="${s#"${s%%[![:space:]]*}"}"
-  s="${s%"${s##*[![:space:]]}"}"
-  printf '%s' "$s"
+err()  { ERRORS+=("$1"); [ "$JSON" -eq 1 ] || printf '%s✗%s %s\n' "$C_ERR" "$C_RESET" "$1"; }
+warn() { WARNINGS+=("$1"); [ "$JSON" -eq 1 ] || printf '%s⚠%s %s\n' "$C_WARN" "$C_RESET" "$1"; }
+note() { NOTES+=("$1"); [ "$JSON" -eq 1 ] || printf '%s·%s %s\n' "$C_DIM" "$C_RESET" "$1"; }
+ok()   { [ "$JSON" -eq 1 ] || printf '%s✓%s %s\n' "$C_OK" "$C_RESET" "$1"; }
+
+json_escape() {
+  awk 'BEGIN{ORS=""} { if (NR>1) printf "\\n"; gsub(/\\/,"\\\\"); gsub(/"/,"\\\""); gsub(/\t/,"\\t"); gsub(/\r/,"\\r"); printf "%s", $0 }'
+}
+json_str_array() {
+  local first=1 item
+  printf '['
+  for item in "$@"; do
+    if [ "$first" -eq 1 ]; then first=0; else printf ','; fi
+    printf '"%s"' "$(printf '%s' "$item" | json_escape)"
+  done
+  printf ']'
 }
 
-# 取台账最大序号 (同前缀同日期)
-max_seq() {
-  local file="$1" prefix="$2" stamp="$3"
-  grep -oE "${prefix}-${stamp}-[0-9]{2}" "$file" 2>/dev/null \
-    | sed "s/^${prefix}-${stamp}-//" | sort -n | tail -1
+TOPIC_RE='^[a-z0-9]+(-[a-z0-9]+)*$'
+DATE_RE='^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+DATETOPIC_RE='^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(-[a-z0-9]+)*$'
+
+# 读取状态 token: `> **状态**: X`(PRD/TD/Plan) 或 `| **状态** | X |`(TestCase)
+read_state() {
+  awk '
+    /^[[:space:]]*>?[[:space:]]*\*\*状态\*\*[[:space:]]*[:：]?/ {
+      val=$0
+      sub(/^[^:：]*[:：][[:space:]]*/, "", val)
+      gsub(/^[[:space:]]*[|*`]+[[:space:]]*/, "", val)
+      gsub(/[[:space:]]*[|*`]+$/, "", val)
+      if (match(val, /(Draft|Ready|Implemented|Deprecated)/)) { print substr(val, RSTART, RLENGTH); exit }
+    }
+  ' "$1" 2>/dev/null
 }
 
-# 取文件首个一级标题, 无则用文件名; 表格竖线替换掉以免破坏台账表格
-first_title() {
-  local t
-  t=$(grep -m1 '^# ' "$1" 2>/dev/null | sed 's/^# //' | tr -d '|')
-  [[ -n "$t" ]] && printf '%s' "$t" || basename "$1"
-}
-
-# 提取 `## PRD台账` 段 (跳过围栏内的同名标题); 无该段时回退全文
-ledger_section() {
-  local file="$1" body
-  body=$(awk '
-    /^```/ { fence = !fence; next }
-    !fence && /^##[[:space:]]+PRD台账[[:space:]]*$/ { f=1; next }
-    !fence && f && /^#{1,6}[[:space:]]/ { exit }
-    f { print }
-  ' "$file" 2>/dev/null)
-  if [[ -z "$body" ]]; then
-    cat "$file" 2>/dev/null
-    return
-  fi
-  printf '%s\n' "$body"
-}
-
-# 由台账表头推算列号 (awk -F'|' 口径: 首列 '|' 之前是空字段, 故 # = 2, ID = 3)
-# 输出: "<no_col> <id_col> <name_col> <prio_col> <state_col> <source_col> <material_col> <create_col> <owner_col>"
-ledger_columns() {
+read_meta_state() {
   awk -F'|' '
-    { no=0; id=0; nm=0; pr=0; st=0; so=0; mt=0; ct=0; ow=0
-      for (i=2; i<=NF-1; i++) {
-        c=$i; gsub(/^[ \t]+|[ \t]+$/,"",c)
-        if (c=="#") no=i
-        else if (c=="ID") id=i
-        else if (c=="PRD 名称" || c=="名称") nm=i
-        else if (c=="优先级") pr=i
-        else if (c=="状态") st=i
-        else if (c=="来源") so=i
-        else if (c=="关联素材") mt=i
-        else if (c=="创建时间") ct=i
-        else if (c=="提出人") ow=i
+    /^\|/ {
+      key=$2; gsub(/^[ \t]+|[ \t]+$/,"",key); gsub(/\*+/,"",key)
+      if (key=="状态") {
+        v=$3; gsub(/^[ \t]+|[ \t]+$/,"",v)
+        if (match(v, /(Draft|Ready|Implemented|Deprecated)/)) { print substr(v, RSTART, RLENGTH); exit }
       }
-      if (id) { printf "%d %d %d %d %d %d %d %d %d\n", (no?no:2), id, (nm?nm:4), (pr?pr:5), (st?st:7), (so?so:8), (mt?mt:9), (ct?ct:10), (ow?ow:12); exit } }
-  ' <<< "$1"
+    }
+  ' "$1" 2>/dev/null
 }
 
-# 从 schema/prd-ledger.md 取台账表头行 + 分隔行
-# 优先取 ```markdown 围栏内的表格; 围栏不存在时回退全文第一个含 ID 列的表头。
-schema_ledger_header() {
-  local src="$1" body
-  body=$(awk '/^```markdown[[:space:]]*$/{f=1;next} /^```[[:space:]]*$/{if(f)exit} f' "$src" 2>/dev/null)
-  if ! printf '%s\n' "$body" | grep -qE '\|[[:space:]]*ID[[:space:]]*\|'; then
-    body=$(cat "$src" 2>/dev/null)
-  fi
-  printf '%s\n' "$body" | awk '
-    /\|[ \t]*ID[ \t]*\|/ { if (!got) { print; got=1; want=1; next } }
-    want && /^\|[ \t]*:?-+/ { print; exit }
-  '
-}
+# --- 各层计数 ---
+# 状态分布覆盖契约 D1 的 4 个状态(Draft / Ready / Implemented / Deprecated);
+# `其他` 只用于状态值不在枚举内(由 check-md-schema.sh 负责报错)。
+prd_total=0; prd_draft=0; prd_ready=0; prd_impl=0; prd_dep=0; prd_other=0
+td_total=0;  td_draft=0;  td_ready=0;  td_impl=0;  td_dep=0;  td_other=0
+plan_total=0; plan_draft=0; plan_ready=0; plan_impl=0; plan_dep=0; plan_other=0
+test_total=0; test_draft=0; test_ready=0; test_impl=0; test_dep=0; test_other=0
 
-# 从一行台账记录取第 c 列 (awk 口径, 去空白)
-col() {
-  local row="$1" c="$2"
-  awk -F'|' -v c="$c" '{gsub(/^[ \t]+|[ \t]+$/,"",$c); print $c}' <<< "$row"
-}
-
-# --- 在台账表的最后一行之后插入一行 (而不是追加到文件末尾) ---
-# 这样台账文件后面即使还有其他小节, 新行仍落在表内。
-append_ledger_row() {
-  local file="$1" row="$2" last tmp
-  last=$(awk '
-    /^```/ { fence = !fence; next }
-    !fence && /^##[[:space:]]+PRD台账[[:space:]]*$/ { f=1; next }
-    !fence && f && /^#{1,6}[[:space:]]/ { exit }
-    f && /^\|/ { last=NR }
-    END { print last+0 }
-  ' "$file")
-  if [[ "$last" -le 0 ]]; then
-    printf '%s\n' "$row" >> "$file"
-    return 0
-  fi
-  tmp="${file}.row.tmp"
-  awk -v last="$last" -v row="$row" 'NR==last { print; print row; next } { print }' "$file" > "$tmp" \
-    && mv "$tmp" "$file"
-  return 0
-}
-
-# --- 按模板创建批次台账文件 ---
-create_ledger() {
-  local file="$1" bname="$2" yyyymmdd="$3" header
-  header=$(schema_ledger_header "$SCHEMA")
-  if [[ -z "$header" ]]; then
-    return 1
-  fi
-  {
-    echo "# PRDS: $bname"
-    echo ""
-    echo "> 批次统一入口: 素材 → PRD 台账。字段顺序与列名见 \`schema/prd-ledger.md\`。"
-    echo ""
-    echo "## PRD台账"
-    echo ""
-    echo "> 批次素材入口。行状态在收敛后回填, 创建/更新时间由登记事件回填, 其余列不得修改。"
-    echo ""
-    printf '%s\n' "$header"
-  } > "$file"
-  return 0
-}
-
-for batch in material/*/; do
-  [[ -d "$batch" ]] || continue
-  bname=$(basename "$batch")
-
-  # 非规范日期目录 → 只点名, 交给 check-naming.sh
-  if ! [[ "$bname" =~ $BATCH_RE ]]; then
-    nonstandard="$nonstandard $bname"
-    continue
-  fi
-
-  # 只处理指定批次
-  if [[ -n "$BATCH_FILTER" && "$bname" != "$BATCH_FILTER" ]]; then
-    continue
-  fi
-
-  total_batches=$((total_batches+1))
-  req_file="${batch}${LEDGER_NAME}"
-  yyyymmdd=${bname//-/}
-
-  # 收集素材文件 (排除台账自身)
-  mat_files=()
-  while IFS= read -r f; do
-    mat_files+=("$f")
-  done < <(find "$batch" -maxdepth 1 -type f -name '*.md' ! -name "$LEDGER_NAME" 2>/dev/null | sort)
-
-  material_total=$((material_total + ${#mat_files[@]}))
-
-  # 无素材且无台账 → 无事可做
-  if [[ ${#mat_files[@]} -eq 0 && ! -f "$req_file" ]]; then
-    continue
-  fi
-
-  # 台账不存在 → 按模板创建
-  if [[ ! -f "$req_file" ]]; then
-    if [[ -f "$SCHEMA" ]]; then
-      if create_ledger "$req_file" "$bname" "$yyyymmdd"; then
-        echo -e "${YELLOW}○${NC} $bname — 按模板创建 $LEDGER_NAME (含 \`## PRD台账\` 段)"
-      else
-        echo -e "${RED}✗${NC} $bname — 无法从 $SCHEMA 提取台账表头, 无法创建 $LEDGER_NAME" >&2
-        exit 2
-      fi
-    else
-      echo -e "${RED}✗${NC} $bname — 缺少 $SCHEMA, 无法创建 $LEDGER_NAME" >&2
-      exit 2
-    fi
-  fi
-
-  ledger_body=$(ledger_section "$req_file")
-  [[ -z "$(grep -E '^\|' <<< "$ledger_body")" ]] && continue
-
-  cols=$(ledger_columns "$ledger_body")
-  if [[ -z "$cols" ]]; then
-    echo -e "${YELLOW}⚠${NC} $bname — 台账表未找到 \`ID\` 列, 跳过补登记与哨兵检查"
-    continue
-  fi
-  read -r no_col id_col name_col prio_col state_col source_col material_col create_col owner_col <<< "$cols"
-  no_col="${no_col:-2}"; id_col="${id_col:-3}"; name_col="${name_col:-4}"; prio_col="${prio_col:-5}"
-  state_col="${state_col:-7}"; source_col="${source_col:-8}"; material_col="${material_col:-9}"
-  create_col="${create_col:-10}"; owner_col="${owner_col:-12}"
-
-  # --- 逐素材核对登记 (台账只增) ---
-  for f in "${mat_files[@]}"; do
-    fname=$(basename "$f")
-    if grep -qF "$fname" <<< "$ledger_body"; then
-      continue
-    fi
-    seq=$(max_seq "$req_file" "PRD" "$yyyymmdd")
-    seq=$(printf '%02d' $(( ${seq:-0} + 1 )))
-    title=$(first_title "$f")
-    # 骨架行: 来源=local (模板不内置任何抓取器, 外部来源由项目自定义 skill 登记)
-    # 列序: # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人
-    skeleton=$(printf '| %s | PRD-%s-%s | %s | 待定 |  | 待分析 | local | %s | %s | %s | [待补] |' \
-      "$seq" "$yyyymmdd" "$seq" "$title" "$fname" "$(date +%F)" "$(date +%F)")
-    append_ledger_row "$req_file" "$skeleton"
-    added_total=$((added_total+1))
-    echo -e "${YELLOW}+${NC} $bname — 补登记骨架行 PRD-$yyyymmdd-$seq ← $fname (local)"
-    ledger_body=$(ledger_section "$req_file")
-  done
-
-  ledger_body=$(ledger_section "$req_file")
-
-  # --- 哨兵检查 ---
-  while IFS= read -r row; do
-    [[ -z "$row" ]] && continue
-    lid=$(col "$row" "$id_col")
-    case "$lid" in
-      ""|"ID") continue ;;
-    esac
-    [[ "$lid" =~ ^:?-+:?$ ]] && continue
-    [[ "$lid" == *"["* || "$lid" == *"]"* ]] && continue
-
-    lsource=$(col "$row" "$source_col")
-    lmaterial=$(col "$row" "$material_col")
-    lcreate=$(col "$row" "$create_col")
-    lprio=$(col "$row" "$prio_col")
-    lowner=$(col "$row" "$owner_col")
-
-    ledger_total=$((ledger_total+1))
-
-    # 来源枚举校验 (只有 local / external / internal)
-    if [[ -n "$lsource" && ! "$lsource" =~ $SOURCE_ENUM_RE ]]; then
-      echo -e "${RED}✗${NC} $bname — $lid 来源非法: '$lsource' (期望 local / external / internal)"
-      errors=$((errors+1))
-    fi
-
-    # 哨兵 1: 待分析 (优先级=待定 或 提出人=[待补])
-    if [[ "$lprio" == "待定" || "$lowner" == "[待补]" ]]; then
-      pending_analysis_total=$((pending_analysis_total+1))
-      echo -e "${YELLOW}⚠${NC} $bname — 待分析: $lid (优先级=$lprio, 提出人=$lowner)"
-    fi
-
-    # 哨兵 2: 待抓取 (来源=external 且有 URL 但 创建时间为空)
-    if [[ "$lsource" == "external" && "$lmaterial" == http* && -z "$lcreate" ]]; then
-      pending_fetch_total=$((pending_fetch_total+1))
-      echo -e "${YELLOW}⚠${NC} $bname — 待抓取: $lid ($lmaterial)"
-    fi
-
-    # 孤儿行: 关联素材指向的仓内 .md 文件不存在 (URL 不查)
-    # 解析顺序: 批次目录相对路径 → 仓根相对路径 → 台账文件所在目录相对路径
-    ref="${lmaterial##*→}"
-    ref="$(trim "$ref")"
-    if [[ "$ref" == *.md && "$ref" != http* ]]; then
-      if [[ ! -f "${batch}${ref}" && ! -f "$ref" && ! -f "$(dirname "$req_file")/${ref}" ]]; then
-        orphan_total=$((orphan_total+1))
-        echo -e "${RED}✗${NC} $bname — 孤儿行: $lid 关联素材不存在: $ref"
-      fi
-    fi
-  done < <(grep -E '^\|' <<< "$ledger_body")
-done
-
-# --- 根 README 统计块回写 (标记之间幂等再生) ---
-update_readme_stats() {
-  local readme="README.md"
-  [[ -f "$readme" ]] || { echo -e "${YELLOW}⚠ 统计回写跳过: README.md 不存在${NC}"; return 0; }
-
-  local b_marker='<!-- prd-stats:begin -->'
-  local e_marker='<!-- prd-stats:end -->'
-  local b_line e_line
-  b_line=$(grep -nF "$b_marker" "$readme" | head -1 | cut -d: -f1)
-  e_line=$(grep -nF "$e_marker" "$readme" | head -1 | cut -d: -f1)
-  if [[ -z "${b_line:-}" || -z "${e_line:-}" || "$e_line" -le "$b_line" ]]; then
-    echo -e "${YELLOW}⚠ 统计回写跳过: README.md 未找到 prd-stats 标记${NC}"
-    return 0
-  fi
-
-  # --- 各层计数 ---
-  # Layer 1: PRD — prd/{date}/*.md 的 `**状态**` 行
-  local prd_total=0 prd_ready=0 prd_impl=0 prd_dep=0 prd_other=0 f st
-  for f in prd/*/*.md; do
-    [[ -f "$f" ]] || continue
+if [ -d "$ROOT/prd" ]; then
+  for f in "$ROOT"/prd/*/*.md; do
+    [ -f "$f" ] || continue
+    d=$(dirname -- "$f"); dn=$(basename -- "$d"); bn=$(basename -- "$f" .md)
+    printf '%s' "$dn" | grep -Eq "$DATE_RE" || continue
+    printf '%s' "$bn" | grep -Eq "$TOPIC_RE" || continue
     prd_total=$((prd_total+1))
-    st=$(grep -m1 -E '^[[:space:]]*>?[[:space:]]*\*\*状态\*\*' "$f" 2>/dev/null || true)
-    if [[ "$st" == *Deprecated* ]]; then prd_dep=$((prd_dep+1))
-    elif [[ "$st" == *Implemented* ]]; then prd_impl=$((prd_impl+1))
-    elif [[ "$st" == *Ready* ]]; then prd_ready=$((prd_ready+1))
-    else prd_other=$((prd_other+1)); fi
+    st=$(read_state "$f")
+    case "$st" in
+      Draft) prd_draft=$((prd_draft+1)) ;;
+      Deprecated) prd_dep=$((prd_dep+1)) ;;
+      Implemented) prd_impl=$((prd_impl+1)) ;;
+      Ready) prd_ready=$((prd_ready+1)) ;;
+      *) prd_other=$((prd_other+1)) ;;
+    esac
   done
+fi
 
-  # Layer 2: Tech Design — tech_design/{date}-{topic}/ 内首个 `**状态**` 行
-  local td_total=0 td_ready=0 td_impl=0 td_dep=0 td_other=0 d
-  for d in tech_design/*/; do
-    [[ -d "$d" ]] || continue
+if [ -d "$ROOT/tech_design" ]; then
+  for d in "$ROOT"/tech_design/*/; do
+    [ -d "$d" ] || continue
+    dn=$(basename -- "$d")
+    printf '%s' "$dn" | grep -Eq "$DATETOPIC_RE" || continue
+    [ -f "$d/README.md" ] || continue
     td_total=$((td_total+1))
-    st=$(grep -h -m1 -E '^[[:space:]]*>?[[:space:]]*\*\*状态\*\*' "$d"*.md 2>/dev/null | head -1 || true)
-    if [[ "$st" == *Deprecated* ]]; then td_dep=$((td_dep+1))
-    elif [[ "$st" == *Implemented* ]]; then td_impl=$((td_impl+1))
-    elif [[ "$st" == *Ready* ]]; then td_ready=$((td_ready+1))
-    else td_other=$((td_other+1)); fi
+    st=$(read_state "$d/README.md")
+    case "$st" in
+      Draft) td_draft=$((td_draft+1)) ;;
+      Deprecated) td_dep=$((td_dep+1)) ;;
+      Implemented) td_impl=$((td_impl+1)) ;;
+      Ready) td_ready=$((td_ready+1)) ;;
+      *) td_other=$((td_other+1)) ;;
+    esac
   done
+fi
 
-  # Layer 3: Plan — plan/{date}-{topic}/ 内首个 `**状态**` 行
-  local plan_total=0 plan_ready=0 plan_impl=0 plan_dep=0 plan_other=0
-  for d in plan/*/; do
-    [[ -d "$d" ]] || continue
+if [ -d "$ROOT/plan" ]; then
+  for d in "$ROOT"/plan/*/; do
+    [ -d "$d" ] || continue
+    dn=$(basename -- "$d")
+    printf '%s' "$dn" | grep -Eq "$DATETOPIC_RE" || continue
+    f="$d${dn#????-??-??-}.md"
+    [ -f "$f" ] || continue
     plan_total=$((plan_total+1))
-    st=$(grep -h -m1 -E '^[[:space:]]*>?[[:space:]]*\*\*状态\*\*' "$d"*.md 2>/dev/null | head -1 || true)
-    if [[ "$st" == *Implemented* ]]; then plan_impl=$((plan_impl+1))
-    elif [[ "$st" == *Ready* ]]; then plan_ready=$((plan_ready+1))
-    elif [[ "$st" == *Deprecated* ]]; then plan_dep=$((plan_dep+1))
-    else plan_other=$((plan_other+1)); fi
+    st=$(read_state "$f")
+    case "$st" in
+      Draft) plan_draft=$((plan_draft+1)) ;;
+      Deprecated) plan_dep=$((plan_dep+1)) ;;
+      Implemented) plan_impl=$((plan_impl+1)) ;;
+      Ready) plan_ready=$((plan_ready+1)) ;;
+      *) plan_other=$((plan_other+1)) ;;
+    esac
   done
+fi
 
-  # Layer 4: Test — test_cases/{date}/*.md 元信息表「状态」行 (排除 *-key-points.md)
-  local test_total=0 test_draft=0 test_ready=0 test_impl=0 test_dep=0 test_other=0 f2 st2
-  while IFS= read -r f2; do
-    [[ -f "$f2" ]] || continue
+if [ -d "$ROOT/test_cases" ]; then
+  for f in "$ROOT"/test_cases/*/*.md; do
+    [ -f "$f" ] || continue
+    d=$(dirname -- "$f"); dn=$(basename -- "$d"); bn=$(basename -- "$f" .md)
+    printf '%s' "$dn" | grep -Eq "$DATE_RE" || continue
+    case "$bn" in *-key-points) continue ;; esac
+    printf '%s' "$bn" | grep -Eq "$TOPIC_RE" || continue
     test_total=$((test_total+1))
-    st2=$(grep -m1 -E '^\|[[:space:]]*状态[[:space:]]*\|' "$f2" 2>/dev/null || true)
-    if [[ "$st2" == *Implemented* ]]; then test_impl=$((test_impl+1))
-    elif [[ "$st2" == *Ready* ]]; then test_ready=$((test_ready+1))
-    elif [[ "$st2" == *Deprecated* ]]; then test_dep=$((test_dep+1))
-    elif [[ "$st2" == *Draft* ]]; then test_draft=$((test_draft+1))
-    else test_other=$((test_other+1)); fi
-  done < <(find test_cases -mindepth 2 -maxdepth 2 -type f -name '*.md' ! -name '*-key-points.md' 2>/dev/null | sort)
+    st=$(read_meta_state "$f")
+    case "$st" in
+      Draft) test_draft=$((test_draft+1)) ;;
+      Ready) test_ready=$((test_ready+1)) ;;
+      Implemented) test_impl=$((test_impl+1)) ;;
+      Deprecated) test_dep=$((test_dep+1)) ;;
+      *) test_other=$((test_other+1)) ;;
+    esac
+  done
+fi
 
-  # 全局: README 关系边表边数 + 演进链条数
-  local edges chains
-  edges=$(awk '/^### 关系边表/{f=1;next} /^### /{if(f){exit}} f && /^\| [0-9]+ \|/' "$readme" | wc -l)
-  chains=$(awk '/^### 演进链索引/{f=1;next} /^### |^## /{if(f){exit}} f && /^\| [A-Za-z]/' "$readme" | wc -l)
+# --- 状态分布文案(计数为 0 的项整项省略; 顺序固定 Draft → Ready → Implemented → Deprecated → 其他) ---
+prd_dist=""; td_dist=""; plan_dist=""; test_dist=""
+[ "$prd_draft" -gt 0 ] && prd_dist="Draft $prd_draft"
+[ "$prd_ready" -gt 0 ] && prd_dist="${prd_dist:+$prd_dist · }Ready $prd_ready"
+[ "$prd_impl"  -gt 0 ] && prd_dist="${prd_dist:+$prd_dist · }Implemented $prd_impl"
+[ "$prd_dep"   -gt 0 ] && prd_dist="${prd_dist:+$prd_dist · }Deprecated $prd_dep"
+[ "$prd_other" -gt 0 ] && prd_dist="${prd_dist:+$prd_dist · }其他 $prd_other"
+[ "$td_draft" -gt 0 ] && td_dist="Draft $td_draft"
+[ "$td_ready" -gt 0 ] && td_dist="${td_dist:+$td_dist · }Ready $td_ready"
+[ "$td_impl"  -gt 0 ] && td_dist="${td_dist:+$td_dist · }Implemented $td_impl"
+[ "$td_dep"   -gt 0 ] && td_dist="${td_dist:+$td_dist · }Deprecated $td_dep"
+[ "$td_other" -gt 0 ] && td_dist="${td_dist:+$td_dist · }其他 $td_other"
+[ "$plan_draft" -gt 0 ] && plan_dist="Draft $plan_draft"
+[ "$plan_ready" -gt 0 ] && plan_dist="${plan_dist:+$plan_dist · }Ready $plan_ready"
+[ "$plan_impl"  -gt 0 ] && plan_dist="${plan_dist:+$plan_dist · }Implemented $plan_impl"
+[ "$plan_dep"   -gt 0 ] && plan_dist="${plan_dist:+$plan_dist · }Deprecated $plan_dep"
+[ "$plan_other" -gt 0 ] && plan_dist="${plan_dist:+$plan_dist · }其他 $plan_other"
+[ "$test_draft" -gt 0 ] && test_dist="Draft $test_draft"
+[ "$test_ready" -gt 0 ] && test_dist="${test_dist:+$test_dist · }Ready $test_ready"
+[ "$test_impl"  -gt 0 ] && test_dist="${test_dist:+$test_dist · }Implemented $test_impl"
+[ "$test_dep"   -gt 0 ] && test_dist="${test_dist:+$test_dist · }Deprecated $test_dep"
+[ "$test_other" -gt 0 ] && test_dist="${test_dist:+$test_dist · }其他 $test_other"
 
-  # --- 状态分布文案 (计数为 0 的项整项省略) ---
-  local prd_dist="" td_dist="" plan_dist="" test_dist=""
-  [[ $prd_ready -gt 0 ]] && prd_dist="Ready $prd_ready"
-  [[ $prd_impl  -gt 0 ]] && prd_dist="${prd_dist:+$prd_dist · }Implemented $prd_impl"
-  [[ $prd_dep   -gt 0 ]] && prd_dist="${prd_dist:+$prd_dist · }Deprecated $prd_dep"
-  [[ $prd_other -gt 0 ]] && prd_dist="${prd_dist:+$prd_dist · }其他 $prd_other"
+# --- 台账(可选层: material/{date}/PRDS.md) ---
+# M12 的禁令只针对「顶层文档」(AGENTS.md / HOW_TO_USE.md 等仓根文档);
+# material/ 是可选层, 批次台账是本脚本的原始职责: 补登骨架行 + 标记待办行 + 幂等。
+#
+# 退出码(material/README.md 与 Lead 口径一致):
+#   0 = 台账与统计块都已同步, 且没有待办行
+#   1 = 存在待办行(待分析 / 待抓取 / 孤儿) —— 工作状态信号, 不是规格违规;
+#       `--check` 下还表示统计块/台账与实际制品不一致(漂移)
+#   2 = 调用/环境错误
+# CI 因此**不**按本脚本的退出码判红(待办是常态), 改为「写模式 + git diff」比对漂移。
+PENDING=0
 
-  [[ $td_ready -gt 0 ]] && td_dist="Ready $td_ready"
-  [[ $td_impl  -gt 0 ]] && td_dist="${td_dist:+$td_dist · }Implemented $td_impl"
-  [[ $td_dep   -gt 0 ]] && td_dist="${td_dist:+$td_dist · }Deprecated $td_dep"
-  [[ $td_other -gt 0 ]] && td_dist="${td_dist:+$td_dist · }其他 $td_other"
+LEDGER_HEADER='| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |
+|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|'
 
-  [[ $plan_ready -gt 0 ]] && plan_dist="Ready $plan_ready"
-  [[ $plan_impl  -gt 0 ]] && plan_dist="${plan_dist:+$plan_dist · }Implemented $plan_impl"
-  [[ $plan_dep   -gt 0 ]] && plan_dist="${plan_dist:+$plan_dist · }Deprecated $plan_dep"
-  [[ $plan_other -gt 0 ]] && plan_dist="${plan_dist:+$plan_dist · }其他 $plan_other"
+ledger_cols() {
+  # 从表头推导列位置: ID / # / 状态 / 关联素材 / 优先级 / 提出人 / 来源 / 创建时间
+  awk -F'|' '
+    { id=0; num=0; st=0; src=0; tm=0; mat=0; pri=0; own=0
+      for (i=2;i<=NF-1;i++) { c=$i; gsub(/^[ \t]+|[ \t]+$/,"",c)
+        if (c=="ID") id=i; else if (c=="#") num=i; else if (c=="状态") st=i
+        else if (c=="来源") src=i; else if (c=="创建时间") tm=i
+        else if (c=="关联素材") mat=i; else if (c=="优先级") pri=i
+        else if (c=="提出人") own=i }
+      if (id) { printf "%d %d %d %d %d %d %d %d\n", id, (num?num:2), (st?st:7), (mat?mat:9), (pri?pri:5), (own?own:12), (src?src:8), (tm?tm:10); exit } }
+  ' "$1" 2>/dev/null
+}
 
-  [[ $test_draft -gt 0 ]] && test_dist="Draft $test_draft"
-  [[ $test_ready -gt 0 ]] && test_dist="${test_dist:+$test_dist · }Ready $test_ready"
-  [[ $test_impl  -gt 0 ]] && test_dist="${test_dist:+$test_dist · }Implemented $test_impl"
-  [[ $test_dep   -gt 0 ]] && test_dist="${test_dist:+$test_dist · }Deprecated $test_dep"
-  [[ $test_other -gt 0 ]] && test_dist="${test_dist:+$test_dist · }其他 $test_other"
+cell() {
+  # $1 = 行文本, $2 = 列号
+  printf '%s\n' "$1" | awk -F'|' -v c="$2" '{gsub(/^[ \t]+|[ \t]+$/,"",$c); print $c}'
+}
 
-  # --- 生成新块体 (不含时间戳行) ---
-  local body tmp
-  body=$(
-    echo ""
-    echo "| 层 | 制品 | 数量 | 状态分布 |"
-    echo "|------|------|:---:|---------|"
-    echo "| Layer 1 | PRD | $prd_total | $prd_dist |"
-    echo "| Layer 2 | Tech Design | $td_total | $td_dist |"
-    echo "| Layer 3 | Plan | $plan_total | $plan_dist |"
-    echo "| Layer 4 | Test | $test_total | $test_dist |"
-    echo "| 全局 | PRD关联矩阵 | $edges 条边 | 演进链 $chains 条 |"
-  )
+is_placeholder_cell() {
+  case "$1" in
+    ""|"["*"]"|"{"*"}"|"待定"|"待补"|"-"*|"—") return 0 ;;
+  esac
+  return 1
+}
 
-  # --- 幂等: 去掉旧块的时间戳行后与新块体比对, 相同则不写文件 (保留原时间戳) ---
-  local old_body
-  old_body=$(sed -n "$((b_line+1)),$((e_line-1))p" "$readme" | grep -v '^> 统计时间: ' || true)
-  if [[ "$old_body" == "$body" ]]; then
-    echo -e "${GREEN}✓${NC} 统计回写: README.md 规格统计无变化, 保持原时间戳"
-    return 0
+ledger_mark_and_count() {
+  # $1 = 台账文件, $2 = 批次目录(可空)
+  # 检测待办行; 写模式下把「状态列为空/占位符」的行标记为 待分析 / 待抓取
+  local lf="$1" bdir="$2"
+  local cols id_col num_col st_col mat_col pri_col own_col src_col time_col
+  cols=$(ledger_cols "$lf")
+  [ -z "$cols" ] && return 0
+  read -r id_col num_col st_col mat_col pri_col own_col src_col time_col <<< "$cols"
+
+  local patch="" pending=0 ln row lid lst src ctime mat pri own want
+  while IFS= read -r row; do
+    ln=${row%%:*}
+    row=${row#*:}
+    lid=$(cell "$row" "$id_col")
+    case "$lid" in ""|"ID") continue ;; esac
+    case "$lid" in *["[]"]*) continue ;; esac
+    lst=$(cell "$row" "$st_col")
+    src=$(cell "$row" "$src_col")
+    ctime=$(cell "$row" "$time_col")
+    mat=$(cell "$row" "$mat_col")
+    pri=$(cell "$row" "$pri_col")
+    own=$(cell "$row" "$own_col")
+    want=""; reason=""
+    case "$mat" in
+      *.md)
+        if [ ! -e "$ROOT/$mat" ] && { [ -z "$bdir" ] || [ ! -e "$bdir/$mat" ]; }; then
+          want=待分析; reason="关联素材不存在(孤儿行): $mat"
+        fi
+        ;;
+    esac
+    if [ -z "$want" ]; then
+      case "$mat" in
+        http://*|https://*)
+          if [ "$src" = "external" ] && [ -z "$ctime" ]; then
+            want=待抓取; reason="来源 external 但创建时间为空(待抓取)"
+          fi
+          ;;
+      esac
+    fi
+    if [ -z "$want" ] && { [ "$pri" = "待定" ] || [ "$own" = "[待补]" ]; }; then
+      want=待分析; reason="优先级/提出人未落实(待分析): 优先级=$pri 提出人=$own"
+    fi
+    if [ -n "$want" ]; then
+      pending=$((pending+1))
+      warn "$(basename -- "$lf") — 台账行 $lid $reason"
+    else
+      case "$lst" in
+        *待分析*|*待抓取*)
+          pending=$((pending+1))
+          warn "$(basename -- "$lf") — 台账行 $lid 状态为「$lst」(台账哨兵, 待办)"
+          ;;
+      esac
+    fi
+    if [ -n "$want" ] && is_placeholder_cell "$lst"; then
+      patch="${patch}${ln}:${want},"
+    fi
+  done < <(grep -n '^|' "$lf" 2>/dev/null)
+
+  if [ -n "$patch" ]; then
+    if [ "$CHECK_MODE" -eq 1 ]; then
+      err "$(basename -- "$lf") — 台账有未标记的待办行 — 请运行 \`scripts/sync-prd.sh\` 标记"
+    else
+      local tmp="$lf.tmp" cnt
+      cnt=$(printf '%s' "$patch" | tr -cd ',' | wc -c | tr -d ' ')
+      awk -F'|' -v OFS='|' -v st="$st_col" -v spec="${patch%,}" '
+        BEGIN { n=split(spec, parts, ","); for (i=1;i<=n;i++) { split(parts[i], kv, ":"); map[kv[1]]=kv[2] } }
+        { if (NR in map) { $st=" " map[NR] " " } print }
+      ' "$lf" > "$tmp" && mv "$tmp" "$lf"
+      note "台账标记: $(basename -- "$lf") 标记 ${cnt} 行待办"
+    fi
   fi
-
-  local now
-  now=$(date '+%Y-%m-%d %H:%M')
-  tmp="${readme}.stats.tmp"
-  {
-    head -n "$b_line" "$readme"
-    echo "> 统计时间: ${now} · 由 \`scripts/sync-prd.sh\` 自动生成"
-    echo "$body"
-    tail -n +"$e_line" "$readme"
-  } > "$tmp" && mv "$tmp" "$readme"
-
-  echo -e "${GREEN}✓${NC} 统计回写: README.md 规格统计已更新 (PRD $prd_total / TD $td_total / Plan $plan_total / Test $test_total)"
+  PENDING=$((PENDING+pending))
   return 0
 }
 
-update_readme_stats
+ledger_register_batch() {
+  # $1 = 批次目录, $2 = 批次日期名, $3 = 台账文件
+  local bd="$1" bn="$2" lf="$3"
+  local mats=() m mbase
+  for m in "$bd"*.md; do
+    [ -f "$m" ] || continue
+    mbase=$(basename -- "$m")
+    case "$mbase" in PRDS.md|README.md|_index.md) continue ;; esac
+    mats+=("$m")
+  done
+  if [ ! -f "$lf" ] && [ "${#mats[@]}" -eq 0 ]; then return 0; fi
 
-# --- 汇总 ---
-echo "---"
-echo "批次总数: $total_batches"
-echo "素材文件: $material_total | 台账行数: $ledger_total | 本次补登记: $added_total"
-echo "待分析行: $pending_analysis_total | 待抓取行: $pending_fetch_total | 孤儿行: $orphan_total"
-if [[ -n "$nonstandard" ]]; then
-  echo -e "${YELLOW}⚠ 非规范目录 (命名问题归 check-naming.sh 管, 此处仅点名):${nonstandard}${NC}"
+  if [ ! -f "$lf" ]; then
+    if [ "$CHECK_MODE" -eq 1 ]; then
+      err "material/$bn/PRDS.md — 批次台账缺失(该批次 ${#mats[@]} 份素材未登记) — 请运行 \`scripts/sync-prd.sh\` 生成"
+      return 0
+    fi
+    {
+      printf '# PRD 台账 — material/%s\n\n' "$bn"
+      printf '> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n'
+      printf '## PRD台账\n\n'
+      printf '%s\n' "$LEDGER_HEADER"
+    } > "$lf" || { err "material/$bn/PRDS.md — 台账写入失败"; return 0; }
+    note "台账新建: material/$bn/PRDS.md"
+  fi
+
+  if ! grep -qE '^##[[:space:]]+PRD台账[[:space:]]*$' "$lf"; then
+    err "material/$bn/PRDS.md — 台账缺少 \`## PRD台账\` 段, 无法登记(请人工补上该段标题)"
+    return 0
+  fi
+
+  local cols id_col num_col st_col mat_col pri_col own_col src_col time_col
+  cols=$(ledger_cols "$lf")
+  if [ -z "$cols" ]; then err "material/$bn/PRDS.md — 台账表未找到 \`ID\` 列, 无法登记"; return 0; fi
+  read -r id_col num_col st_col mat_col pri_col own_col src_col time_col <<< "$cols"
+
+  local registered seq title new_rows="" nn yyyymmdd cnt last tmp
+  registered=$(awk -F'|' -v c="$mat_col" '
+    { v=$c; gsub(/^[ \t]+|[ \t]+$/,"",v); gsub(/`/,"",v)
+      if (v!="" && v!="关联素材" && v !~ /^-+$/) print v }' "$lf")
+  seq=$(awk -F'|' -v c="$num_col" '
+    { v=$c; gsub(/^[ \t]+|[ \t]+$/,"",v); if (v ~ /^[0-9]+$/ && v+0>max) max=v+0 } END {print max+0}' "$lf")
+  yyyymmdd=$(printf '%s' "$bn" | tr -d '-')
+
+  for m in "${mats[@]+"${mats[@]}"}"; do
+    mbase=$(basename -- "$m")
+    if printf '%s\n' "$registered" | grep -qF "$mbase"; then continue; fi
+    seq=$((seq+1))
+    nn=$(printf '%02d' "$seq")
+    title=${mbase%.md}
+    new_rows="${new_rows}| ${seq} | PRD-${yyyymmdd}-${nn} | ${title} | 待定 |  | 待分析 | local | ${mbase} | ${bn} | ${bn} | [待补] |
+"
+  done
+
+  if [ -n "$new_rows" ]; then
+    cnt=$(printf '%s' "$new_rows" | grep -c '^|')
+    if [ "$CHECK_MODE" -eq 1 ]; then
+      err "material/$bn/PRDS.md — 台账缺少 ${cnt} 行素材骨架行 — 请运行 \`scripts/sync-prd.sh\` 补登"
+    else
+      last=$(awk '/^\|/ {n=NR} END {print n+0}' "$lf")
+      tmp="$lf.tmp"
+      { head -n "$last" "$lf"; printf '%s' "$new_rows"; tail -n +"$((last+1))" "$lf"; } > "$tmp" && mv "$tmp" "$lf"
+      note "台账补登: material/$bn/PRDS.md 追加 ${cnt} 行骨架"
+    fi
+  fi
+  return 0
+}
+
+if [ -d "$ROOT/material" ]; then
+  for bd in "$ROOT"/material/*/; do
+    [ -d "$bd" ] || continue
+    bn=$(basename -- "$bd")
+    printf '%s' "$bn" | grep -Eq "$DATE_RE" || continue
+    ledger_register_batch "$bd" "$bn" "$bd/PRDS.md"
+  done
+  for lf in "$ROOT"/material/*/PRDS.md; do
+    [ -f "$lf" ] || continue
+    ledger_mark_and_count "$lf" "$(dirname -- "$lf")"
+  done
+  [ "$PENDING" -eq 0 ] && note "素材区已启用, 台账无待办行"
+else
+  note "素材层未启用(material/ 不存在), 跳过台账登记与待办检查"
+fi
+if [ -f "$ROOT/PRDS.md" ]; then ledger_mark_and_count "$ROOT/PRDS.md" ""; fi
+
+# --- 生成统计块 ---
+README="$ROOT/README.md"
+edges=0; chains=0
+if [ -f "$README" ]; then
+  edges=$(awk '/^### 关系边表/{f=1;next} /^### /{if(f){exit}} f && /^\| [0-9]+ \|/' "$README" | wc -l)
+  chains=$(awk '/^### 演进链索引/{f=1;next} /^### |^## /{if(f){exit}} f && /^\| [A-Za-z]/' "$README" | wc -l)
 fi
 
-if [[ $pending_analysis_total -gt 0 || $pending_fetch_total -gt 0 || $orphan_total -gt 0 ]]; then
-  echo -e "${YELLOW}○ PRD台账同步: 存在待办 (待分析/待抓取/孤儿行), 退出码 1${NC}"
-  exit 1
+body=$(
+  printf '\n'
+  printf '| 层 | 制品 | 数量 | 状态分布 |\n'
+  printf '|------|------|:---:|---------|\n'
+  printf '| Layer 1 | PRD | %s | %s |\n' "$prd_total" "$prd_dist"
+  printf '| Layer 2 | Tech Design | %s | %s |\n' "$td_total" "$td_dist"
+  printf '| Layer 3 | Plan | %s | %s |\n' "$plan_total" "$plan_dist"
+  printf '| Layer 4 | Test | %s | %s |\n' "$test_total" "$test_dist"
+  printf '| 全局 | PRD关联矩阵 | %s 条边 | 演进链 %s 条 |\n' "$edges" "$chains"
+)
+
+b_marker='<!-- prd-stats:begin -->'
+e_marker='<!-- prd-stats:end -->'
+b_line=$(grep -nF "$b_marker" "$README" 2>/dev/null | head -1 | cut -d: -f1)
+e_line=$(grep -nF "$e_marker" "$README" 2>/dev/null | head -1 | cut -d: -f1)
+
+if [ -z "$b_line" ] || [ -z "$e_line" ] || [ "$e_line" -le "$b_line" ]; then
+  if [ "$CHECK_MODE" -eq 1 ]; then
+    err "README.md 缺少 prd-stats 标记块 — 统计块无法核对(违反契约 M12 的唯一写入点约定)"
+  else
+    warn "统计回写跳过: README.md 未找到 prd-stats 标记"
+  fi
+else
+  old_body=$(sed -n "$((b_line+1)),$((e_line-1))p" "$README" | grep -v '^> 统计时间: ')
+  if [ "$old_body" = "$body" ]; then
+    ok "规格统计无变化 (PRD $prd_total / TD $td_total / Plan $plan_total / Test $test_total)"
+  elif [ "$CHECK_MODE" -eq 1 ]; then
+    err "README.md 规格统计块已过期 — 请运行 \`scripts/sync-prd.sh\` 重新生成"
+    if [ "$JSON" -eq 0 ]; then
+      printf '  --- 当前 ---\n%s\n  --- 期望 ---\n%s\n' "$old_body" "$body" | sed 's/^/  /'
+    fi
+  else
+    now=$(date '+%Y-%m-%d %H:%M')
+    tmp="$README.stats.tmp"
+    {
+      head -n "$b_line" "$README"
+      printf '> 统计时间: %s · 由 `scripts/sync-prd.sh` 自动生成\n' "$now"
+      printf '%s\n' "$body"
+      tail -n +"$e_line" "$README"
+    } > "$tmp" && mv "$tmp" "$README"
+    ok "统计回写: README.md 规格统计已更新 (PRD $prd_total / TD $td_total / Plan $plan_total / Test $test_total)"
+  fi
 fi
 
-if [[ $errors -gt 0 ]]; then
-  echo -e "${RED}✗ PRD台账同步: $errors 项违规, 退出码 1${NC}"
-  exit 1
+ERRC=${#ERRORS[@]}
+WARNC=${#WARNINGS[@]}
+if [ "$ERRC" -gt 0 ]; then
+  STATUS="violation"; EXIT=1
+elif [ "$PENDING" -gt 0 ]; then
+  # 待办行是工作状态, 不是规格违规 —— 但退出码 1 是既定语义(material/README.md)
+  STATUS="pending"; EXIT=1
+else
+  STATUS="pass"; EXIT=0
 fi
 
-echo -e "${GREEN}✓ PRD台账同步: 无待办${NC}"
-exit 0
+if [ "$JSON" -eq 1 ]; then
+  printf '{"script":"sync-prd.sh","root":"%s","mode":"%s","status":"%s","exit_code":%d,"error_count":%d,"warning_count":%d,"pending_count":%d,"counts":{"prd":%d,"tech_design":%d,"plan":%d,"test":%d,"matrix_edges":%d},"errors":%s,"warnings":%s,"notes":%s}\n' \
+    "$(printf '%s' "$ROOT" | json_escape)" \
+    "$([ "$CHECK_MODE" -eq 1 ] && echo check || echo write)" \
+    "$STATUS" "$EXIT" "$ERRC" "$WARNC" "$PENDING" "$prd_total" "$td_total" "$plan_total" "$test_total" "$edges" \
+    "$(json_str_array "${ERRORS[@]+"${ERRORS[@]}"}")" \
+    "$(json_str_array "${WARNINGS[@]+"${WARNINGS[@]}"}")" \
+    "$(json_str_array "${NOTES[@]+"${NOTES[@]}"}")"
+fi
+exit $EXIT

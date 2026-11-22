@@ -1,10 +1,15 @@
 # Plan: {主题}
 
-> **状态**: Draft | Ready | Implemented
+> **状态**: Draft | Ready | Implemented | Deprecated
 > **来源 Tech Design**: [../../tech_design/{YYYY-MM-DD}-{topic}/](../../tech_design/{YYYY-MM-DD}-{topic}/README.md)
 > **来源 PRD**: [../../prd/{YYYY-MM-DD}/{topic}.md](../../prd/{YYYY-MM-DD}/{topic}.md)
+> **参考 Test Cases**: `test_cases/{YYYY-MM-DD}/{topic}.md`
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
+
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一, 不得自造状态名。
+> **状态推进**: agent 可写上限 = `Draft`;`Ready` 由**人工 reviewer** 在 `## 复审 (Review)` 签署后翻转;`Implemented` 仅人工在外部代码仓 PR merged 后回写(PRD / Tech Design / Plan 三件套**必须同时**回写);上游转 `Deprecated` 时, 引用本 Plan 的 Test Case 一并 `Deprecated`。
+> **填写规则**: 「参考 Test Cases」是可选行 —— 填了必须是仓内**真实存在**、且以 test_cases/ 开头的路径(用反引号包裹);不适用就**删除整行**。
 
 > ⚠️ **设计原则**: Plan 是"实施指南",**不是**"替代实现"。变更描述用文字说明策略和约束,指导参与的 agent 写出代码。完整代码在 TDD 阶段产出。
 
@@ -22,6 +27,10 @@
 ---
 
 ## 变更清单 (Changes)
+
+> **单仓 / 0 代码仓**: Change 直接列在本段, 用 h3 标题 `### Change #1: {文件路径}`。
+> **多仓 (≥2 个关联代码仓)**: 先按仓分组 —— 组标题用 h4 `#### {标识} 变更`, 组内 Change 用 h4 `#### Change #N: {标识}/{路径}`;路径**必须**带 `{标识}/` 前缀, 标识取 AGENTS.md §1.1「标识」列(不写目录名, 不写口语化仓库名)。
+> **V 用例不按仓分组**: 按业务场景聚合, 一个场景可横跨多仓(V 用例段独立于本段)。
 
 ### Change #1: {文件路径}
 
@@ -41,7 +50,11 @@
 
 ---
 
-### Change #2: ...
+### Change #2: {文件路径}
+
+**遵循决策**: KD-{n}
+
+**验证**: V-2 / V-3
 
 ---
 
@@ -94,6 +107,8 @@ sequenceDiagram
 | 时序图 | MOD-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/apis.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/interactions.md` | [ ] | V-1 |
 | PRD 需求 | FR-XXX | `../../prd/{YYYY-MM-DD}/{topic}.md` | [ ] | V-1 |
 | 验证用例 | V-1 | 本文件 | [ ] | Change #1 |
+| 验证用例 | V-2 | 本文件 | [ ] | Change #2 |
+| 验证用例 | V-3 | 本文件 | [ ] | Change #2 |
 
 **对账规则**:
 - 每一行都必须勾选 `[x]`
@@ -178,7 +193,18 @@ sequenceDiagram
 
 ---
 
-## 变更记录
+## 复审 (Review)
+
+> 本段是**机器必填段**。三行(`评审人` / `评审日期` / `评审结论`)是**评审签署**载体 —— `Draft` 阶段清空, 升 `Ready` 前由**人工 reviewer** 填写真值并翻转状态, agent 不得自行填写或翻转。
+> Plan 的 `Implemented` 仅在外部代码仓 PR merged 后由**人工**回写, 且 PRD / Tech Design / Plan 三件套必须同时回写。
+
+> **评审人**: {github-handle}
+> **评审日期**: {YYYY-MM-DD}
+> **评审结论**: {通过 / 有条件通过 / 需返工}
+
+---
+
+## 变更记录 (Change Log)
 
 | 日期 | 变更 |
 |------|------|

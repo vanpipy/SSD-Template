@@ -2,7 +2,10 @@
 
 > Spec-Driven Development(SSD)工作流模板。一套固定 harness,把「需求」到「设计」到「计划」拆成可校验的分层规格,并把执行流程封装成 AI agent 可直接调用的 skills。
 
-SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规格架构 + 可选质量层,每层有独立 schema 模板、命名约定、状态机与机器可跑的校验脚本。所有执行流程以 skill 为执行单元,agent 通过 `/to-prd` / `/to-tech-design` / `/to-plan` 等命令驱动,不手写 schema。
+SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规格架构 + 可选质量层,每层有独立 schema 模板、命名约定、状态机与机器可跑的校验脚本。所有执行流程以 skill 为执行单元,agent 按 skill 定义的流程驱动,不手写 schema。
+
+> **契约唯一真源** = [WORKFLOW.md](WORKFLOW.md)(编排配置 + agent 工作契约)。
+> 仓内 README / HOW_TO_USE / AGENTS / schema 全部以 `WORKFLOW.md` 为准;冲突时以它为准并记录冲突,不自行调和。
 
 ## 分层模型
 
@@ -19,35 +22,37 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 ## 快速开始
 
 ```bash
-# 1. 注册 skills 到 agent 的 skills 目录
-bash skills/setup.sh
+# 1. 读仓内 skill 定义(.codex/skills/<name>/SKILL.md,随仓库分发)
+#    8 个 skill:to-prd / to-tech-design / to-plan / validate-spec
+#                to-test-cases / sync-status / sync-prd / to-deep-understand
 
-# 2. 走 5 步工作流
+# 2. 走 5 步工作流(每个 skill 的调用签名见其 SKILL.md)
 /to-prd <date>                              # 原始素材 → PRD
 /to-tech-design <prd-path>                  # PRD → Tech Design
 /to-plan <tech-design-dir>                  # Tech Design → Plan
 /validate-spec                              # 跑全部校验脚本
 ```
 
-完整说明见 [HOW_TO_USE.md](HOW_TO_USE.md)。仓库操作契约见 [AGENTS.md](AGENTS.md)。
+完整说明见 [HOW_TO_USE.md](HOW_TO_USE.md)。仓库操作契约见 [AGENTS.md](AGENTS.md)。编排配置与 agent 工作契约见 [WORKFLOW.md](WORKFLOW.md)。
 
 | 需求 | 去哪里找 |
 |------|----------|
 | 工作流全貌与状态机 | [HOW_TO_USE.md](HOW_TO_USE.md) |
 | 仓库契约(多仓 / 基线 / 证据锚点) | [AGENTS.md](AGENTS.md) |
+| 编排配置 + agent 工作契约(唯一真源) | [WORKFLOW.md](WORKFLOW.md) |
 | 模板定义 | [schema/](schema/) |
-| Skill 定义 | [skills/](skills/) |
+| Skill 定义 | [.codex/skills/](.codex/skills/) |
 | 校验脚本 | [scripts/](scripts/) |
-| 机制契约(吸收取舍 + 验收标准) | [docs/mechanism-contract.md](docs/mechanism-contract.md) |
+| 历史目录归档位置 | [ARCHIVE.md](ARCHIVE.md) |
 
 ## 规格统计
 
 <!-- prd-stats:begin -->
-> 统计时间: 2026-11-18 18:34 · 由 `scripts/sync-prd.sh` 自动生成
+> 统计时间: 2026-11-22 18:44 · 由 `scripts/sync-prd.sh` 自动生成
 
 | 层 | 制品 | 数量 | 状态分布 |
 |------|------|:---:|---------|
-| Layer 1 | PRD | 0 |  |
+| Layer 1 | PRD | 1 | Draft 1 |
 | Layer 2 | Tech Design | 0 |  |
 | Layer 3 | Plan | 0 |  |
 | Layer 4 | Test | 0 |  |
@@ -83,7 +88,7 @@ bash skills/setup.sh
 
 台账节点用 `PRD-{YYYYMMDD}-{NN}` / `TECH-...` / `TEST-...` / `PLAN-...`(4 前缀,与 [schema/prd-ledger.md](schema/prd-ledger.md) 一致);实体文件节点用仓内相对路径 `prd/{YYYY-MM-DD}/{topic}.md`。
 
-> 本模板仓库无真实 PRD 实例,故上方「关系边表」**只保留表头**。项目启用本层后,每新增一条 PRD 关系就追加一行,节点标识必须能在台账或 `prd/` 下解析到实体文件。
+> 本模板仓库只提供 1 份样例 PRD(见 `prd/2026-11-22/layer-checklist.md`),不存在多 PRD 关系,故上方「关系边表」**只保留表头**。项目启用本层后,每新增一条 PRD 关系就追加一行,节点标识必须能在台账或 `prd/` 下解析到实体文件。
 
 ## 可选层
 
@@ -91,34 +96,39 @@ bash skills/setup.sh
 
 | 层 | 位置 | 用途 | 启用方式 |
 |----|------|------|----------|
-| 原始素材 | [material/](material/) | 需求原文暂存 + 批次 PRD 台账 | 建 `material/` 目录 |
+| 原始素材 | [material/](material/README.md) | 需求原文暂存 + 批次 PRD 台账 | 建 `material/` 目录 |
 | PRD 台账 | `material/{YYYY-MM-DD}/PRDS.md` | 11 列台账,追踪素材到 PRD 的流转 | 建台账文件,跑 `scripts/sync-prd.sh` |
 | 关联矩阵 | 根 [README.md](#prd关联矩阵) 章节 | 8 类 PRD 关系边 | 在本文件「关系边表」追加行 |
-| 测试用例 | [test_cases/](test_cases/) | Layer 4 黑盒用例 | 建 `test_cases/` 目录,跑 `/to-test-cases` |
-| 理解底座 | `deep/` | 主题模型 / 消歧 / 时间线 | 建 `deep/` 目录,跑 `/to-deep-understand` |
+| 测试用例 | [test_cases/](test_cases/README.md) | Layer 4 黑盒用例 | 建 `test_cases/` 目录,用 `to-test-cases` skill |
+| 理解底座 | `deep/` | 主题模型 / 消歧 / 时间线 | 建 `deep/` 目录,用 `to-deep-understand` skill |
 | 实现基线 | Tech Design `## 实现基线` 段 | 设计所基于的代码现状快照 | 项目有关联代码仓时 |
 
 > 校验脚本会按目录 / 文件是否存在决定是否启用对应检查。模板自身零实例,故全绿(零实例即零违规)。
 
 ## 校验脚本
 
-| 脚本 | 检查 | 退出码 0 条件 |
-|------|------|--------------|
-| `scripts/check-naming.sh` | 目录 / 文件命名规范 | 无命名违规 |
-| `scripts/check-md-schema.sh` | PRD / TD / Plan / Test Case 必填字段 | 无字段违规 |
-| `scripts/check-traceability.sh` | KD / V 闭环、跨层级联一致性 | 无追溯违规 |
-| `scripts/check-repo-baseline.sh` | 实现基线表与实际仓状态一致性 | 有关联代码仓时才有意义 |
-| `scripts/sync-prd.sh` | PRD 台账机械登记 + 根 README 统计块再生成 | 幂等,标记块内一致 |
-| `scripts/sync-test-index.sh` | `test_cases/_index.md` 再生成 | 索引与文档元信息一致 |
+退出码约定:`0` = 通过,`1` = 存在违规,`2` = 调用 / 环境错误。
 
-> 一次性跑全部检查:用 `/validate-spec` skill,不要手拼脚本命令。
+| 脚本 | 检查 | 什么时候跑 |
+|------|------|------------|
+| `scripts/check-naming.sh` | 目录 / 文件命名规范与层结构形状 | 每次都跑 |
+| `scripts/check-md-schema.sh` | PRD / TD / Plan / Test Case 必填字段、状态枚举、阶段感知 | 每次都跑 |
+| `scripts/check-traceability.sh` | KD / V 闭环、跨层级联一致性 | 每次都跑 |
+| `scripts/check-doc-links.py` | 仓内 Markdown 相对链接死链 | 每次都跑 |
+| `scripts/check-line-endings.sh` | 文本文件行尾统一 LF(不含 CR) | 每次都跑 |
+| `scripts/check-repo-baseline.sh` | 实现基线表与实际仓状态一致性 | 有关联代码仓时 |
+| `scripts/sync-prd.sh` | PRD 台账机械登记 + 根 README 统计块再生成 | 启用了台账时 |
+| `scripts/sync-test-index.sh` | `test_cases/_index.md` 再生成 | 仅 Layer 4 |
+
+> 一次性跑全部检查:用 `validate-spec` skill(交互式 agent),或按 `WORKFLOW.md` §6 的脚本表逐个跑(Symphony 编排下没有 slash 命令)。
+> **脚本只强制格式与追溯,不强制状态判定**:`Ready` / `Implemented` / `Deprecated` 由人决定(见 [HOW_TO_USE.md](HOW_TO_USE.md) 状态机详解)。
 
 ## 相关文件
 
 | 文件 | 用途 |
 |------|------|
+| [WORKFLOW.md](WORKFLOW.md) | 契约唯一真源:编排配置 + agent 工作契约 |
 | [AGENTS.md](AGENTS.md) | 仓库操作契约(仓库清单 / 跨仓引用 / 多仓 Plan / 基线 / 证据锚点) |
 | [HOW_TO_USE.md](HOW_TO_USE.md) | 工作流指南与状态机 |
-| [docs/mechanism-contract.md](docs/mechanism-contract.md) | 通用机制契约:吸收什么、不吸收什么、可检查的验收标准 |
+| [ARCHIVE.md](ARCHIVE.md) | 已移出仓内的历史目录(`legacy/` / `legacy-simple/`)的归档位置 |
 | [new-factors.md](new-factors.md) | 概念参考 |
-| [legacy/](legacy/) | 历史参考(旧 schema 设计) |

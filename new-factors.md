@@ -1,5 +1,9 @@
 # New Factors And New Questions
 
+> **概念参考**。本文件解释这套 harness「为什么长成这样」,不定义任何可执行规则。
+> 可执行规则以 [WORKFLOW.md](WORKFLOW.md)(契约唯一真源)与 `schema/**` 模板为准;状态值只有
+> `Draft` / `Ready` / `Implemented` / `Deprecated` 四个,全层统一。
+
 1. Why do we have this flow?
 2. What problem is this solving?
 3. Why is the code shapred like this?
@@ -48,7 +52,7 @@ Enforced: ...
 ```
 ---
 id: prd-101
-status: Ready
+status: Draft
 owner: leroy
 ---
 
@@ -62,6 +66,9 @@ Goal: ...
 
 Journey: ...
 ```
+
+> `status` 取值域与本仓状态机一致:`Draft` / `Ready` / `Implemented` / `Deprecated`。
+> `Draft` 由 agent 产出;`Ready` 起需要人工在 `## 复审 (Review)` 段签署。
 
 ## BDDs
 
@@ -110,11 +117,14 @@ Agent gets early feedback and works through it to reach the goal.
 
 > The loop is generic
 
-1. $adr -- which rules govern these changes
-2. $prd -- which goals does this serve
-3. $ui-loop -- iterate fast, reconcile after
-4. $test -- run focused test suite
+1. `to-tech-design` -- which rules govern these changes (关键决策 KD)
+2. `to-prd` -- which goals does this serve
+3. `to-test-cases` -- iterate fast, reconcile after
+4. `validate-spec` -- run focused check suite
 5. Goal exception -- decisions and pending work
+
+> 上面的 skill 全部是**仓内** skill,定义在 `.codex/skills/<name>/SKILL.md`,随仓库分发。
+> 完整 8 个 skill 的清单与调用签名见 [AGENTS.md](AGENTS.md) §3.7。
 
 ## Drawbacks
 

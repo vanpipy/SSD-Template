@@ -1,9 +1,11 @@
 # Scenario Mapping: {topic}
 
-> **状态**: Draft | Ready
+> **状态**: Draft | Ready | Implemented | Deprecated
 > **来源 PRD**: [../../prd/{YYYY-MM-DD}/{topic}.md](../../prd/{YYYY-MM-DD}/{topic}.md)
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
+
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态行, 由人工统一翻转, agent 不得自行改写。
 
 > ⚠️ **完整性原则**: PRD 中每个 Given/When/Then 场景**必须**出现在本表中,漏掉会导致 Plan 验证用例不完整。
 

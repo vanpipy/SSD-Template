@@ -7,9 +7,11 @@
 
 | Layer | 位置 | 状态 |
 |-------|------|------|
-| Layer 1 | `prd/{YYYY-MM-DD}/{topic}.md` | Ready → Implemented |
-| Layer 2 | `tech_design/{YYYY-MM-DD}-{topic}/` | Ready → Implemented |
-| Layer 3 | `plan/{YYYY-MM-DD}-{topic}/{topic}.md` | Ready → Implemented |
+| Layer 1 | `prd/{YYYY-MM-DD}/{topic}.md` | Draft → Ready → Implemented |
+| Layer 2 | `tech_design/{YYYY-MM-DD}-{topic}/` | Draft → Ready → Implemented |
+| Layer 3 | `plan/{YYYY-MM-DD}-{topic}/{topic}.md` | Draft → Ready → Implemented |
+
+> **agent 的权限天花板 = `Draft`**:`Ready` 由人工评审签署后写入,`Implemented` 由人回写。详见 [AGENTS.md](../AGENTS.md) §3.3。
 
 > `prd/{YYYY-MM-DD}/` 是 Layer 1 的**素材存放区**,**不是**独立 Layer。
 > Layer 0(可选素材区)在 [material/](../material/README.md),启用与否由项目决定。
@@ -25,8 +27,8 @@ prd/
     └── {topic}.md              ← Layer 1: PRD(Step 1 产出)
 ```
 
-**目录命名**: `{YYYY-MM-DD}`,必须是规范日期。
-**PRD 命名**: `{简短主题}.md`,小写连字符(如 `login` / `checkout-flow`)。一个日期可有多个 PRD(1:N 关系)。
+**目录命名**: `{YYYY-MM-DD}`,必须是规范日期(`^[0-9]{4}-[0-9]{2}-[0-9]{2}$`)。
+**PRD 命名**: `{简短主题}.md`,topic 必须匹配 `^[a-z0-9]+(-[a-z0-9]+)*$`(小写字母与数字,中划线分隔,如 `login` / `checkout-flow`)。一个日期可有多个 PRD(1:N 关系)。
 **素材命名**: `{来源描述}.md`,可多个,不强制 topic 格式。
 
 > **目录内两类文件共存**:`{topic}.md` 是 Layer 1 制品;其余为暂存素材。`scripts/check-naming.sh` 对后者只报 `⚠` 提示,不报错。素材长期暂存时,建议迁到 [material/](../material/README.md)。
@@ -46,10 +48,16 @@ prd/
 - 状态机: Draft → Ready → Implemented | Deprecated
 
 > 门禁清单 5 项:为什么 / 目标 / 场景 / 不在范围内 / 复审。权威定义见 [schema/prd.md](../schema/prd.md)。
+> **评审签署**:状态为 `Ready` 时,`## 复审 (Review)` 段必须填入 `> **评审人**` / `> **评审日期**` / `> **评审结论**` 三行真实值;
+> `Draft` 阶段三行留空(段本身必须存在)。
 
 ## 模板
 
 见 [schema/prd.md](../schema/prd.md)
+
+## 仓内样例
+
+`prd/2026-11-22/layer-checklist.md` —— 一份可直接过全部门禁的样例 PRD(状态 `Draft`)。
 
 ## 可选关联层
 
