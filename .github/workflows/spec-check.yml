@@ -189,3 +189,20 @@ jobs:
           [ "$rc" -eq 0 ] || exit "$rc"
           [ -n "$out" ] || { echo "::error::ssdctl.sh scan --check 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
 
+      # 判据引擎自身的回归网:每种 kind 至少有一个「能失败」的用例。
+      # 没有这一步,有人把引擎改回「永远通过」CI 仍然是绿的 ——
+      # 那正是本轮修掉的洞(死代码 + `grep -Eq ""` 恒真)。
+      # 解释器同样走包装器,避免 CI 与本地用不同的解析规则。
+      - name: 判据引擎单元测试(每种 kind 至少一个能失败用例)
+        run: |
+          set -uo pipefail
+          PY="$(bash scripts/ssdctl.sh --python)"
+          rc=0
+          out="$("$PY" -m unittest discover -s scripts/tests -t scripts/tests 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          printf '%s\n' "$out" | grep -Eq 'Ran [1-9][0-9]* tests' || {
+            echo "::error::单元测试没有发现任何用例 — 防空转断言失败"
+            exit 1
+          }
+

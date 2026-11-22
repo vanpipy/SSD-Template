@@ -393,6 +393,8 @@ bash scripts/ssdctl.sh verify <artifact>
 > 包装器依次尝试 `$SSDCTL_PYTHON` / `python3` / `python` / `py -3` /
 > `~/.dsh/dsh-runtimes/*/dependencies/python/python.exe`,每个候选都通过 `-c 'import sys'` 自检,
 > 全都不行时 exit 2 并列出试过的候选,**不静默继续**。
+> 判据引擎的单元测试(CI 也跑这一条):
+> `PY="$(bash scripts/ssdctl.sh --python)"; "$PY" -m unittest discover -s scripts/tests -t scripts/tests`
 
 ### 3.7 Skill 清单
 

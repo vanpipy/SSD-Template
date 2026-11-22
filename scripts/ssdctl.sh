@@ -92,4 +92,24 @@ if [ ${#PY_CMD[@]} -eq 0 ]; then
   exit 2
 fi
 
+# `--python` 只打印解析出来的解释器路径(不跑 ssdctl.py)——
+# 让 CI 与本地文档用**同一条**解释器解析规则跑判据引擎的单元测试。
+if [ "${1:-}" = "--python" ]; then
+  py="${PY_CMD[0]}"
+  # Git Bash 里 $HOME 是 /c/Users/...;转成 Windows 原生形式(C:/Users/...),
+  # 这样同一行命令在 bash 与 PowerShell 里都能用(POSIX 上保持原样)。
+  case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*)
+      case "$py" in
+        /[A-Za-z]/*)
+          drive="${py#/}"; drive="${drive%%/*}"; rest="${py#/${drive}}"
+          py="${drive}:${rest}"
+          ;;
+      esac
+      ;;
+  esac
+  printf '%s\n' "$py"
+  exit 0
+fi
+
 exec "${PY_CMD[@]}" "$TARGET" "$@"

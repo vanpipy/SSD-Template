@@ -525,9 +525,14 @@ flowchart TB
 | `scripts/sync-test-index.sh --check` | 仅 Layer 4 | `test_cases/_index.md` 与用例元信息一致 |
 | `bash scripts/ssdctl.sh scan --check` | **每次都跑**(CI) | 状态块 / 复审块 / 派生数据(台账、`control/state.json`)是否一致 |
 | `bash scripts/ssdctl.sh gate` | **每次都跑**(CI) | 当前目标状态的判据集是否全部满足 |
+| 判据引擎单元测试 | **改了判据 / 引擎后**(CI 也跑) | 每种 kind 至少有一个「能失败」的用例 |
 
 **调用方式**:上表前 5 个脚本全返回 0 → 「可评审」。此后由 **agent** 调 `bash scripts/ssdctl.sh advance <artifact> --to <状态>` 推进状态(机器判据驱动 + 留痕);人类需要介入时落 `control/decisions/*.md` 或跑 `bash scripts/ssdctl.sh decide`,**不**手工改状态行。
 `bash scripts/ssdctl.sh` 的子命令全集:`scan` / `criteria` / `gate` / `advance` / `queue` / `decide` / `evidence` / `verify`;退出码统一 `0` = 通过 / `1` = 存在违规 / `2` = 调用或环境错误。
+
+判据引擎的单元测试(CI 也跑这一条):
+`PY="$(bash scripts/ssdctl.sh --python)"; "$PY" -m unittest discover -s scripts/tests -t scripts/tests`
+—— 解释器同样由包装器解析,CI 与本地用同一条规则;没有这一步,有人把引擎改回「永远通过」CI 仍然是绿的。
 
 > **为什么命令形态是 `bash scripts/ssdctl.sh` 而不是「直接用 `python` 跑 `scripts/ssdctl.py`」**:
 > `scripts/ssdctl.sh` 是 `scripts/ssdctl.py` 的**解释器解析包装器**。不同机器上 `python` 未必可用
