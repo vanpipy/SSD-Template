@@ -164,3 +164,28 @@ jobs:
             exit 1
           fi
           echo "✓ PRD 制品数: $count"
+
+      # 契约 §8:既有 8 个门禁之后,按固定顺序追加这两步。
+      # 两步都必须有非空 stdout(与既有门禁步骤同一条防空转断言)。
+      # 命令形态:统一走 `scripts/ssdctl.sh` 包装器 —— 它自己解析解释器
+      # (SSDCTL_PYTHON → python3 → python → py -3 → DSH runtime 自带解释器),
+      # 每个候选都自检,全不行则 exit 2 并列出候选。
+      # CI 也走包装器 ⇒ 包装器持续被验证,不会只在某台机器上可用。
+      - name: SDD criteria + derived data
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(bash scripts/ssdctl.sh gate 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::ssdctl.sh gate 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+
+      - name: Derived state freshness
+        run: |
+          set -uo pipefail
+          rc=0
+          out="$(bash scripts/ssdctl.sh scan --check 2>&1)" || rc=$?
+          printf '%s\n' "$out"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          [ -n "$out" ] || { echo "::error::ssdctl.sh scan --check 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+

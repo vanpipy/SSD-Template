@@ -1,6 +1,11 @@
 ---
 name: to-deep-understand
-description: 可选层 · 深度理解层 (v1.0)。scripts/deep-scan.py 机械扫描语料并计算文件指纹 (只更新 deep/INDEX.md), agent 读扫描输出并撰写 deep/topics/*.md 主题模型, 向 deep/disambiguation.md 追加消歧记录, 向 deep/timeline.md 追加时间线。Use when 需要建立或维护 deep/ 理解底座, 在写 Tech Design / Plan / 测试用例前做跨文档理解对账。默认不启用, 且 validate-spec 不校验 deep/ 内容; agent 不得代答 Q-{n}, 不得编造 SHA 或行号。
+description: >-
+  可选层 · 深度理解层 (v2.0)。scripts/deep-scan.py 机械扫描语料并计算文件指纹 (只更新 deep/INDEX.md),
+  agent 读扫描输出并撰写 deep/topics/*.md 主题模型, 向 deep/disambiguation.md 追加消歧记录, 向 deep/timeline.md 追加时间线。
+  Use when 需要建立或维护 deep/ 理解底座, 在写 Tech Design / Plan / 测试用例前做跨文档理解对账。
+  默认不启用, 且 validate-spec 不校验 deep/ 内容; agent 不得代答 Q-{n}, 不得编造 SHA 或行号;
+  本 skill 不写任何制品的状态行, 也不做 git 写操作。
 ---
 
 # to-deep-understand
@@ -211,13 +216,13 @@ python3 scripts/deep-scan.py
 | 凭记忆写 SHA 或行号 | 锚点必须真实可解析; 拿不准就不写锚点 |
 | 写具体仓库目录名或专有系统名 | 用 AGENTS.md §1.1 的通用标识 |
 | 在本轮改 `prd/` / `tech_design/` / `plan/` 内容 | 本 skill 只写 `deep/` |
-| 跑 git commit/push | 产物何时提交由用户决定, 本 skill 不落 commit。**Symphony 编排路径**: 提交动作按仓根 `WORKFLOW.md` §8 执行 |
+| 跑 git commit/push | 产物何时提交由用户决定, 本 skill 不落 commit; git 写操作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
 
 ## 禁止行为 (Agent 权限边界)
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定。**Symphony 编排路径例外**: 在 Symphony 给你的工作区 + `spec/{issue-identifier}-{topic}` 分支上, 按仓根 `WORKFLOW.md` §8 提交与推送是**授权动作**; 仍禁止 push 主分支 / merge / 伪造评审 |
+| 自行 `git commit` / `git push` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
 | 代答 `Q-{n}` 开放问题 | 登记问题, 等人工/产品确认 |
 | 编造 SHA / 行号 / handle / 专有系统名 | 锚点必须真实可解析; 拿不准就不写 |
 | 静默覆盖旧模型结论 | 登记 `C-{n}`, 双方保留 |
@@ -231,6 +236,7 @@ python3 scripts/deep-scan.py
 - 新增 `G-{n}` / `Q-{n}` / `C-{n}` / `D-{n}` 全部有编号与出处
 - 新增的代码锚全部真实可解析（标识在 §1.1 登记过, 路径与行号可核对）
 - `deep/` 以外没有任何文件被本轮修改
+- 本轮没有写任何制品的状态行（状态推进只走 `ssdctl advance`）
 - 本轮知识变化在 `deep/timeline.md` 有对应条目
 - `deep/topics/*.md` 的每条断言都能追到出处或 `Q-{n}`
 

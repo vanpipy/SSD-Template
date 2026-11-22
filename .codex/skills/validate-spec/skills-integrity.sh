@@ -22,6 +22,9 @@
 #   G  零 em dash（U+2014）
 #   H  每个 SKILL.md 的 front matter 键集合必须恰好是 name + description
 #   I  不得残留 Slash Command 标题或 [MODE: ...] 标记
+#   J  旧表述零命中（黑名单数据文件 legacy-wording.txt, 不在代码里写字面量）
+#      + 占位式回写表述只允许出现在否定句里
+#      + ssdctl 子命令名封闭（白名单 scan/criteria/gate/advance/queue/decide/evidence/verify）
 
 set -uo pipefail
 
@@ -252,6 +255,65 @@ for f in $(scan_files); do
     fi
 done
 [ "$slash_bad" -eq 0 ] && ok '没有 Slash Command 标题, 也没有 [MODE: ...] 标记'
+
+# ---------------------------------------------------------------- Sweep J
+head2 'Sweep J: 旧表述零命中 + ssdctl 子命令名封闭'
+
+# J1 旧口径: 命中 legacy-wording.txt 里的任意一条即违规.
+#            黑名单是数据文件, 不写在代码里, 避免自查自污染.
+#            命中行会连同行号一起打印, 便于定位.
+WORDING_LIST="$SCRIPT_DIR/legacy-wording.txt"
+OLD_PAT=''
+if [ -f "$WORDING_LIST" ]; then
+    OLD_PAT=$(awk '!/^[[:space:]]*#/ && NF { if (n++) printf "|"; printf "%s", $0 }' "$WORDING_LIST")
+else
+    bad "缺少旧表述黑名单数据文件: $WORDING_LIST"
+fi
+if [ -z "$OLD_PAT" ]; then
+    bad "旧表述黑名单为空: $WORDING_LIST"
+    OLD_PAT='ZZZ_NO_SUCH_WORDING_ZZZ'
+fi
+old_bad=0
+for f in $(scan_files); do
+    hits=$(grep -nE "$OLD_PAT" "$f" 2>/dev/null || true)
+    [ -z "$hits" ] && continue
+    bad "旧表述残留: ${f#$REPO_ROOT/}"
+    printf '%s\n' "$hits" | sed 's/^/         /'
+    old_bad=$((old_bad + 1))
+done
+[ "$old_bad" -eq 0 ] && ok '没有旧表述残留'
+
+# J2 占位式「人工回写 / 待人工回写」: 只允许出现在否定句（不得 / 禁止 / 不写 / 不出现）里.
+PH_PAT='人工[回]写'
+ph_bad=0
+for f in $(scan_files); do
+    hits=$(grep -nE "$PH_PAT" "$f" 2>/dev/null || true)
+    [ -z "$hits" ] && continue
+    while IFS= read -r hit; do
+        [ -z "$hit" ] && continue
+        case "$hit" in
+            *不得*|*禁止*|*不写*|*不出现*|*不该*|*勿*|*不能*) : ;;
+            *) bad "占位式回写表述: ${f#$REPO_ROOT/}: $hit"; ph_bad=$((ph_bad + 1)) ;;
+        esac
+    done <<EOF
+$hits
+EOF
+done
+[ "$ph_bad" -eq 0 ] && ok '没有未加否定限定的占位式回写表述'
+
+# J3 ssdctl 子命令白名单: 只能出现契约 §5 定义的 8 个子命令.
+SSDCTL_CMDS='scan criteria gate advance queue decide evidence verify'
+ssd_bad=0
+for f in $(scan_files); do
+    cmds=$(grep -ohE 'ssdctl(\.py)?[[:space:]]+[a-z][a-z-]*' "$f" 2>/dev/null | sed -E 's/.*[[:space:]]//' | sort -u || true)
+    for c in $cmds; do
+        case " $SSDCTL_CMDS " in
+            *" $c "*) : ;;
+            *) bad "未知 ssdctl 子命令 '$c': ${f#$REPO_ROOT/}"; ssd_bad=$((ssd_bad + 1)) ;;
+        esac
+    done
+done
+[ "$ssd_bad" -eq 0 ] && ok 'ssdctl 子命令名都在白名单内'
 
 # ---------------------------------------------------------------- 汇总
 printf '\n'

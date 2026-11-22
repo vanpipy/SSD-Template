@@ -1,13 +1,19 @@
 # Tech Design: {topic} (Index)
 
 > **状态**: Draft | Ready | Implemented | Deprecated
+> **状态主体**: agent:{id} | human:{handle}
+> **状态时间**: {YYYY-MM-DDTHH:MM:SS±HH:MM}
+> **状态依据**: criteria:{id}[,{id}…] | decision:{path}#{anchor} | external:{ref}
 > **来源 PRD**: [../../prd/{YYYY-MM-DD}/{topic}.md](../../prd/{YYYY-MM-DD}/{topic}.md)
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
 > **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一, 不得自造状态名。
-> **状态推进**: agent 可写上限 = `Draft`;`Ready` 由**人工 reviewer** 在 `## 复审 (Review)` 签署后翻转;`Implemented` 仅人工在外部代码仓 PR merged 后回写(PRD / Tech Design / Plan 三件套**必须同时**回写);上游转 `Deprecated` 时, 引用本 TD 的 Plan / Test Case 一并 `Deprecated`。
-> **状态口径**: 本 README 的状态行是**本 TD 目录的唯一状态源**, 子文件 (ards.md / apis.md / data-model.md) 的状态行跟随本文件。
+> **主体口径**: `agent:<id>` = 机器写入, `human:<handle>` = 人工写入。**agent 不得填 `human:` 前缀、不得代填人名**(INV-3)。
+> **状态推进**: agent 按 `schema/criteria.json` 的判据推进 —— 判据全绿即可由机器代写 `Ready`;`Implemented` 需外部事实依据(`external:`, 如外部代码仓 PR merged), 且 PRD / Tech Design / Plan 三件套**必须同时**回写;上游转 `Deprecated` 时, 引用本 TD 的 Plan / Test Case 一并 `Deprecated`。
+> **依据形式**: `criteria:<id>[,{id}…]` = 判据 id 列表, `decision:<path>#<anchor>` = 人工介入记录, `external:<ref>` = 外部事实。**状态块 4 行都要写** —— `Draft` 态写当次生成的 `状态主体` / `状态时间` / `状态依据`;升 `Ready` / `Implemented` 时后三行必填且非空。
+> **复审块 (4 行, 机器校验)**: `评审人` / `评审日期` / `评审结论` / `评审方式` 4 行都要写(`Draft` 态值可留空, 升 `Ready` 前 4 行必填非空)。取值: 评审人 = `agent:<id>` | 裸 handle(人工), 评审日期 = `YYYY-MM-DD`, 评审结论 = 通过 | 有条件通过 | 需返工, 评审方式 = 自动判据 | 人工介入 | 外部事实。`评审人` 为 `agent:*` 时 `评审方式` 不得为 `人工介入`。
+> **状态口径**: 本 README 的状态块是**本 TD 目录的唯一状态源**, 子文件 (ards.md / apis.md / data-model.md) 的状态行跟随本文件。
 
 > **默认代际 = v4**: 新建 TD 目录**一律**用 v4, 固定 4 子文件 —— README.md (综合描述) / ards.md (架构决策 + 方案对比) / apis.md (接口契约 + 时序交互) / data-model.md (ER 图 + 数据结构)。
 > **存量 v3 (仅显式 opt-in)**: [./v3/](./v3/NOTES.md) (7 个子模板, 仅维护**存量** v3 TD 目录或 fork 项目显式 opt-in 时按需取用; 目录说明见 [NOTES.md](./v3/NOTES.md))。
@@ -87,15 +93,16 @@
 
 > ⚠️ **完整性原则**: PRD 中每个 Given/When/Then 场景 (含 **But** 分支) **必须**出现在本表中, 漏掉会导致 Plan 验证用例不完整。
 > 表格固定 6 列 (PRD 场景 / 步骤 / 动作 / 组件 / 数据模型 / 时序图), 校验脚本按列数计数。
+> **PRD 场景列写上游场景的稳定 ID `S-n`**(与 `prd/{date}/{topic}.md` 的场景标题一致), 不写序号或自然语言标题。
 
-| PRD 场景 (或 FR-XXX) | 步骤 | 动作 | 组件 | 数据模型 | 时序图 |
+| PRD 场景 S-n (或 FR-XXX) | 步骤 | 动作 | 组件 | 数据模型 | 时序图 |
 |----------------------|------|------|------|----------|--------|
-| {场景 A 或 FR-001} | 1 | {动作} | {组件} | {模型} | MOD-1 |
+| S-1 {场景 A} | 1 | {动作} | {组件} | {模型} | MOD-1 |
 |                      | 2 | {动作} | {组件} | {模型} | MOD-1 |
-| {场景 B 或 FR-002} | 1 | ... | ... | ... | SYS-1 |
+| S-2 {场景 B} | 1 | ... | ... | ... | SYS-1 |
 
 **字段说明**:
-- **PRD 场景 (或 FR-XXX)**: 来自 PRD 的场景编号, 如果 PRD 用了 FR-XXX 编号则用 FR-XXX
+- **PRD 场景 S-n (或 FR-XXX)**: 来自 PRD 的场景稳定 ID `S-n`(PRD 用了 FR-XXX 编号则用 FR-XXX)
 - **步骤**: 场景内的步骤序号 (从 1 开始)
 - **动作**: 该步骤执行的动作
 - **组件**: 负责该动作的内部组件
@@ -124,7 +131,7 @@
 | 可用性 | 服务可用性 | {n}% | 健康检查 | [策略] |
 | 质量 | 错误率 | < {n}% | 日志统计 | [策略] |
 
-**关联场景**: PRD 场景 {n}
+**关联场景**: S-1
 **引用决策**: KD-1
 
 ### 降级策略 (Fallback Strategy)
@@ -165,18 +172,21 @@
 - [ ] 质量指标全部为具体数字, 且每个量化指标有冷启动 / 首笔保护答案
 - [ ] 所有跨文件引用 (KD-1 / KD-2 / V / FR / SYS / MOD) 已对账
 - [ ] README 计数复核: 本文件与各子文件中的行数、KD 数、OQ 数、约束数、风险数按当前内容重新统计, 不沿袭旧值
-- [ ] `## 复审 (Review)` 三行已由**人工 reviewer** 填写, 状态从 `Draft` 改为 `Ready`
+- [ ] `## 复审 (Review)` 四行(评审人 / 评审日期 / 评审结论 / 评审方式)已由 agent 按 `schema/criteria.json` 判据填写, 状态从 `Draft` 改为 `Ready`; `评审人` 写 `agent:<id>`, 人工复核时改填人名
 
 ---
 
 ## 复审 (Review)
 
-> 本段是**机器必填段**。三行(`评审人` / `评审日期` / `评审结论`)是**评审签署**载体 —— `Draft` 阶段清空, 升 `Ready` 前由**人工 reviewer** 填写真值并翻转状态, agent 不得自行填写或翻转。
-> Tech Design 的 `Implemented` 仅在外部代码仓 PR merged 后由**人工**回写, 且 PRD / Tech Design / Plan 三件套必须同时回写。
+> 本段是**机器必填段**。四行(`评审人` / `评审日期` / `评审结论` / `评审方式`)是**评审签署**载体 —— `Draft` 阶段清空, 升 `Ready` 前由 agent 按 `schema/criteria.json` 的判据填写真值并翻转状态。
+> `评审人` 取值: `agent:<id>` = 机器签署, 裸 handle = 人工签署。**agent 不得填 `human:` 前缀、不得代填人名**(INV-3)。
+> `评审方式` 取值: `自动判据` / `人工介入` / `外部事实`;`评审人` 为 `agent:*` 时 `评审方式` 不得为 `人工介入`。
+> Tech Design 的 `Implemented` 需外部事实依据(外部代码仓 PR merged), 且 PRD / Tech Design / Plan 三件套必须同时回写。
 
-> **评审人**: {github-handle}
+> **评审人**: agent:{id} | {github-handle}
 > **评审日期**: {YYYY-MM-DD}
 > **评审结论**: {通过 / 有条件通过 / 需返工}
+> **评审方式**: {自动判据 / 人工介入 / 外部事实}
 
 ---
 

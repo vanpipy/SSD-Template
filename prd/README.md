@@ -11,7 +11,7 @@
 | Layer 2 | `tech_design/{YYYY-MM-DD}-{topic}/` | Draft → Ready → Implemented |
 | Layer 3 | `plan/{YYYY-MM-DD}-{topic}/{topic}.md` | Draft → Ready → Implemented |
 
-> **agent 的权限天花板 = `Draft`**:`Ready` 由人工评审签署后写入,`Implemented` 由人回写。详见 [AGENTS.md](../AGENTS.md) §3.3。
+> **agent 的权限天花板 = `Ready`**:`Ready` 由 `ssdctl advance` 按 `schema/criteria.json` 判据全绿后代写;`Implemented` 需外部事实(外部 PR merged),合并动作仍由人执行。详见 [AGENTS.md](../AGENTS.md) §3.3。
 
 > `prd/{YYYY-MM-DD}/` 是 Layer 1 的**素材存放区**,**不是**独立 Layer。
 > Layer 0(可选素材区)在 [material/](../material/README.md),启用与否由项目决定。

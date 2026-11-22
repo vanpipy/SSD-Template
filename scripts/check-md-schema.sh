@@ -142,6 +142,26 @@ DATETOPIC_RE='^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(-[a-z0-9]+)*$'
 PLACEHOLDER_RE='\{[A-Z][A-Z_-]+\}|\{[A-Z_-]+ [A-Z_-]+\}'
 PLACEHOLDER_ANY_RE='\{[a-zA-Z_-]+\}|\{[a-zA-Z_-]+ [a-zA-Z_-]+\}'
 STATE_RE='^(Draft|Ready|Implemented|Deprecated)'
+# 状态块元数据的取值格式(实施契约 §3.1)
+#   状态块 = 4 行固定顺序
+#     > **状态**: Draft
+#     > **状态主体**: agent:sddctl
+#     > **状态时间**: 2026-11-22T23:30:00+08:00
+#     > **状态依据**: criteria:PRD-READY-01,PRD-READY-02
+#   Draft / Deprecated: 后三行可缺省(写了就必须合法)
+#   Ready / Implemented: 后三行必填且非空(半写 = 违规)
+STATE_SUBJECT_RE='^(agent|human):[A-Za-z0-9._-]+$'
+STATE_TIME_RE='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([+-][0-9]{2}:[0-9]{2}|Z)$'
+STATE_BASIS_ITEM_RE='^(criteria|decision|external):[^[:space:],]+$'
+# criteria:<id>[,<id>…] 的延续项(省略前缀的裸 id)
+STATE_BASIS_ID_RE='^[A-Za-z0-9._-]+$'
+# Deprecated 态的状态依据只允许 decision: / external:(实施契约 §5.2 —— 不允许 criteria:)
+# 注意: 这个常量必须存在。未定义时 `grep -Eq ""` 匹配一切, 规则会静默变成 no-op。
+STATE_BASIS_DECISION_RE='^(decision|external):[^[:space:],]+$'
+# 复审方式的取值(实施契约 §3.2)
+REVIEW_METHODS_RE='^(自动判据|人工介入|外部事实)$'
+# 复审结论的取值(实施契约 §3.2)
+REVIEW_CONCLUSION_RE='^(有条件通过|需返工|通过)$'
 
 # --- 结构解析辅助 ---
 
@@ -228,9 +248,32 @@ review_value() {
   '
 }
 
+# 状态块元数据取值(状态主体 / 状态时间 / 状态依据): 精确匹配 `**键名**`
+status_meta_value() {
+  awk -v k="$1" '
+    {
+      if (index($0, "**" k "**") == 0) next
+      line = $0
+      if (sub(/^[^:：]*[:：][[:space:]]*/, "", line) == 0) next
+      gsub(/^[[:space:]]*[|*`]+/, "", line)
+      gsub(/[[:space:]]*[|*`]+$/, "", line)
+      if (index(line, "**" k "**") > 0) next
+      print line
+      exit
+    }
+  ' "$2"
+}
+
 is_placeholder_value() {
   printf '%s' "$1" | grep -Eq '^\{.*\}$'
 }
+
+
+
+
+
+
+
 
 # 状态枚举校验(M3): 结果写入全局 STATE_TOKEN; 非法时返回 1
 STATE_TOKEN=""
@@ -253,6 +296,66 @@ check_state_value() {
     return 1
   fi
   STATE_TOKEN="$tok"
+  return 0
+}
+
+
+# 状态块元数据校验(契约 §3.1, 实施契约 agent-first §3.1)
+#   Draft / Deprecated → 状态主体 / 状态时间 / 状态依据 **可缺省**;
+#                      若写了就必须合法(半写的状态块是违规, 不是「没关系」)
+#   Ready / Implemented → 三行**必填且非空**:
+#      状态主体 = agent:<id> | human:<handle>
+#      状态时间 = 带时区的 ISO-8601
+#      状态依据 = criteria:<id> / decision:<path>#<anchor> / external:<ref>(逗号分隔, 至少一项)
+check_status_meta() {
+  local rel="$1" file="$2" stage="$3"
+  local subject ts basis item
+  stage=$(canonical_stage "$stage")
+  subject=$(status_meta_value "状态主体" "$file")
+  ts=$(status_meta_value "状态时间" "$file")
+  basis=$(status_meta_value "状态依据" "$file")
+
+  if [ -n "$subject" ] && ! printf '%s' "$subject" | grep -Eq "$STATE_SUBJECT_RE"; then
+    err "$rel — 状态主体非法: '$subject' (应为 agent:<id> 或 human:<handle>)"
+  fi
+  if [ -n "$ts" ] && ! printf '%s' "$ts" | grep -Eq "$STATE_TIME_RE"; then
+    err "$rel — 状态时间不是带时区的 ISO-8601: '$ts'"
+  fi
+  if [ -n "$basis" ]; then
+    local oldifs="$IFS" prev_prefix=""
+    IFS=','
+    for item in $basis; do
+      IFS="$oldifs"
+      item=$(printf '%s' "$item" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+      IFS=','
+      [ -z "$item" ] && continue
+      if printf '%s' "$item" | grep -Eq "$STATE_BASIS_ITEM_RE"; then
+        prev_prefix=$(printf '%s' "$item" | sed 's/^\([a-z][a-z]*\):.*/\1/')
+        if [ "$stage" = "Deprecated" ] && [ "$prev_prefix" = "criteria" ]; then
+          err "$rel — 状态为 Deprecated, 状态依据不允许 criteria: ('$item'), 只能用 decision:<path>#<anchor> 或 external:<ref>"
+        fi
+      elif [ "$prev_prefix" = "criteria" ] && printf '%s' "$item" | grep -Eq "$STATE_BASIS_ID_RE"; then
+        : # criteria:<id>[,<id>…] 的延续项 —— 前缀继承上一项(与判据正则一致)
+      else
+        err "$rel — 状态依据项非法: '$item' (应为 criteria:<id>[,<id>…] / decision:<path>#<anchor> / external:<ref>)"
+      fi
+    done
+    IFS="$oldifs"
+  fi
+
+  case "$stage" in
+    Ready|Implemented)
+      if [ -z "$subject" ]; then
+        err "$rel — 状态为 $stage, 状态块缺少 \`> **状态主体**: agent:<id>\`"
+      fi
+      if [ -z "$ts" ]; then
+        err "$rel — 状态为 $stage, 状态块缺少 \`> **状态时间**: <ISO-8601 带时区>\`"
+      fi
+      if [ -z "$basis" ]; then
+        err "$rel — 状态为 $stage, 状态块缺少 \`> **状态依据**: criteria:<id>[,decision:<path>#<anchor>,external:<ref>]\`"
+      fi
+      ;;
+  esac
   return 0
 }
 
@@ -308,7 +411,7 @@ apply_stage_override() {
 check_review_block() {
   # $1 = rel, $2 = 文件, $3 = 状态 token(可空)
   local rel="$1" file="$2" stage="$3"
-  local body sign_date sign_reviewer sign_conclusion alt_date date
+  local body sign_date sign_reviewer sign_conclusion sign_method alt_date date
   stage=$(canonical_stage "$stage")
   if ! grep -q "^##[[:space:]]\{1,\}复审" "$file" 2>/dev/null; then
     err "$rel — 缺少必填段 \`## 复审 (Review)\`"
@@ -319,6 +422,7 @@ check_review_block() {
   sign_reviewer=$(review_value "评审人" "$body")
   [ -z "$sign_reviewer" ] && sign_reviewer=$(review_value "复审人" "$body")
   sign_conclusion=$(review_value "评审结论" "$body")
+  sign_method=$(review_value "评审方式" "$body")
 
   case "$stage" in
     Ready|Implemented)
@@ -339,11 +443,28 @@ check_review_block() {
       elif is_placeholder_value "$sign_reviewer"; then
         err "$rel — 状态为 $stage, 评审人仍是占位符: '$sign_reviewer'"
       fi
-      if is_placeholder_value "$sign_conclusion"; then
+      if [ -z "$sign_conclusion" ]; then
+        err "$rel — 状态为 $stage, 复审段缺少评审结论(应写 通过 / 有条件通过 / 需返工)"
+      elif is_placeholder_value "$sign_conclusion"; then
         err "$rel — 状态为 $stage, 评审结论仍是占位符: '$sign_conclusion'"
-      elif [ -z "$sign_conclusion" ]; then
-        warn "$rel — 状态为 $stage, 复审段未填评审结论(应写 通过 / 有条件通过 / 需返工)"
+      elif ! printf '%s' "$sign_conclusion" | grep -Eq "$REVIEW_CONCLUSION_RE"; then
+        err "$rel — 状态为 $stage, 评审结论取值非法: '$sign_conclusion' (应为 通过 / 有条件通过 / 需返工)"
       fi
+      if [ -z "$sign_method" ]; then
+        err "$rel — 状态为 $stage, 复审段缺少评审方式(应写 \`> **评审方式**: 自动判据 | 人工介入 | 外部事实\`)"
+      elif is_placeholder_value "$sign_method"; then
+        err "$rel — 状态为 $stage, 评审方式仍是占位符: '$sign_method'"
+      elif ! printf '%s' "$sign_method" | grep -Eq "$REVIEW_METHODS_RE"; then
+        err "$rel — 状态为 $stage, 评审方式取值非法: '$sign_method' (应为 自动判据 / 人工介入 / 外部事实)"
+      fi
+      # agent 署名不得配「人工介入」(实施契约 §3.2 / INV-3)
+      case "$sign_reviewer" in
+        agent:*)
+          if [ "$sign_method" = "人工介入" ]; then
+            err "$rel — 状态为 $stage, 评审人为 agent 署名 ('$sign_reviewer') 时评审方式不得为「人工介入」"
+          fi
+          ;;
+      esac
       ;;
     *)
       # Draft / Deprecated / 状态未知: 复审段存在即可, 日期与评审人豁免
@@ -369,6 +490,7 @@ check_prd() {
   raw=$(read_state "$file")
   if check_state_value "$rel" "$raw"; then stage="$STATE_TOKEN"; else stage=""; fi
   apply_stage_override "$rel" "$stage" || true
+  check_status_meta "$rel" "$file" "$EFFECTIVE_STAGE"
 
   for sec in 为什么 目标 场景 不在范围内; do
     if ! grep -q "^##[[:space:]]\{1,\}$sec" "$file"; then
@@ -418,6 +540,7 @@ check_td_dir() {
   raw=$(read_state "$dir/README.md")
   if check_state_value "$rel/README.md" "$raw"; then stage="$STATE_TOKEN"; else stage=""; fi
   apply_stage_override "$rel/README.md" "$stage" || true
+  check_status_meta "$rel/README.md" "$dir/README.md" "$EFFECTIVE_STAGE"
 
   if [ "$gen" = "v4" ]; then
     for sub in README.md ards.md apis.md data-model.md; do
@@ -475,6 +598,7 @@ check_plan() {
   raw=$(read_state "$file")
   if check_state_value "$rel" "$raw"; then stage="$STATE_TOKEN"; else stage=""; fi
   apply_stage_override "$rel" "$stage" || true
+  check_status_meta "$rel" "$file" "$EFFECTIVE_STAGE"
 
   if ! grep -q "^##[[:space:]]\{1,\}变更清单" "$file"; then
     err "$rel — 缺少必填段 \`## 变更清单 (Changes)\`"
@@ -535,6 +659,7 @@ check_testcase() {
     fi
   fi
   apply_stage_override "$rel" "$stage" || true
+  check_status_meta "$rel" "$file" "$EFFECTIVE_STAGE"
 
   if ! grep -q "^##[[:space:]]\{1,\}用例总览" "$file"; then
     err "$rel — 缺少 \`## 用例总览\` 段"

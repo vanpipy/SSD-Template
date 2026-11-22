@@ -3,6 +3,11 @@
 > AI agent 在**规格仓库(spec repo)**工作时的操作契约。
 > **核心原则**:以 skill 为执行单元。agent 不直接拼装 `schema/` 模板或 `scripts/` 校验脚本,而是调用 `.codex/skills/<name>/SKILL.md`。
 > 每次开始工作前,先读本文件 + 读对应 skill 的 `SKILL.md`(skill 内部已封装 schema 读取 + scripts 校验流程)。
+>
+> **契约真源**:`WORKFLOW.md`(状态推进、调度依据、硬禁止以它为准)。
+> **状态与调度的唯一入口**:`scripts/ssdctl.py`(实施契约 `.swarm/requirements/agent-first-implementation.md` §5);
+> 调度依据 = **仓内 `ssdctl scan`**,不是外部编排器(实施契约 §7、§11)。
+> **推进主体**:agent 自主推进,人类**可**手动介入(决策记录 `control/decisions/`)。
 
 ---
 
@@ -222,7 +227,7 @@ git -C <仓库本地路径> rev-parse --short HEAD
 | 负责人 | (待填) |
 
 > **本仓与代码仓的关系**:本仓只存规格与计划。**不**在 A 仓写业务代码。
-> 实施在外部代码仓进行,各自独立分支与提交;实现完成后人工回写 A 仓状态为 `Implemented`。
+> 实施在外部代码仓进行,各自独立分支与提交;外部 PR merged 后,由 `ssdctl advance` 在**外部事实**证据齐备时代写 A 仓状态为 `Implemented`(实施契约 §5.2);**合并动作仍由人执行**。
 
 ---
 
@@ -232,7 +237,8 @@ git -C <仓库本地路径> rev-parse --short HEAD
 
 > Step 0(收集原始需求) + Step 1(加工为 PRD) + Step 2(PRD → Tech Design) + Step 3(Tech Design → Plan) + Step 4(TDD 执行)
 >
-> **本仓有 ≥1 关联代码仓时**,Step 4 启用:规格进入 `Ready` 后由 coding agent 在代码仓实施,完成后人工回写 `Implemented`。
+> **本仓有 ≥1 关联代码仓时**,Step 4 启用:规格进入 `Ready` 后由 coding agent 在代码仓实施;外部 PR merged 后,
+> `ssdctl advance` 在**外部事实**证据齐备时代写 `Implemented`(实施契约 §5.2),**合并动作仍由人执行**。
 > **0 关联代码仓时**,Step 4 不存在,规格停留在 `Ready`。
 >
 > **Layer 4(`test_cases/`)** 是可选质量层,启用时通过 `to-test-cases` 生成黑盒用例,作为 Plan V 用例的参考比照对象。
@@ -246,8 +252,10 @@ git -C <仓库本地路径> rev-parse --short HEAD
 | Step 4: TDD 执行(仅 ≥1 外部代码仓) | Plan | 代码 + 测试 | Ready → Implemented | 外部代码仓 |
 | Layer 4(可选) 测试用例 | `to-test-cases <prd-path> <td-dir>` | Test Cases(主/冒烟/要点) | Draft → Ready → Implemented | `test_cases/{date}/{topic}.md` |
 
-> **agent 产出即 `Draft`**:agent 写出的三层规格一律停在 `Draft`;升 `Ready` 只能由人工 reviewer 签署复审三行后回写(见 §3.3)。**没有「产出即 Ready」** → 脚本只强制**格式与追溯**,「能否标 `Ready`」是人工评审语义,不由脚本判定。
-> **Layer 4 例外**:Test Cases 初始产出 `Draft`,评审通过 + 要点伴生就位后升 `Ready`。
+> **agent 产出即 `Draft`**:agent 写出的三层规格一律停在 `Draft`;升 `Ready` 由 **`ssdctl advance` 按判据自动执行**
+> (判据全绿即推进;人工可手动介入,见 §3.3)。判据的机器权威在 `schema/criteria.json`,**不由人工的主观判断决定**
+> —— 人工介入表现为 `control/decisions/` 里的决定记录,而不是「人手敲状态行」。
+> **Layer 4 例外**:Test Cases 初始产出 `Draft`,判据通过 + 要点伴生就位后升 `Ready`。
 > **可选层**:`material/`(素材区)、`test_cases/`(Layer 4)、`test-business/`(业务知识库)、`deep/`(理解底座)、PRD 台账 + 关联矩阵。仅在项目启用时存在,不存在则跳过对应校验。
 
 ### 3.2 目录与命名规范
@@ -278,17 +286,24 @@ git -C <仓库本地路径> rev-parse --short HEAD
 
 **状态值(全层统一 4 值)**: `Draft` / `Ready` / `Implemented` / `Deprecated`。**不得自造状态名**。
 
-| 状态 | 谁能写 | 写入载体 | 门禁 |
-|------|--------|----------|------|
-| `Draft` | **agent** | 产出文件本身 | 该层校验脚本 exit 0 |
-| `Ready` | **人工 reviewer** | `## 复审 (Review)` 段的 `> **评审人**` / `> **评审日期**` / `> **评审结论**` 三行 | 该层校验脚本 exit 0 **且** 复审段三行已填真值 |
-| `Implemented` | **仅人工** | 同上,并注明回写依据(如「代码仓 PR #N merged」) | 人工检查外部仓库 |
-| `Deprecated` | **人工决策** | 状态行 + 备注「级联自上游 {path}({日期})」 | `scripts/check-traceability.sh` 级联一致性 |
+| 状态 | 谁能发起 | 写入载体(一律由机器代写) | 准入条件 |
+|------|--------|--------------------------|----------|
+| `Draft` | **agent** | 产出文件本身的状态块(`> **状态**` / `> **状态主体**` / `> **状态时间**` / `> **状态依据**` 4 行;Draft 态后三行允许缺省) | 该层校验脚本 exit 0 |
+| `Ready` | **agent(判据驱动)或人工(手动介入)** | **`bash scripts/ssdctl.sh advance` 代写**状态块 4 行 + 复审块 4 行(`> **评审人**` / `> **评审日期**` / `> **评审结论**` / `> **评审方式**`) | 该层全部 `blocking:true` 判据通过 + `upstream_ready`;`blocking:false` 失败项须有 `control/decisions/` 决定记录(实施契约 §4.2 / §5.2) |
+| `Implemented` | **人工(外部事实)** | 同上,由 `advance --to Implemented` 代写;状态依据须含 `external:` 依据或 `--decision` 指定的外部事实介入记录 | 外部 PR merged 等**外部事实**齐备;三层必须**同时**进入 `Implemented`(不允许单层先转) |
+| `Deprecated` | **agent 或人工** | 同上,由 `advance --to Deprecated` 代写 + 备注「级联自上游 {path}({日期})」 | 状态依据必须是 `decision:<path>#<anchor>` 或 `external:<ref>`,**不允许** `criteria:`(实施契约 §5.2) |
 
-> **agent 权限天花板 = `Draft`**。agent 可产出文件、可跑门禁、可报告结论,**不得**自行签署评审,不得把状态改成 `Ready` / `Implemented`,不得代填评审人与评审日期。
-> **Ready 的机器可核验载体**是产物文件内的三行签署;**Implemented 只能由人回写**,且三层必须**同时**进入 `Implemented`(不允许单层先转)。
+> **agent 权限天花板 = `Ready`**(由判据决定,不由人手决定)。agent 可产出文件、可跑门禁、可报告结论;判据全绿时由
+> `bash scripts/ssdctl.sh advance` 代写 `Ready`。`Implemented` 仍需**外部事实**证据,不靠 agent 自述。
+> **不得冒充人工**:`human:` 前缀**只能由人自己写**;agent 的署名一律 `agent:<id>`(实施契约 §2 INV-3、决策 D-07)。
+> agent 不得代填人名、不得把 `评审方式` 写成「人工介入」。
+> **状态推进必须走 `ssdctl advance`,不得手改状态行**:advance 负责校验判据、代写状态块与复审块、追加证据链
+> (`control/evidence/**`,append-only)。手改状态行 = 绕过判据与证据链,属违规。
+> **Ready 的机器可核验载体**是产物文件内的状态块 + 复审块;**每次转换都留可回读证据**,用
+> `bash scripts/ssdctl.sh verify <artifact>` 复核三者一致。
 > **Deprecated 级联**:上游转 `Deprecated` 时,引用它的下游 TD / Plan / Test Case 一并转 `Deprecated`。
-> **Test Cases 状态**由 `sync-status` skill 编排(Implemented 回写 / Deprecated 级联 / 复审回退 Draft),独立于三件套生命周期。
+> **Test Cases 状态**同样走 `ssdctl advance`(`Ready` / `Implemented` / `Deprecated`),独立于三件套生命周期;
+> `advance --to` 不含 `Draft`,复审回退属人工介入,记录在 `control/decisions/`。
 
 ### 3.4 门禁清单 (wiki 视角)
 
@@ -305,7 +320,7 @@ git -C <仓库本地路径> rev-parse --short HEAD
 | 实现基线(可选) | Tech Design `## 实现基线` 段 | `scripts/check-repo-baseline.sh`(有关联代码仓时才校验) |
 | PRD 台账 / 关联矩阵(可选) | `schema/prd-ledger.md` / `schema/prd-matrix.md` | `scripts/sync-prd.sh` / `scripts/check-traceability.sh`(层存在时才校验) |
 
-**调用方式**:用 `validate-spec` skill(它按层跑全部校验脚本),不要手拼脚本命令。脚本退出码是唯一判定依据:全部 `✓` 只说明**格式与追溯**合规;「能否标 `Ready`」是人工评审语义(见 §3.3),不由脚本判定。
+**调用方式**:用 `validate-spec` skill(它按层跑全部校验脚本),不要手拼脚本命令。脚本退出码是唯一判定依据:全部 `✓` 只说明**格式与追溯**合规;**能否进 `Ready` 由 `schema/criteria.json` 的判据决定**,由 `bash scripts/ssdctl.sh advance` 代写状态块与复审块(见 §3.3),既不由「✓ 的数量」决定,也不是人工敲状态行。
 
 ### 3.5 禁止行为
 
@@ -313,13 +328,16 @@ git -C <仓库本地路径> rev-parse --short HEAD
 - ❌ **不省略日期前缀**。`tech_design/` 和 `plan/` 文件夹名必须带 `{YYYY-MM-DD}-`
 - ❌ **不在 Plan 中写完整代码**。只写策略和约束,代码在 TDD 阶段产出
 - ❌ **不遗漏 PRD 场景**。Tech Design 场景映射必须覆盖所有 Given/When/Then
-- ❌ **不假设代码仓完成**。规格 `Ready` ≠ 代码已实现,回写 `Implemented` 前必须核对外部代码仓的实际提交
-- ❌ **交互式会话内不绕过 skill 直接拼 schema/scripts 命令**。保持调用入口单一,agent 首选 `.codex/skills/<name>/SKILL.md`。(Symphony 流水线按 `WORKFLOW.md` §6 直接跑 scripts,不受此限)
+- ❌ **不假设代码仓完成**。规格 `Ready` ≠ 代码已实现,推进 `Implemented` 前必须有**外部事实**证据(外部 PR merged),并核对外部代码仓的实际提交
+- ❌ **不冒充人工署名**。`human:` 前缀**只能由人自己写**;agent 只能署 `agent:<id>`,不得代填人名,不得把 `评审方式` 写成「人工介入」(实施契约 §2 INV-3、决策 D-07)
+- ❌ **不手改状态行**。状态推进必须走 `bash scripts/ssdctl.sh advance` —— 由它校验判据、代写状态块与复审块、追加证据链;手改 = 绕过判据与证据链
+- ❌ **不凭推测写终态**。`Implemented` 需 `external:` 依据或 `--decision` 指定的外部事实介入记录;`Deprecated` 的状态依据不允许写 `criteria:`
+- ❌ **交互式会话内不绕过 skill 直接拼 schema/scripts 命令**。保持调用入口单一,agent 首选 `.codex/skills/<name>/SKILL.md`。(本仓自主流水线按 `WORKFLOW.md` §6 直接跑 scripts,不受此限)
 
 ### 3.6 调用示例
 
 skill 定义在 `.codex/skills/<name>/SKILL.md`,front matter 只有 `name` 与 `description`。
-**调用形态取决于宿主**:交互式会话里 agent 直接读该 SKILL.md 并按正文执行;宿主支持 slash 命令时可写成 `/to-prd`;Symphony 流水线里由 `WORKFLOW.md` 按 issue 描述驱动对应 skill。
+**调用形态取决于宿主**:交互式会话里 agent 直接读该 SKILL.md 并按正文执行;宿主支持 slash 命令时可写成 `/to-prd`;本仓自主流水线里由 `WORKFLOW.md` 按 `ssdctl scan` 的调度结果驱动对应 skill。
 
 ```bash
 # Step 1: 原始素材 → PRD
@@ -336,18 +354,45 @@ to-plan <tech-design-dir>                    # 例: to-plan tech_design/2026-11-
 validate-spec
 ```
 
-> **Layer 4(可选)**:Test Cases 与状态编排。**状态转换命令只由人工发起** → agent 不得自行决定转换(见 §3.3):
+> **Layer 4(可选)**:Test Cases 的产出仍走 skill;**状态推进统一走 `scripts/ssdctl.py`**(实施契约 §5)——
+> 不再存在「只有人能发起状态转换」这种单边授权:agent 依据判据自动推进,人可随时手动介入。
 
 ```bash
 # Test Cases: PRD + TD → 黑盒用例
 to-test-cases <prd-path> <tech-design-dir>   # 例: to-test-cases prd/2026-11-22/layer-checklist.md tech_design/2026-11-22-layer-checklist/
-
-# 状态编排(**人工发起**):Implemented 回写 / Deprecated 级联 / 复审回退 Draft
-sync-status implement <plan-path>            # 三件套 Implemented 回写(人工给出 PR 依据)
-sync-status deprecate <prd-or-td-path>       # Deprecated 级联
-sync-status rollback <prd-path>              # 复审回退 Draft
-sync-status test-done <test-case-path>       # Test Cases Ready → Implemented
 ```
+
+**状态与调度命令**(`scripts/ssdctl.py`,唯一入口;退出码 `0`=通过 / `1`=不通过 / `2`=用法或内部错误,实施契约 INV-7):
+
+```bash
+# 调度:仓内扫描,判本层是否可推进(调度依据,不是外部编排器)
+bash scripts/ssdctl.sh scan [--json] [--layer L] [--check]
+
+# 判据:单制品逐条评估
+bash scripts/ssdctl.sh criteria <artifact> [--json]
+
+# 全仓门禁(既有门禁 + 判据引擎 + 派生数据再生)
+bash scripts/ssdctl.sh gate [--json]
+
+# 状态推进(唯一写入路径;--to 不含 Draft)
+bash scripts/ssdctl.sh advance <artifact> --to <Ready|Implemented|Deprecated> [--actor A] [--decision <path>#<anchor>] [--dry-run]
+
+# 人工介入:待裁决清单 / 决定记录
+bash scripts/ssdctl.sh queue <artifact> [--json]
+bash scripts/ssdctl.sh decide --artifact <path> --action <approve|reject|hold|override> --actor <name> --reason <text> [--criterion <id>]
+
+# 证据与复核
+bash scripts/ssdctl.sh evidence [--artifact <path>] [--json]
+bash scripts/ssdctl.sh verify <artifact>
+```
+
+> `advance --dry-run` **只校验、不写文件**;`advance` 校验失败时**不写任何文件**(退出码 1)。
+> `--decision` 指向 `control/decisions/<YYYY-MM-DD>-<topic>.md#<anchor>`。
+> **命令形态**:一律 `bash scripts/ssdctl.sh <子命令>` —— 它是 `scripts/ssdctl.py` 的解释器解析包装器。
+> 不同机器上 `python` 未必可用(Windows 的 Microsoft Store 占位符会命中 exit 9009),`python3` 只在 POSIX 机器上有;
+> 包装器依次尝试 `$SSDCTL_PYTHON` / `python3` / `python` / `py -3` /
+> `~/.dsh/dsh-runtimes/*/dependencies/python/python.exe`,每个候选都通过 `-c 'import sys'` 自检,
+> 全都不行时 exit 2 并列出试过的候选,**不静默继续**。
 
 ### 3.7 Skill 清单
 
@@ -362,13 +407,14 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 | 3 | `to-plan` | PRD + Tech Design → Plan | TD 目录 | `plan/{date}-{topic}/{topic}.md` |
 | 4 | `validate-spec` | 全量校验 + 证据锚点抽查 | 整仓 / 单文件 / 单目录 | 校验报告(不产出制品) |
 | 5 | `to-test-cases` | PRD + TD → 黑盒用例 | PRD 路径 + TD 目录 | `test_cases/{date}/{topic}.md`(+ `-smoke` / `-key-points`) |
-| 6 | `sync-status` | 四层生命周期编排 | 目标文档路径 | 状态行与备注更新 |
+| 6 | `sync-status` | 四层生命周期编排(只编排步骤) | 目标文档路径 | 编排指令与备注(**状态行由 `ssdctl advance` 写**) |
 | 7 | `sync-prd` | 可选层 · PRD 台账同步 | 批次日期 | `material/{date}/PRDS.md` + 根 README 统计块 |
 | 8 | `to-deep-understand` | 可选层 · 深度理解层 | 范围(可选) | `deep/`(只写 `deep/`,不改规格层) |
-| 9 | `commit` | 辅助工具 · 产出符合仓库约定的 commit message(含 `Reviewed-by:` trailer,由人工回写) | 变更内容 | commit message(不产出制品) |
+| 9 | `commit` | 辅助工具 · 产出符合仓库约定的 commit message(含 `Reviewed-by:` trailer,取值 = 复审块 `> **评审人**` 的实际值,可能是 `agent:<id>` 或人工 handle;不得写没签过的名字) | 变更内容 | commit message(不产出制品) |
 
 > `sync-prd` 与 `to-deep-understand` 是**可选层** skill,默认不启用。
 > skill 的 front matter 只保留 `name` 与 `description`;执行细节全在正文里。
+> **状态写入的唯一入口是 `scripts/ssdctl.py`**:`sync-status` 只编排步骤,不直接改状态行(见 §3.3 / §3.5)。
 
 ### 3.8 快速定位文件
 
@@ -419,7 +465,8 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 **多仓库 fork 时的关键约束**:
 - 本仓库永远是 wiki,**不是**代码仓
 - 跨仓引用使用 `{仓库标识}/path` 写法
-- Step 4 (TDD) 在代码仓执行,**人工回写** wiki 状态为 `Implemented`
+- Step 4 (TDD) 在代码仓执行;外部 PR merged 后,由 `ssdctl advance` 在**外部事实**证据齐备时代写 wiki 状态为 `Implemented`(**合并动作仍由人执行**)
+- 仓内调度依据 = **`ssdctl scan`**(实施契约 §7),不依赖外部 issue tracker
 
 ### fork 时可选:Step 4 启动模式
 
@@ -430,7 +477,7 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 - **工作量**:0 额外配置
 - **原理**:Plan Ready = 工作信号,coding agent 直接消费本地 wiki
 - **不需要**:`Implementing` 中间态 / 调度 issue / wiki agent kickoff
-- **唯一人工介入**:外部 PR merged 后回写 wiki 状态
+- **人工介入点**:执行合并动作;判据存在 `blocking:false` 失败项时补 `control/decisions/` 决定记录(`ssdctl decide`)。状态行本身由 `ssdctl advance` 代写
 
 **(C) 显式调度(仅多 agent 协调需要)**:
 - **适用**:多 code agent / 多 repo fork(罕见)

@@ -1,0 +1,827 @@
+{
+  "version": 1,
+  "criteria": [
+    {
+      "id": "PRD-SECTIONS",
+      "layer": "prd",
+      "title": "PRD 必填 5 段齐全(为什么 / 目标 / 场景 / 不在范围内 / 复审)",
+      "kind": "section_exists",
+      "params": {
+        "sections": ["为什么 (Why)", "目标 (Goal)", "场景 (Scenarios)", "不在范围内 (Out of Scope)", "复审 (Review)"]
+      },
+      "blocking": true,
+      "source": "schema/prd.md:30"
+    },
+    {
+      "id": "PRD-STATE-VALUE",
+      "layer": "prd",
+      "title": "状态块首行取值只能是 4 态之一",
+      "kind": "enum_field",
+      "params": {
+        "field": "状态",
+        "values": ["Draft", "Ready", "Implemented", "Deprecated"]
+      },
+      "blocking": true,
+      "source": "schema/prd.md:3"
+    },
+    {
+      "id": "PRD-STATE-BLOCK",
+      "layer": "prd",
+      "title": "状态块 4 行齐全(状态 / 状态主体 / 状态时间 / 状态依据);Draft 态后 3 行允许缺省, 故不阻断",
+      "kind": "count_min",
+      "params": {
+        "regex": "^> \\*\\*(状态|状态主体|状态时间|状态依据)\\*\\*:",
+        "min_count": 4
+      },
+      "blocking": false,
+      "source": "schema/prd.md:3"
+    },
+    {
+      "id": "PRD-STATE-SUBJECT",
+      "layer": "prd",
+      "title": "状态主体只能是 agent:<id> 或 human:<handle>;agent 不得填 human: 前缀",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态主体\\*\\*:\\s*(agent:[A-Za-z0-9._-]+|human:[A-Za-z0-9._-]+)$"
+      },
+      "blocking": false,
+      "source": "schema/prd.md:4"
+    },
+    {
+      "id": "PRD-STATE-TIME",
+      "layer": "prd",
+      "title": "状态时间必须是带时区的 ISO-8601 时间戳",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态时间\\*\\*:\\s*\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$"
+      },
+      "blocking": false,
+      "source": "schema/prd.md:5"
+    },
+    {
+      "id": "PRD-STATE-BASIS",
+      "layer": "prd",
+      "title": "状态依据必须是 criteria: / decision: / external: 三选一",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|decision:\\S+#\\S+|external:\\S+)$"
+      },
+      "blocking": false,
+      "source": "schema/prd.md:6"
+    },
+    {
+      "id": "PRD-READY-01",
+      "layer": "prd",
+      "title": "验收标准必须写成带稳定 ID 的复选项 `- [ ] AC-n <文本>`",
+      "kind": "count_min",
+      "params": {
+        "regex": "^- \\[ \\] AC-[0-9]+ .+$",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/prd.md:30"
+    },
+    {
+      "id": "PRD-CHECKBOX",
+      "layer": "prd",
+      "title": "验收标准必须以复选框形式给出, 不得写成散文",
+      "kind": "checkbox_present",
+      "params": {
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/prd.md:30"
+    },
+    {
+      "id": "PRD-AC-UNIQUE",
+      "layer": "prd",
+      "title": "AC-n 在本 PRD 内唯一",
+      "kind": "id_unique",
+      "params": {
+        "prefix": "AC"
+      },
+      "blocking": true,
+      "source": "schema/prd.md:30"
+    },
+    {
+      "id": "PRD-SCENARIO-LINES",
+      "layer": "prd",
+      "title": "场景标题必须带稳定 ID `### 场景: S-n <名称>`",
+      "kind": "count_min",
+      "params": {
+        "regex": "^### 场景: S-[0-9]+ .+$",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/prd.md:41"
+    },
+    {
+      "id": "PRD-S-UNIQUE",
+      "layer": "prd",
+      "title": "S-n 在本 PRD 内唯一",
+      "kind": "id_unique",
+      "params": {
+        "prefix": "S"
+      },
+      "blocking": true,
+      "source": "schema/prd.md:41"
+    },
+    {
+      "id": "PRD-COVER-LINES",
+      "layer": "prd",
+      "title": "每个场景必须写 `**覆盖**: AC-n, AC-n` 覆盖行",
+      "kind": "count_min",
+      "params": {
+        "regex": "^\\*\\*覆盖\\*\\*:\\s*AC-[0-9]+(,\\s*AC-[0-9]+)*$",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/prd.md:41"
+    },
+    {
+      "id": "PRD-COVER-RESOLVE",
+      "layer": "prd",
+      "title": "覆盖行引用的 AC-n 必须在本 PRD 内已声明",
+      "kind": "id_refs_resolve",
+      "params": {
+        "from_prefix": "S",
+        "to_prefix": "AC",
+        "via_field": "覆盖"
+      },
+      "blocking": true,
+      "source": "schema/prd.md:41"
+    },
+    {
+      "id": "PRD-READY-02",
+      "layer": "prd",
+      "title": "每个 AC-n 至少被一个 S-n 的覆盖行覆盖",
+      "kind": "coverage_complete",
+      "params": {
+        "from_prefix": "AC",
+        "to_prefix": "S",
+        "via_field": "覆盖"
+      },
+      "blocking": true,
+      "source": "schema/prd.md:41"
+    },
+    {
+      "id": "PRD-GIVEN-WHEN-THEN",
+      "layer": "prd",
+      "title": "场景必须写 Given / When / Then 三段",
+      "kind": "count_min",
+      "params": {
+        "regex": "^\\*\\*(Given|When|Then)\\*\\*",
+        "min_count": 3
+      },
+      "blocking": true,
+      "source": "schema/prd.md:41"
+    },
+    {
+      "id": "PRD-REVIEW-BLOCK",
+      "layer": "prd",
+      "title": "复审块 4 行齐全(评审人 / 评审日期 / 评审结论 / 评审方式)",
+      "kind": "count_min",
+      "params": {
+        "regex": "^> \\*\\*(评审人|评审日期|评审结论|评审方式)\\*\\*:",
+        "min_count": 4
+      },
+      "blocking": true,
+      "source": "schema/prd.md:85"
+    },
+    {
+      "id": "PRD-REVIEWER",
+      "layer": "prd",
+      "title": "评审人取值只能是 agent:<id> 或裸 handle;禁止 human: 前缀",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*评审人\\*\\*:\\s*(agent:[A-Za-z0-9._-]+|[A-Za-z0-9._-]+)?$"
+      },
+      "blocking": true,
+      "source": "schema/prd.md:85"
+    },
+    {
+      "id": "PRD-REVIEW-DATE",
+      "layer": "prd",
+      "title": "评审日期为空(草稿)或 YYYY-MM-DD",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*评审日期\\*\\*:\\s*(\\d{4}-\\d{2}-\\d{2})?$"
+      },
+      "blocking": true,
+      "source": "schema/prd.md:85"
+    },
+    {
+      "id": "PRD-REVIEW-CONCLUSION",
+      "layer": "prd",
+      "title": "评审结论取值只能是 通过 / 有条件通过 / 需返工(草稿可空)",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*评审结论\\*\\*:\\s*(通过|有条件通过|需返工)?$"
+      },
+      "blocking": true,
+      "source": "schema/prd.md:85"
+    },
+    {
+      "id": "PRD-REVIEW-METHOD",
+      "layer": "prd",
+      "title": "评审方式取值只能是 自动判据 / 人工介入 / 外部事实(草稿可空)",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*评审方式\\*\\*:\\s*(自动判据|人工介入|外部事实)?$"
+      },
+      "blocking": true,
+      "source": "schema/prd.md:85"
+    },
+    {
+      "id": "PRD-NO-PLACEHOLDER",
+      "layer": "prd",
+      "title": "PRD 正文不得残留模板占位符",
+      "kind": "no_placeholder",
+      "params": {},
+      "blocking": true,
+      "source": "schema/prd.md:30"
+    },
+
+    {
+      "id": "TD-SECTIONS",
+      "layer": "td",
+      "title": "Tech Design 必填段齐全(摘要 / 门禁清单 / 复审 / 变更记录)",
+      "kind": "section_exists",
+      "params": {
+        "sections": ["摘要 (Summary)", "门禁清单 (Completion Gate)", "复审 (Review)", "变更记录 (Change Log)"]
+      },
+      "blocking": true,
+      "source": "schema/tech_design/README.md:23"
+    },
+    {
+      "id": "TD-STATE-VALUE",
+      "layer": "td",
+      "title": "状态块首行取值只能是 4 态之一",
+      "kind": "enum_field",
+      "params": {
+        "field": "状态",
+        "values": ["Draft", "Ready", "Implemented", "Deprecated"]
+      },
+      "blocking": true,
+      "source": "schema/tech_design/README.md:3"
+    },
+    {
+      "id": "TD-STATE-BLOCK",
+      "layer": "td",
+      "title": "TD README 状态块 4 行齐全;Draft 态后 3 行允许缺省, 故不阻断",
+      "kind": "count_min",
+      "params": {
+        "regex": "^> \\*\\*(状态|状态主体|状态时间|状态依据)\\*\\*:",
+        "min_count": 4
+      },
+      "blocking": false,
+      "source": "schema/tech_design/README.md:3"
+    },
+    {
+      "id": "TD-STATE-SUBJECT",
+      "layer": "td",
+      "title": "状态主体只能是 agent:<id> 或 human:<handle>",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态主体\\*\\*:\\s*(agent:[A-Za-z0-9._-]+|human:[A-Za-z0-9._-]+)$"
+      },
+      "blocking": false,
+      "source": "schema/tech_design/README.md:4"
+    },
+    {
+      "id": "TD-STATE-TIME",
+      "layer": "td",
+      "title": "状态时间必须是带时区的 ISO-8601 时间戳",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态时间\\*\\*:\\s*\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$"
+      },
+      "blocking": false,
+      "source": "schema/tech_design/README.md:5"
+    },
+    {
+      "id": "TD-STATE-BASIS",
+      "layer": "td",
+      "title": "状态依据必须是 criteria: / decision: / external: 三选一",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|decision:\\S+#\\S+|external:\\S+)$"
+      },
+      "blocking": false,
+      "source": "schema/tech_design/README.md:6"
+    },
+    {
+      "id": "TD-SUBFILE-GATE",
+      "layer": "td",
+      "title": "每个 TD 子文件都要有 `## 门禁清单 (Completion Gate)`(v4 4 子文件 / v3 6+ 子文件)",
+      "kind": "count_min",
+      "params": {
+        "regex": "^## 门禁清单",
+        "min_count": 4
+      },
+      "blocking": true,
+      "source": "schema/tech_design/ards.md:242"
+    },
+    {
+      "id": "TD-SUBFILE-CHANGELOG",
+      "layer": "td",
+      "title": "每个 TD 子文件都要有 `## 变更记录 (Change Log)`",
+      "kind": "count_min",
+      "params": {
+        "regex": "^## 变更记录",
+        "min_count": 4
+      },
+      "blocking": true,
+      "source": "schema/tech_design/ards.md:258"
+    },
+    {
+      "id": "TD-KD-DECLARED",
+      "layer": "td",
+      "title": "关键决策必须以 `## KD-n: <名称>` 声明(v4 在 ards.md, v3 在 decisions.md)",
+      "kind": "count_min",
+      "params": {
+        "regex": "^## KD-[0-9]+: ",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/tech_design/ards.md:132"
+    },
+    {
+      "id": "TD-SCENE-REF",
+      "layer": "td",
+      "title": "子文件必须回指上游 PRD 场景稳定 ID `**关联场景**: S-n`",
+      "kind": "count_min",
+      "params": {
+        "regex": "^\\*\\*关联场景\\*\\*:\\s*S-[0-9]+$",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/tech_design/README.md:134"
+    },
+    {
+      "id": "TD-KD-REF",
+      "layer": "td",
+      "title": "子文件必须回指所依据的关键决策 `**引用决策**: KD-n`",
+      "kind": "count_min",
+      "params": {
+        "regex": "^\\*\\*引用决策\\*\\*:\\s*KD-[0-9]+",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/tech_design/README.md:135"
+    },
+    {
+      "id": "TD-NO-PLACEHOLDER",
+      "layer": "td",
+      "title": "Tech Design 正文不得残留模板占位符",
+      "kind": "no_placeholder",
+      "params": {},
+      "blocking": true,
+      "source": "schema/tech_design/README.md:23"
+    },
+
+    {
+      "id": "PLAN-SECTIONS",
+      "layer": "plan",
+      "title": "Plan 必填段齐全(变更清单 / 跨文件引用对账 / 验证用例 / 业务约束 / 完成检查 / 复审 / 变更记录)",
+      "kind": "section_exists",
+      "params": {
+        "sections": [
+          "变更清单 (Changes)",
+          "跨文件引用对账 (Cross-Reference Reconciliation)",
+          "验证用例 (Verification)",
+          "业务约束 (Business Constraints)",
+          "完成检查 (Completion Gate)",
+          "复审 (Review)",
+          "变更记录 (Change Log)"
+        ]
+      },
+      "blocking": true,
+      "source": "schema/plan.md:36"
+    },
+    {
+      "id": "PLAN-STATE-VALUE",
+      "layer": "plan",
+      "title": "状态块首行取值只能是 4 态之一",
+      "kind": "enum_field",
+      "params": {
+        "field": "状态",
+        "values": ["Draft", "Ready", "Implemented", "Deprecated"]
+      },
+      "blocking": true,
+      "source": "schema/plan.md:3"
+    },
+    {
+      "id": "PLAN-STATE-BLOCK",
+      "layer": "plan",
+      "title": "状态块 4 行齐全;Draft 态后 3 行允许缺省, 故不阻断",
+      "kind": "count_min",
+      "params": {
+        "regex": "^> \\*\\*(状态|状态主体|状态时间|状态依据)\\*\\*:",
+        "min_count": 4
+      },
+      "blocking": false,
+      "source": "schema/plan.md:3"
+    },
+    {
+      "id": "PLAN-STATE-SUBJECT",
+      "layer": "plan",
+      "title": "状态主体只能是 agent:<id> 或 human:<handle>",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态主体\\*\\*:\\s*(agent:[A-Za-z0-9._-]+|human:[A-Za-z0-9._-]+)$"
+      },
+      "blocking": false,
+      "source": "schema/plan.md:4"
+    },
+    {
+      "id": "PLAN-STATE-TIME",
+      "layer": "plan",
+      "title": "状态时间必须是带时区的 ISO-8601 时间戳",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态时间\\*\\*:\\s*\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$"
+      },
+      "blocking": false,
+      "source": "schema/plan.md:5"
+    },
+    {
+      "id": "PLAN-STATE-BASIS",
+      "layer": "plan",
+      "title": "状态依据必须是 criteria: / decision: / external: 三选一",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|decision:\\S+#\\S+|external:\\S+)$"
+      },
+      "blocking": false,
+      "source": "schema/plan.md:6"
+    },
+    {
+      "id": "PLAN-CHANGE-ENTRIES",
+      "layer": "plan",
+      "title": "变更清单必须写 `### Change #N:` / `#### Change #N:` 条目",
+      "kind": "count_min",
+      "params": {
+        "regex": "^#{3,4} Change #[0-9]+: ",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/plan.md:42"
+    },
+    {
+      "id": "PLAN-V-ENTRIES",
+      "layer": "plan",
+      "title": "验证用例必须写 `### V-n: <名称>` 条目",
+      "kind": "count_min",
+      "params": {
+        "regex": "^### V-[0-9]+: ",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/plan.md:131"
+    },
+    {
+      "id": "PLAN-V-UNIQUE",
+      "layer": "plan",
+      "title": "V-n 在本 Plan 内唯一",
+      "kind": "id_unique",
+      "params": {
+        "prefix": "V"
+      },
+      "blocking": true,
+      "source": "schema/plan.md:127"
+    },
+    {
+      "id": "PLAN-V-SCENE-LINES",
+      "layer": "plan",
+      "title": "每个 V 用例必须声明它覆盖的上游 PRD 场景 `**场景**: S-n`",
+      "kind": "count_min",
+      "params": {
+        "regex": "^\\*\\*场景\\*\\*:\\s*S-[0-9]+$",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/plan.md:133"
+    },
+    {
+      "id": "PLAN-IDREF-COLUMNS",
+      "layer": "plan",
+      "title": "跨文件引用对账表必须是 6 列(引用类型 / 标识 / 来源 / 已对账 / 备注 / 覆盖)",
+      "kind": "line_present",
+      "params": {
+        "regex": "^\\| 引用类型 \\| 标识 \\| 来源 \\| 已对账 \\| 备注 \\| 覆盖 \\|$"
+      },
+      "blocking": true,
+      "source": "schema/plan.md:110"
+    },
+    {
+      "id": "PLAN-IDREF-CHECKED",
+      "layer": "plan",
+      "title": "对账表每一行必须已勾选 `[x]` 且「覆盖」列非空",
+      "kind": "count_min",
+      "params": {
+        "regex": "^\\|[^|]*\\|[^|]*\\|[^|]*\\|\\s*\\[x\\]\\s*\\|[^|]*\\|[^|]*\\S[^|]*\\|$",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/plan.md:110"
+    },
+    {
+      "id": "PLAN-IDREF-UNCHECKED",
+      "layer": "plan",
+      "title": "对账表不得残留未勾选 `[ ]` 的行",
+      "kind": "line_absent",
+      "params": {
+        "regex": "^\\|[^|]*\\|[^|]*\\|[^|]*\\|\\s*\\[ \\]\\s*\\|"
+      },
+      "blocking": true,
+      "source": "schema/plan.md:120"
+    },
+    {
+      "id": "PLAN-IDREF-EMPTY-COVER",
+      "layer": "plan",
+      "title": "已勾选的对账行「覆盖」列不得为空",
+      "kind": "line_absent",
+      "params": {
+        "regex": "^\\|[^|]*\\|[^|]*\\|[^|]*\\|\\s*\\[x\\]\\s*\\|[^|]*\\|\\s*\\|$"
+      },
+      "blocking": true,
+      "source": "schema/plan.md:122"
+    },
+    {
+      "id": "PLAN-COVERAGE-S",
+      "layer": "plan",
+      "title": "每个上游 PRD 场景 S-n 至少被一个 V-n 经 `**场景**:` 声明覆盖(跨文档求值)",
+      "kind": "coverage_complete",
+      "params": {
+        "from_prefix": "S",
+        "to_prefix": "V",
+        "via_field": "场景",
+        "scope": "repo",
+        "from_layer": "prd",
+        "to_layer": "plan"
+      },
+      "blocking": true,
+      "source": "schema/plan.md:133"
+    },
+    {
+      "id": "PLAN-B-CONSTRAINTS",
+      "layer": "plan",
+      "title": "业务约束必须带稳定 ID `- B-n <约束>`",
+      "kind": "count_min",
+      "params": {
+        "regex": "^- B-[0-9]+ ",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/plan.md:157"
+    },
+    {
+      "id": "PLAN-B-UNIQUE",
+      "layer": "plan",
+      "title": "B-n 在本 Plan 内唯一",
+      "kind": "id_unique",
+      "params": {
+        "prefix": "B"
+      },
+      "blocking": true,
+      "source": "schema/plan.md:157"
+    },
+    {
+      "id": "PLAN-REVIEW-BLOCK",
+      "layer": "plan",
+      "title": "复审块 4 行齐全(评审人 / 评审日期 / 评审结论 / 评审方式)",
+      "kind": "count_min",
+      "params": {
+        "regex": "^> \\*\\*(评审人|评审日期|评审结论|评审方式)\\*\\*:",
+        "min_count": 4
+      },
+      "blocking": true,
+      "source": "schema/plan.md:212"
+    },
+    {
+      "id": "PLAN-REVIEW-CONCLUSION",
+      "layer": "plan",
+      "title": "评审结论取值只能是 通过 / 有条件通过 / 需返工(草稿可空)",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*评审结论\\*\\*:\\s*(通过|有条件通过|需返工)?$"
+      },
+      "blocking": true,
+      "source": "schema/plan.md:212"
+    },
+    {
+      "id": "PLAN-REVIEW-METHOD",
+      "layer": "plan",
+      "title": "评审方式取值只能是 自动判据 / 人工介入 / 外部事实(草稿可空)",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*评审方式\\*\\*:\\s*(自动判据|人工介入|外部事实)?$"
+      },
+      "blocking": true,
+      "source": "schema/plan.md:212"
+    },
+    {
+      "id": "PLAN-GATE-LAYERS",
+      "layer": "plan",
+      "title": "完成检查必须覆盖实现层 / 验证层 / 引用层 / 流程层 4 层",
+      "kind": "count_min",
+      "params": {
+        "regex": "^### (实现层|验证层|引用层|流程层)",
+        "min_count": 4
+      },
+      "blocking": true,
+      "source": "schema/plan.md:190"
+    },
+    {
+      "id": "PLAN-NO-PLACEHOLDER",
+      "layer": "plan",
+      "title": "Plan 正文不得残留模板占位符",
+      "kind": "no_placeholder",
+      "params": {},
+      "blocking": true,
+      "source": "schema/plan.md:36"
+    },
+
+    {
+      "id": "TC-SECTIONS",
+      "layer": "test-case",
+      "title": "Test Case 必填段齐全(元信息 / 状态机约定 / 复审 / 用例总览 / 用例正文 / 冒烟子集 / 要点伴生文件 / 门禁清单 / 变更记录)",
+      "kind": "section_exists",
+      "params": {
+        "sections": [
+          "元信息 (Metadata)",
+          "状态机约定",
+          "复审 (Review)",
+          "用例总览 (Test Suite Overview)",
+          "用例正文 (Test Cases)",
+          "冒烟子集 (Smoke Subset)",
+          "要点伴生文件 (Key Points Companion)",
+          "门禁清单 (Completion Gate)",
+          "变更记录 (Change Log)"
+        ]
+      },
+      "blocking": true,
+      "source": "schema/test_case.md:15"
+    },
+    {
+      "id": "TC-STATE-VALUE",
+      "layer": "test-case",
+      "title": "状态块首行取值只能是 4 态之一",
+      "kind": "enum_field",
+      "params": {
+        "field": "状态",
+        "values": ["Draft", "Ready", "Implemented", "Deprecated"]
+      },
+      "blocking": true,
+      "source": "schema/test_case.md:8"
+    },
+    {
+      "id": "TC-STATE-BLOCK",
+      "layer": "test-case",
+      "title": "状态块 4 行齐全;Draft 态后 3 行允许缺省, 故不阻断",
+      "kind": "count_min",
+      "params": {
+        "regex": "^> \\*\\*(状态|状态主体|状态时间|状态依据)\\*\\*:",
+        "min_count": 4
+      },
+      "blocking": false,
+      "source": "schema/test_case.md:8"
+    },
+    {
+      "id": "TC-STATE-SUBJECT",
+      "layer": "test-case",
+      "title": "状态主体只能是 agent:<id> 或 human:<handle>",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态主体\\*\\*:\\s*(agent:[A-Za-z0-9._-]+|human:[A-Za-z0-9._-]+)$"
+      },
+      "blocking": false,
+      "source": "schema/test_case.md:9"
+    },
+    {
+      "id": "TC-STATE-TIME",
+      "layer": "test-case",
+      "title": "状态时间必须是带时区的 ISO-8601 时间戳",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态时间\\*\\*:\\s*\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$"
+      },
+      "blocking": false,
+      "source": "schema/test_case.md:10"
+    },
+    {
+      "id": "TC-STATE-BASIS",
+      "layer": "test-case",
+      "title": "状态依据必须是 criteria: / decision: / external: 三选一",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|decision:\\S+#\\S+|external:\\S+)$"
+      },
+      "blocking": false,
+      "source": "schema/test_case.md:11"
+    },
+    {
+      "id": "TC-META-ROWS",
+      "layer": "test-case",
+      "title": "元信息 7 必填行齐全(主题 / 业务产品 / 目标平台 / 来源 / 生成日期 / 状态 / 用例总数)",
+      "kind": "count_min",
+      "params": {
+        "regex": "^\\| \\*\\*(主题|业务产品|目标平台|来源|生成日期|状态|用例总数)\\*\\* \\|",
+        "min_count": 7
+      },
+      "blocking": true,
+      "source": "schema/test_case.md:22"
+    },
+    {
+      "id": "TC-CASE-ENTRIES",
+      "layer": "test-case",
+      "title": "用例正文必须写 `### TC-nnn: <用例名>` 条目",
+      "kind": "count_min",
+      "params": {
+        "regex": "^### TC-[0-9]+: ",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/test_case.md:88"
+    },
+    {
+      "id": "TC-SCENE-LINKS",
+      "layer": "test-case",
+      "title": "每个用例必须回指上游 PRD 场景 `**关联**: S-n`",
+      "kind": "count_min",
+      "params": {
+        "regex": "^\\*\\*关联\\*\\*:\\s*.*S-[0-9]+",
+        "min_count": 1
+      },
+      "blocking": true,
+      "source": "schema/test_case.md:101"
+    },
+    {
+      "id": "TC-REVIEW-BLOCK",
+      "layer": "test-case",
+      "title": "复审块 4 行齐全(评审人 / 评审日期 / 评审结论 / 评审方式)",
+      "kind": "count_min",
+      "params": {
+        "regex": "^> \\*\\*(评审人|评审日期|评审结论|评审方式)\\*\\*:",
+        "min_count": 4
+      },
+      "blocking": true,
+      "source": "schema/test_case.md:56"
+    },
+    {
+      "id": "TC-REVIEW-CONCLUSION",
+      "layer": "test-case",
+      "title": "评审结论取值只能是 通过 / 有条件通过 / 需返工(草稿可空)",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*评审结论\\*\\*:\\s*(通过|有条件通过|需返工)?$"
+      },
+      "blocking": true,
+      "source": "schema/test_case.md:56"
+    },
+    {
+      "id": "TC-REVIEW-METHOD",
+      "layer": "test-case",
+      "title": "评审方式取值只能是 自动判据 / 人工介入 / 外部事实(草稿可空)",
+      "kind": "line_present",
+      "params": {
+        "regex": "^> \\*\\*评审方式\\*\\*:\\s*(自动判据|人工介入|外部事实)?$"
+      },
+      "blocking": true,
+      "source": "schema/test_case.md:56"
+    },
+    {
+      "id": "TC-NO-PLACEHOLDER",
+      "layer": "test-case",
+      "title": "Test Case 正文不得残留模板占位符",
+      "kind": "no_placeholder",
+      "params": {},
+      "blocking": true,
+      "source": "schema/test_case.md:15"
+    },
+
+    {
+      "id": "REPO-NO-CR",
+      "layer": "repo",
+      "title": "受版本控制的文本文件不得含 CR 字节(统一 LF)",
+      "kind": "line_absent",
+      "params": {
+        "regex": "\\r"
+      },
+      "blocking": true,
+      "source": ".gitattributes:1"
+    },
+    {
+      "id": "REPO-NO-PLACEHOLDER",
+      "layer": "repo",
+      "title": "仓库内不得残留未解决的冲突占位标记",
+      "kind": "no_placeholder",
+      "params": {
+        "regex": "^(<{7} |>{7} )"
+      },
+      "blocking": true,
+      "source": ".gitattributes:1"
+    }
+  ]
+}

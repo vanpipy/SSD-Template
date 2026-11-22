@@ -5,7 +5,7 @@
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
-> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态行, 由人工统一翻转, agent 不得自行改写。
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态块 由 `ssdctl advance` 统一代写, 本文件不单独改写。
 >
 > **升级条件**: 如果 API 数 > 5 或跨服务,改用 `contracts/` 子目录,每个 API 一个文件 (`contracts/{module}.md`)
 
@@ -16,7 +16,7 @@
 - **端点**: `METHOD /path`
 - **用途**: {一句话}
 - **来源**: PRD 场景 {n}
-- **引用决策**: KD-{n}
+- **引用决策**: KD-1
 - **时序图**: SYS-{n} / MOD-{n}
 
 **请求**:

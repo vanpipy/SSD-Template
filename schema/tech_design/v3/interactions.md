@@ -6,7 +6,7 @@
 > **最后更新**: {YYYY-MM-DD}
 > **格式**: Mermaid `sequenceDiagram`
 
-> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态行, 由人工统一翻转, agent 不得自行改写。
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态块 由 `ssdctl advance` 统一代写, 本文件不单独改写。
 
 ---
 
@@ -18,7 +18,7 @@
 
 **Reference**: PRD 场景 {n}
 **Trigger**: {触发条件}
-**引用决策**: KD-{n}
+**引用决策**: KD-1
 
 ```mermaid
 sequenceDiagram
@@ -57,7 +57,7 @@ sequenceDiagram
 
 **Reference**: PRD 场景 {n}
 **Trigger**: {触发条件}
-**引用决策**: KD-{n}
+**引用决策**: KD-1
 
 ```mermaid
 sequenceDiagram

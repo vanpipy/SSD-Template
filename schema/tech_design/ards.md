@@ -5,7 +5,7 @@
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
-> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态行, 由人工统一翻转, agent 不得自行改写。
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态块, 由 `ssdctl advance` 统一代写, 本文件不单独改写。
 > **v4 必填子文件**: 架构决策的**唯一落点**。方向选择 + 方案对比 (Solution Space) + 关键决策 (KD) + 探索记录 (OQ/Spikes/Pivot) + 选定 vs 实际代码 Gap 对比 + 补全建议 + 风险 + 回滚考量.
 > 回答两个问题: 「为什么选这个方案」(对比与理由) 和 「落地后与现状差多少」(Gap 与补全).
 

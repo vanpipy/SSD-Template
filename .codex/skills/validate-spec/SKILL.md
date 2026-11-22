@@ -1,11 +1,15 @@
 ---
 name: validate-spec
-description: 跑 spec 校验脚本 (check-naming / check-md-schema / check-traceability / check-repo-baseline), 输出统一报告 (v1.2)。支持 v4/v3 双模式 TD + 可选层 (test_cases/ 台账/ 关联矩阵/ deep/ 按存在与否条件启用) + 证据锚点人工抽查 (只报 ⚠, 不改退出码) + skill 目录自检 (skills-integrity.sh)。Use when 完成 PRD / Tech Design / Plan 产出后, 需要验证是否符合规范; 或修改存量 spec 文件后, 需要确认无新违规。
+description: >-
+  跑仓内判据与门禁, 输出统一报告 (v2.0)。判据与门禁一律经 scripts/ssdctl.py (gate / criteria / scan --check / verify),
+  不再逐个手拼校验脚本。支持 v4/v3 双模式 TD + 可选层 (test_cases/ 台账/ 关联矩阵/ deep/ 按存在与否条件启用)
+  + 证据锚点人工抽查 (只报 ⚠, 不改退出码) + skill 目录自检 (skills-integrity.sh)。
+  Use when 完成 PRD / Tech Design / Plan 产出后, 需要验证是否符合判据; 或修改存量 spec 文件后, 需要确认无新违规。
 ---
 
 # validate-spec
 
-跑 SSD-Template 全部 spec 校验脚本, 输出统一报告。
+跑 SSD-Template 仓内判据与门禁, 输出统一报告。
 
 ## 执行阶段 (内部 phase 标识)
 
@@ -15,7 +19,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | Phase | agent 做什么 |
 |-------|--------------|
-| `running` | 跑 check-naming.sh / check-md-schema.sh / check-traceability.sh (+ check-repo-baseline.sh), 逐个记录退出码 |
+| `running` | 跑 `bash scripts/ssdctl.sh gate` (全仓门禁 + 判据引擎 + 派生数据再生) 与 `bash scripts/ssdctl.sh scan --check` (调度一致性), 逐个记录退出码 |
 | `integrity` | 跑 `skills-integrity.sh` 自检 `.codex/skills/` 目录的一致性 |
 | `spot-checking` | 人工抽查 Tech Design「现状结论」的证据锚点（**只报 ⚠, 不改任何脚本退出码**）|
 | `reporting` | 输出统一报告（pass / skip / violation / 锚点警告）|
@@ -39,8 +43,8 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | 依赖 | 路径 | 用途 |
 |------|------|------|
-| Scripts | `scripts/check-md-schema.sh` / `check-traceability.sh` / `check-naming.sh` | 3 个基础校验脚本 |
-| 基线脚本 | `scripts/check-repo-baseline.sh` | TD「实现基线」段核对（**仅项目关联代码仓时启用**）|
+| 判据与门禁入口 | `scripts/ssdctl.py` | **唯一入口**: `gate` / `criteria` / `scan --check` / `verify` |
+| 判据权威 | `schema/criteria.json` | 机器判据（`blocking` / `kind` / `params`）|
 | 自检脚本 | `.codex/skills/validate-spec/skills-integrity.sh` | `.codex/skills/` 目录内部一致性自检 |
 | 工作目录 | SSD-Template 仓根目录 | scripts 假设此位置 |
 
@@ -48,13 +52,13 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 ### 校验维度
 
-| 脚本 | 检查项 | 兼容策略 |
+| 命令 | 检查项 | 兼容策略 |
 |------|--------|----------|
-| `check-md-schema.sh` | 必填段（Why / Goal / Scenarios / Review 等）| 容忍旧格式文件 |
-| `check-traceability.sh` | KD / V 闭环、引用一致性 | 不误报业务值 |
-| `check-naming.sh` | 目录/文件命名规范（`{date}-{topic}`）| 容忍旧命名 |
-| `check-repo-baseline.sh` | TD「实现基线」段（仓库 / 分支 / SHA / 核对日期 / 核对项 / 状态）| 0 代码仓项目按「不适用」跳过 |
-| `skills-integrity.sh` | `.codex/skills/` 目录一致性（front matter 键集合 / 悬空引用 / 代际口径 / 占位符）| 只查 skill 目录, 不查 spec 产物 |
+| `ssdctl.py criteria <artifact>` | 单制品逐条判据（必填段 / 状态块 / 复审块 / 稳定 ID / 引用闭环 / 无占位符）| 容忍旧格式文件 |
+| `ssdctl.py gate` | 全仓门禁: 既有门禁脚本 + 判据引擎 + 派生数据再生 | 逐条记录退出码 |
+| `ssdctl.py scan --check` | 调度一致性（状态块 ↔ 派生索引 ↔ 依赖许可）| 派生数据可再生成 |
+| `ssdctl.py verify <artifact>` | 状态块 / 复审块 / 证据链三者一致 | 只回读, 不写 |
+| `skills-integrity.sh` | `.codex/skills/` 目录一致性（front matter 键集合 / 悬空引用 / 代际口径 / 占位符 / 旧表述 / ssdctl 子命令名）| 只查 skill 目录, 不查 spec 产物 |
 
 ### 可选层与条件启用
 
@@ -85,29 +89,20 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 ### 1. Running Phase
 
-依次跑脚本：
+依次跑**唯一入口** `scripts/ssdctl.py`（不要再手拼 `scripts/check-*.sh`）：
 
 ```bash
-echo "=== check-naming.sh ==="
-bash scripts/check-naming.sh
+echo "=== ssdctl.py gate ==="
+bash scripts/ssdctl.sh gate
 
 echo ""
-echo "=== check-md-schema.sh ==="
-bash scripts/check-md-schema.sh
-
-echo ""
-echo "=== check-traceability.sh ==="
-bash scripts/check-traceability.sh
-
-echo ""
-echo "=== check-repo-baseline.sh ==="
-# 仅项目关联代码仓时才有意义; 0 代码仓项目脚本自身按「不适用」跳过
-[[ -f scripts/check-repo-baseline.sh ]] && bash scripts/check-repo-baseline.sh
+echo "=== ssdctl.py scan --check ==="
+bash scripts/ssdctl.sh scan --check
 ```
 
-> 用 `bash scripts/<name>.sh` 而不是 `./scripts/<name>.sh`: exec 位不一定被保留, 且 CRLF 会让直接执行失败。
+> `gate` 内部会跑既有门禁脚本 + 判据引擎 + 派生数据再生; 需要单制品逐条判定时用 `bash scripts/ssdctl.sh criteria <artifact>`。
 
-**记录每个脚本的退出码**。退出码是脚本层面的唯一判定依据, 本 skill 不改写它。
+**记录每个命令的退出码**。退出码是唯一的判定依据（`0` = 通过 / `1` = 不通过 / `2` = 用法或内部错误）, 本 skill 不改写它。
 
 ### 2. Integrity Phase (skill 目录自检)
 
@@ -115,7 +110,7 @@ echo "=== check-repo-baseline.sh ==="
 bash .codex/skills/validate-spec/skills-integrity.sh
 ```
 
-自检 `.codex/skills/` 目录的内部一致性: front matter 键集合、悬空脚本引用、AGENTS.md 章节引用、v4 默认代际口径、模板占位符、em dash。退出码同样记录在报告里。
+自检 `.codex/skills/` 目录的内部一致性: front matter 键集合、悬空脚本引用、AGENTS.md 章节引用、v4 默认代际口径、模板占位符、em dash、**旧表述残留**、**ssdctl 子命令名封闭**。退出码同样记录在报告里。
 
 > 该脚本只检查 skill 目录自身, **不检查 spec 产物**。它不替代前一个 phase 的门禁脚本。
 
@@ -162,14 +157,12 @@ git -C <仓库本地路径> show <短SHA>:<路径> | wc -l
 ## Validate-Spec Report
 
 ### 总体状态
-- check-naming.sh: ✓ pass / ✗ N violations
-- check-md-schema.sh: ✓ pass (含 X 项跳过) / ✗ N violations
-- check-traceability.sh: ✓ pass / ✗ N violations
-- check-repo-baseline.sh: ✓ pass / ○ 跳过 (0 代码仓) / ✗ N violations
+- ssdctl.py gate: ✓ pass / ✗ N violations
+- ssdctl.py scan --check: ✓ pass / ✗ N violations
 - skills-integrity.sh: ✓ pass / ✗ N violations
 
 ### 总体判定
-以脚本退出码为准: 全部 0 → ✅ 通过; 任一非 0 → ❌ 未通过。
+以命令退出码为准: 全部 0 → ✅ 通过; 任一非 0 → ❌ 未通过。
 
 ### 详细报告
 [各脚本完整输出]
@@ -198,7 +191,7 @@ git -C <仓库本地路径> show <短SHA>:<路径> | wc -l
 - 若有锚点 ⚠: 建议补锚点, 但不阻塞交付
 ```
 
-> **判定原则**: 只有脚本退出码决定 pass/fail。锚点 ⚠ 是建议项, 不阻塞。
+> **判定原则**: 只有命令退出码决定 pass/fail。锚点 ⚠ 是建议项, 不阻塞。
 
 ## 禁止行为 (Agent 权限边界)
 
@@ -207,6 +200,7 @@ git -C <仓库本地路径> show <短SHA>:<路径> | wc -l
 | ❌ Don't | ✅ Do |
 |----------|-------|
 | 校验过程中 `git commit` / `git push` | 只读; 不改工作区文件 |
+| 校验过程中手改状态行 / 复审块 | 只读; 状态推进一律走 `bash scripts/ssdctl.sh advance` |
 | 改写脚本退出码或把 `⚠` 记成 `✗` | 退出码是唯一判定依据; 符号语义照输出符号表 |
 | 修改 `schema/**` 下的模板 | 只读 `schema/` |
 | 某个脚本失败就静默跳过 | 逐个记录退出码, 失败如实写进报告 |
@@ -225,10 +219,11 @@ git -C <仓库本地路径> show <短SHA>:<路径> | wc -l
 | 因为缺锚点就把报告判成失败 | 锚点只报 ⚠, 判定只看脚本退出码 |
 | 为凑锚点编造 SHA 或行号 | 锚点必须真实可解析; 拿不准就不写锚点 |
 | 把 `deep/` 内容纳入本 skill 校验 | `deep/` 不在本 skill 校验范围 |
+| 手拼 `scripts/check-*.sh` 代替 `ssdctl.py` | 判据与门禁只走 `scripts/ssdctl.py`; 底层脚本由 `gate` 统一调用 |
 
 ## Troubleshooting
 
-### Q1：check-naming.sh 报"文件名应为 `{date}-{topic}.md`,实为 `{topic}.md`"
+### Q1：`ssdctl gate` 报"文件名应为 `{date}-{topic}.md`,实为 `{topic}.md`"
 
 **症状**：Plan 文件名不带日期前缀
 
@@ -243,7 +238,7 @@ ls plan/{date}-{topic}/
 - **新 Plan**：用 `{date}-{topic}.md` 命名
 - **旧 Plan**：脚本已做双模式容忍
 
-### Q2：check-md-schema.sh 报"缺少必填子文件"（tech_design）
+### Q2：`ssdctl gate` 报"缺少必填子文件"（tech_design）
 
 **症状**：tech_design 目录缺 README.md / ards.md 等
 
@@ -254,15 +249,15 @@ ls plan/{date}-{topic}/
 - **存量 v3 tech_design**：按 v3 六子文件写, 校验脚本按目录内是否有 `ards.md` / `apis.md` 自动分流
 - **极旧单文件目录**：脚本走 `○ v2 跳过`
 
-### Q3：check-md-schema.sh 报"非法引用类型"（误报）
+### Q3：`ssdctl gate` 报"非法引用类型"（误报）
 
 **症状**：报 `AES-256` / `SHA-256` / `EAN-13` 等业务值为非法引用
 
-**原因**：check-traceability.sh T5 已简化（只扫描白名单引用）
+**原因**：底层追溯校验 T5 已简化（只扫描白名单引用）
 
-**处理**：确认 scripts/check-traceability.sh 是否更新到当前版本。如果是旧的，重新复制。
+**处理**：确认仓内追溯校验是否更新到当前版本。如果是旧的，重新同步。
 
-### Q4：check-traceability.sh 报"引用 KD-N 但不存在"
+### Q4：`ssdctl gate` 报"引用 KD-N 但不存在"
 
 **症状**：Plan 引用 KD-3，但 TD 的决策文件里没有 `## KD-3:`
 
@@ -273,16 +268,16 @@ ls plan/{date}-{topic}/
 
 > 判定代际: 目录内有 `ards.md` 或 `apis.md` → v4; 否则 → v3 存量。
 
-### Q5：跑脚本报"路径不存在"
+### Q5：跑命令报"路径不存在"
 
-**症状**：`./scripts/check-md-schema.sh: line N: ... No such file`
+**症状**：`bash scripts/ssdctl.sh: line N: ... No such file`
 
 **原因**：当前工作目录不是 SSD-Template 仓根目录
 
 **处理**：
 ```bash
 cd 仓库根
-bash scripts/check-md-schema.sh
+bash scripts/ssdctl.sh gate
 ```
 
 ### Q6：锚点抽查报"路径解析不了"
@@ -302,12 +297,12 @@ sed -n '/^### 1\.1/,/^### 1\.2/p' AGENTS.md
 
 ## Tips
 
-- **3 个基础脚本都要跑**：单一脚本不能覆盖所有检查项; 有代码仓时再加跑 `check-repo-baseline.sh`
-- **顺序建议**：先 check-naming（最快），再 check-md-schema（最广），最后 check-traceability（最严）
+- **只走唯一入口**：`bash scripts/ssdctl.sh gate` 覆盖全部门禁; 不要手拼 `scripts/check-*.sh`
+- **顺序建议**：先 `scan --check`（调度一致性，最快），再 `gate`（全仓门禁，最严）
 - **判定只看退出码**：锚点 ⚠ 和可选层跳过都不改变判定
 - **`○` 跳过不是错误**：保护历史文件与未启用的可选层, 新文件不会触发
 - **修改存量前先跑 baseline**：记录修改前的 violation 数，避免误以为修改引入新问题
-- **CI 集成**：可在 `.github/workflows/` 下的 CI 里跑 `bash scripts/check-md-schema.sh && bash scripts/check-traceability.sh && bash scripts/check-naming.sh`
+- **CI 集成**：CI 里跑 `bash scripts/ssdctl.sh gate && bash scripts/ssdctl.sh scan --check`
 - **PR 前必跑**：避免把违规带入主分支
 
 ## Examples
@@ -317,12 +312,12 @@ sed -n '/^### 1\.1/,/^### 1\.2/p' AGENTS.md
 ```
 User: 校验整个仓库的 spec 规范
 Agent: phase: running
-Agent: === check-naming.sh ===
-Agent: ✓ 命名规范: 64 项全部通过 (新增 1 项)
-Agent: === check-md-schema.sh ===
-Agent: ✓ 字段校验: 51 项全部通过 (新增 1 项)
-Agent: === check-traceability.sh ===
-Agent: ✓ 追溯校验: 1 项全部通过
+Agent: === ssdctl.py gate ===
+Agent: ✓ 门禁: 64 项全部通过 (新增 1 项)
+Agent: ✓ 判据: 51 项全部通过 (新增 1 项)
+Agent: ✓ 追溯: 1 项全部通过
+Agent: === ssdctl.py scan --check ===
+Agent: ✓ 调度一致性: 派生索引与状态块一致
 Agent: phase: integrity
 Agent: ✓ skills-integrity.sh: 8 个规格 skill 的 front matter 与引用一致
 Agent: phase: spot-checking
@@ -338,7 +333,7 @@ Agent: ✅ 所有新文件符合规范 (锚点 ⚠ 1 条, 不影响判定)
 ```
 User: 校验 plan/2026-07-03-login/login.md
 Agent: phase: running
-Agent: ✗ check-md-schema.sh: 缺 V-1 验证用例
+Agent: ✗ ssdctl gate: 缺 V-1 验证用例
 Agent: phase: reporting
 Agent: ## Validate-Spec Report
 Agent: ### 违规清单
@@ -351,9 +346,9 @@ Agent: 在 `## 验证用例` 段补 `### V-1: {场景名}`
 
 ```
 User: 校验整个仓库的 spec 规范
-Agent: ✓ check-md-schema.sh: 50 项全部通过 (含 13 项旧 Plan 跳过)
-Agent: ✓ check-naming.sh: 63 项全部通过
-Agent: ✓ check-traceability.sh: 0 项全部通过
+Agent: ✓ ssdctl gate: 50 项全部通过 (含 13 项旧 Plan 跳过)
+Agent: ✓ 命名: 63 项全部通过
+Agent: ✓ 追溯: 0 项全部通过
 Agent: ### 可选层状态
 Agent: | test_cases/ | ○ 未启用 | 目录不存在则跳过 |
 Agent: | PRD 台账 | ○ 未启用 | 无 PRDS.md 则跳过 |
@@ -386,10 +381,9 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 - <repo>/AGENTS.md §1（多仓上下文，如需明确仓库清单）
 - <repo>/AGENTS.md §1.6（实现基线约定）
 - <repo>/AGENTS.md §1.7（证据锚点约定）
-- <repo>/scripts/check-md-schema.sh（v4 / v3 双模式）
-- <repo>/scripts/check-traceability.sh（双模式）
-- <repo>/scripts/check-naming.sh（双模式 + DATE_RE 修复）
-- <repo>/scripts/check-repo-baseline.sh（TD 实现基线段核对）
+- <repo>/scripts/ssdctl.py（判据与门禁唯一入口）
+- <repo>/schema/criteria.json（判据机器权威）
+- <repo>/scripts/check-repo-baseline.sh（TD 实现基线段核对；由仓内门禁统一触发，skill 不单独手拼）
 - <repo>/.codex/skills/validate-spec/skills-integrity.sh（skill 目录自检）
 - <repo>/AGENTS.md §3.4（门禁清单）
 - <repo>/HOW_TO_USE.md（脚本使用方式）

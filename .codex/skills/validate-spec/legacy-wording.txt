@@ -1,0 +1,28 @@
+# 旧表述黑名单 (legacy wording blacklist)
+#
+# 用途: skills-integrity.sh 的 Sweep J1 逐行读取本文件, 每行一条 POSIX ERE;
+#       任何 skill 指令文件 (.md / .sh / .py) 命中任意一条即判违规.
+#
+# 约束: 本文件是数据, 不是 skill 指令. 它的内容不得出现在任何 SKILL.md /
+#       .sh / .py 里 —— 否则「旧表述零命中」这条检查会自我污染.
+#       新增旧表述时只改本文件, 不要改 Sweep J 的代码.
+#
+# 每行一条正则 (ERE); 以 # 开头的行与空行被忽略.
+状态判定权归人
+判定权归人
+决策权归人
+状态转换只由人工发起
+只由人工发起
+人工签署后才翻转
+签署后才翻转
+权限天花板
+状态只能人工回写
+只能人工回写
+agent 可写上限
+人工 reviewer 签署后
+等人工 reviewer 签署
+评审签署三行
+三行留空
+人工回写 Implemented
+人工回写 wiki
+只写 `Draft`

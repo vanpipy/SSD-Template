@@ -1,6 +1,11 @@
 ---
 name: sync-prd
-description: 可选层 · PRD 台账同步 (v1.0)。L1 跑 scripts/sync-prd.sh 做机械登记与统计 (确定性、幂等、无 LLM、无网络), L2 由 agent 读素材充实「待分析」行, L3 把「待抓取」行委派给项目自定义的外部来源 skill。Use when 项目启用了 material/ 素材区 + 批次台账, 需要巡检台账完整性、充实骨架行、或处理外部来源待抓取行。默认不启用; 本 skill 只改工作区文件, 不做 git 写操作, 不自造状态。
+description: >-
+  可选层 · PRD 台账同步 (v2.0)。L1 跑 scripts/sync-prd.sh 做机械登记与统计 (确定性、幂等、无 LLM、无网络),
+  L2 由 agent 读素材充实「待分析」行, L3 把「待抓取」行委派给项目自定义的外部来源 skill。
+  Use when 项目启用了 material/ 素材区 + 批次台账, 需要巡检台账完整性、充实骨架行、或处理外部来源待抓取行。
+  默认不启用; 台账状态列是派生索引 (由 ssdctl scan 从制品状态块生成), 状态权威在制品本身, 判定权归判据;
+  本 skill 只改工作区文件, 不做 git 写操作, 不自造状态。
 ---
 
 # sync-prd
@@ -44,7 +49,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | 依赖 | 路径 | 用途 |
 |------|------|------|
-| L1 脚本 | `scripts/sync-prd.sh` | 机械登记 + 统计（幂等, 退出码表达待办）|
+| L1 脚本 | `scripts/sync-prd.sh` | 机械登记 + 统计（幂等, 退出码表达待办）; 台账状态列是**派生索引**, 由 `bash scripts/ssdctl.sh scan` 生成 |
 | 台账模板 | `schema/prd-ledger.md` | 台账 11 列定义 + 哨兵定义 |
 | 素材区 | `material/{YYYY-MM-DD}/` | Layer 0 只读素材来源 |
 | 关联矩阵 | 根 `README.md`「PRD关联矩阵」章节 | 关系边提议的比对基准 |
@@ -64,7 +69,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | 3 | `PRD 名称` | 一句话主题 |
 | 4 | `优先级` | `P0` / `P1` / `P2` / `待定` |
 | 5 | `验收要点` | 1-2 句话核心验收标准 |
-| 6 | `状态` | `待分析` / `Draft` / `Ready` / `Implemented` / `Deprecated` |
+| 6 | `状态` | `待分析` / `Draft` / `Ready` / `Implemented` / `Deprecated` | **派生索引**: 值从制品状态块生成, 权威在制品本身 |
 | 7 | `来源` | `local` / `external` / `internal` |
 | 8 | `关联素材` | 仓内路径 或 仓外 URL |
 | 9 | `创建时间` | `YYYY-MM-DD` |
@@ -100,6 +105,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | 关系边**提议**（写入前需确认）| 未经确认直写 README 矩阵 |
 | 委派外部抓取 + 回填 `创建时间` | 修改素材原文内容 |
 | 统计汇报 | 任何 git 写操作 |
+| 台账状态列按 `ssdctl scan` 派生再生 | 手改台账状态列 |
 
 ## Execution Steps
 
@@ -186,15 +192,15 @@ LC_ALL=C.UTF-8 bash scripts/sync-prd.sh
 | 收敛台账行 / 产出 PRD | 那是 `.codex/skills/to-prd/SKILL.md` 的职责 |
 | 在本 skill 里写死某个外部平台的抓取逻辑 | 外部抓取交给**项目自定义 skill**; 模板零外部工具依赖 |
 | 用模板外的来源值（如具体平台名）| `来源` 只有 `local` / `external` / `internal` |
-| 跑 git commit/push | 本 skill 只改工作区文件。**Symphony 编排路径**: 提交动作按仓根 `WORKFLOW.md` §8 执行 |
-| 把台账行状态改成 `Ready` / `Implemented` | 台账只登记与 `Draft` 一致的状态; 判定权在人 |
+| 跑 git commit/push | 本 skill 只改工作区文件; 提交动作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
+| 把台账行状态改成 `Ready` / `Implemented` | 台账状态列是派生索引, 由 `ssdctl scan` 从制品状态块生成; 判定权归判据, 不在本 skill |
 
 ## 禁止行为 (Agent 权限边界)
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定。**Symphony 编排路径例外**: 在 Symphony 给你的工作区 + `spec/{issue-identifier}-{topic}` 分支上, 按仓根 `WORKFLOW.md` §8 提交与推送是**授权动作**; 仍禁止 push 主分支 / merge / 伪造评审 |
-| 把台账状态写成 `Ready` / `Implemented` | 只登记与 `Draft` 一致的状态 |
+| 自行 `git commit` / `git push` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
+| 手改台账状态列 | 台账状态列是派生索引, 由 `ssdctl scan` 再生 |
 | 编造 `提出人` handle / URL / 抓取结果 | 识别不到就保持 `[待补]` 并点名 |
 | 修改 `schema/**` 下的模板 | 只读 `schema/prd-ledger.md` / `schema/prd-matrix.md` |
 | 静默覆盖台账历史行 | 只增不改; 冲突登记待人工裁决 |
@@ -209,6 +215,7 @@ LC_ALL=C.UTF-8 bash scripts/sync-prd.sh
 - 无「待分析」哨兵残留（`优先级=待定` 或 `提出人=[待补]` 的行已处理或已点名）
 - 「待抓取」行要么 `创建时间` 已回填, 要么已在报告中标为环境未就绪
 - README 统计块在标记之间, 标记外内容未被触碰
+- 台账状态列与 `bash scripts/ssdctl.sh scan --check` 的派生结果一致（无手写漂移）
 
 ## Examples
 
@@ -251,10 +258,10 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 
 ## Related Skills
 
-- `.codex/skills/to-prd/SKILL.md`：收敛产出 PRD（消费台账, 回写行状态, 登记关系边）
+- `.codex/skills/to-prd/SKILL.md`：收敛产出 PRD（消费台账, 登记关系边）
 - `.codex/skills/to-tech-design/SKILL.md` / `.codex/skills/to-plan/SKILL.md` / `.codex/skills/to-test-cases/SKILL.md`：按 ID 前缀路由的其他流水线入口
-- `.codex/skills/sync-status/SKILL.md`：四层状态机编排（状态流转与级联）
-- `.codex/skills/validate-spec/SKILL.md`：校验链（台账 / 矩阵一致性检查按产物存在与否条件启用）
+- `.codex/skills/sync-status/SKILL.md`：四层生命周期编排（状态流转与级联; 状态行由 `ssdctl advance` 写）
+- `.codex/skills/validate-spec/SKILL.md`：校验链（判据与门禁走 `ssdctl.py`; 台账 / 矩阵一致性检查按产物存在与否条件启用）
 
 ## Cross-References
 

@@ -1,10 +1,10 @@
 ---
 name: to-plan
 description: >-
-  Tech Design → Plan 转换流程 (v1.2), 按 schema/plan.md 多段结构产出实施计划。引用来源自适应, v4 TD 取 ards.md / apis.md,
+  Tech Design → Plan 转换流程 (v2.0), 按 schema/plan.md 多段结构产出实施计划。引用来源自适应, v4 TD 取 ards.md / apis.md,
   v3 存量 TD 取 decisions.md / interactions.md。Use when 收到已就绪的 Tech Design (默认 v4 四子文件), 需要产出多段结构 Plan
-  (含变更索引 + TDD Flow + 跨文件引用对账 + 4 段完成检查)。多仓项目按 §1.5 强制分仓分组 Change。agent 只能产出 Draft 状态,
-  Ready 与 Implemented 由人工写入。
+  (含变更索引 + TDD Flow + 跨文件引用对账 + 4 段完成检查)。多仓项目按 §1.5 强制分仓分组 Change。
+  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工可选复核并落决定记录。
 ---
 
 # to-plan
@@ -22,8 +22,9 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | `reading` | 读 TD 子文件 (默认 v4 四子文件, v3 存量六子文件自动识别) + 对应 PRD + `AGENTS.md` §1 |
 | `structuring` | 设计变更清单 + V 用例 + 业务/开发约束骨架 |
 | `grouping-by-repo` | 按 §1.5 **强制分仓**: Change 按仓分组, V 用例按场景聚合 |
-| `writing` | 写 Plan 到 `plan/{date}-{topic}/{topic}.md`, 状态行写 `Draft` |
-| `validating` | 跑 `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` 校验并汇报退出码 |
+| `writing` | 写 Plan 到 `plan/{date}-{topic}/{topic}.md`, 状态块写 `Draft` |
+| `validating` | 跑 `bash scripts/ssdctl.sh criteria plan/{date}-{topic}/{topic}.md` 逐条判定并汇报退出码 |
+| `advancing` | 判据全绿则 `bash scripts/ssdctl.sh advance plan/{date}-{topic}/{topic}.md --to Ready` 代写状态块与复审块 |
 
 ## When to Use
 
@@ -44,12 +45,12 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | 依赖 | 路径 | 用途 |
 |------|------|------|
-| Tech Design 状态 | Ready | 前置条件 (上游 TD 由人工 reviewer 签署后翻到 `Ready`) |
+| Tech Design 状态 | Ready | 前置条件 (上游 TD 状态为 `Ready`; 由 `ssdctl advance` 按判据推进) |
 | Tech Design 结构 | v4 四子文件 (默认) / v3 存量六子文件（按目录识别）| 输入 |
-| 对应 PRD | Ready 状态 | 上下文（Goal / Scenarios 用于 V 用例） |
+| 对应 PRD | Ready 状态 | 上下文（Goal / Scenarios / `AC-n` / `S-n` 用于 V 用例） |
 | AGENTS.md | §1 仓库清单 + §1.5 多仓 Plan 编排约定 + §1.6 实现基线约定 | 强制分仓 + 基线口径 |
 | Schema 模板 | `schema/plan.md` | Plan 多段结构 |
-| 校验脚本 | `scripts/check-md-schema.sh` + `check-traceability.sh` | 自动校验 |
+| 判据与门禁 | `scripts/ssdctl.py` | 唯一入口: `criteria` 逐条判定 + `gate` 全仓 |
 
 ## Core Concept
 
@@ -57,31 +58,35 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | 段 | 必填 | 关注点 |
 |----|------|--------|
-| 元数据 | ✓ | 状态 / 来源 TD / 来源 PRD / 参考 Test Cases / 创建日期 / 最后更新 |
+| 元数据 | ✓ | 状态块 4 行 / 来源 TD / 来源 PRD / 参考 Test Cases / 创建日期 / 最后更新 |
 | 变更索引 | ✓ | 表格快速扫读（# / 文件路径 / 类型 / KD 引用 / V 引用 / 状态）|
 | 变更清单 | ✓ | 每个 Change 详细描述（新增/修改/删除 + 策略约束 + KD 引用 + V 引用）|
 | TDD 执行流程 | ✓ | mermaid 可视化 Red → Green → Refactor |
-| 跨文件引用对账 | ✓ | KD / SYS / MOD / FR / V 闭环检查 |
+| 跨文件引用对账 | ✓ | KD / SYS / MOD / FR / V 闭环检查 + 覆盖列 |
 | 验证用例 (V-{n}) | ✓ | 正常路径 + 异常 + 边界 |
 | 业务约束 | ✓ | 前置 / 不变量 / 后置 / 副作用 |
 | 开发约束 | ✓ | 并发 / 事务 / 幂等性 / 重试 / 超时 |
 | 完成检查 (4 段) | ✓ | 实现层 + 验证层 + 引用层 + 流程层 |
 | 变更记录 | ✓ | 版本管理 |
 
-### 元信息 6 项 (与 schema/plan.md 逐字对齐)
+### 元信息 (与 schema/plan.md 逐字对齐)
 
-Plan 头部的元信息块必须写满 **6 项**, 顺序与 `schema/plan.md` 一致:
+Plan 头部的元信息块 = **状态块 4 行** + **来源/日期 4 行**, 顺序与 `schema/plan.md` 一致:
 
 | # | 字段 | 写法 | 说明 |
 |---|------|------|------|
-| 1 | `> **状态**` | `Draft` / `Ready` / `Implemented` / `Deprecated` | agent 只写 `Draft` |
-| 2 | `> **来源 Tech Design**` | `../../tech_design/{date}-{topic}/` | 两级相对路径 |
-| 3 | `> **来源 PRD**` | `../../prd/{date}/{topic}.md` | 两级相对路径 |
-| 4 | `> **参考 Test Cases**` | `test_cases/{YYYY-MM-DD}/{topic}.md` | **可选行**: 填了必须是仓内真实存在、且以 `test_cases/` 开头的路径(用反引号包裹); 不适用就**删掉整行** |
-| 5 | `> **创建日期**` | `YYYY-MM-DD` | 真实日期, 不留占位符 |
-| 6 | `> **最后更新**` | `YYYY-MM-DD` | 真实日期, 不留占位符 |
+| 1 | `> **状态**` | `Draft` / `Ready` / `Implemented` / `Deprecated` | agent 产出时写 `Draft`; 推进由 `ssdctl advance` 代写 |
+| 2 | `> **状态主体**` | `agent:<id>` / `human:<handle>` | 谁推进的; `Draft` 态可缺省; `human:` 前缀只能由人自己填 |
+| 3 | `> **状态时间**` | `YYYY-MM-DDTHH:MM:SS±HH:MM` | ISO-8601 带时区; `Draft` 态可缺省 |
+| 4 | `> **状态依据**` | `criteria:{id}[,{id}…]` / `decision:{path}#{anchor}` / `external:{ref}` | 逗号分隔, ≥1 项; `Draft` 态可缺省 |
+| 5 | `> **来源 Tech Design**` | `../../tech_design/{date}-{topic}/` | 两级相对路径 |
+| 6 | `> **来源 PRD**` | `../../prd/{date}/{topic}.md` | 两级相对路径 |
+| 7 | `> **参考 Test Cases**` | `test_cases/{YYYY-MM-DD}/{topic}.md` | **可选行**: 填了必须是仓内真实存在、且以 `test_cases/` 开头的路径(用反引号包裹); 不适用就**删掉整行** |
+| 8 | `> **创建日期**` | `YYYY-MM-DD` | 真实日期, 不留占位符 |
+| 9 | `> **最后更新**` | `YYYY-MM-DD` | 真实日期, 不留占位符 |
 
-> `scripts/check-traceability.sh` 的 T11 会校验「参考 Test Cases」行的路径是否存在; 该行**不存在**时跳过校验, 但**存在时必须指向真实文件**。
+> 状态块 4 行**只由 `ssdctl advance` 写**; agent 起草复审自评时 `评审人` 写 `agent:<id>`、`评审方式` 写 `自动判据`, **绝不写 `human:` 前缀, 也不代填人名**。
+> 「参考 Test Cases」行的路径是否存在由追溯判据校验; 该行**不存在**时跳过校验, 但**存在时必须指向真实文件**。
 
 ### TD 代际自适应 (引用来源)
 
@@ -142,7 +147,7 @@ Plan 引用的外部标识符来自 TD 的不同文件, **按 TD 代际取源**�
 ```
 
 > **分组标题格式**: 按 AGENTS.md §1.5, 仓库组标题写 `#### {仓库标识} 变更`（标识取 §1.1「标识」列）。**不**写「前端变更」「后端变更」这类自造标签。
-> **Change 标题层级**: 多仓时组标题与组内 Change 都是 h4 (`#### {标识} 变更` / `#### Change #N: {标识}/{路径}`); 单仓 / 0 代码仓时 Change 直接落 h3 (`### Change #1: {文件路径}`)。`check-md-schema.sh` 两种层级都识别。
+> **Change 标题层级**: 多仓时组标题与组内 Change 都是 h4 (`#### {标识} 变更` / `#### Change #N: {标识}/{路径}`); 单仓 / 0 代码仓时 Change 直接落 h3 (`### Change #1: {文件路径}`)。字段门禁两种层级都识别。
 > **V 用例层级**: V 用例段独立于变更清单段, 段标题 h2 `## 验证用例 (Verification)`, 用例标题 h3 `### V-{n}: {场景名}`。
 
 ### 跨仓引用格式（§1.2）
@@ -157,7 +162,7 @@ Plan 引用的外部标识符来自 TD 的不同文件, **按 TD 代际取源**�
 
 ### 1. Reading Phase
 
-**TD 代际识别**（用 check-md-schema.sh 或直接看子文件是否存在）：
+**TD 代际识别**（看目录内子文件是否存在）：
 
 ```bash
 # v4 模式 (默认): 读 4 子文件
@@ -225,41 +230,48 @@ mkdir -p "$plan_dir"
 echo "$content" > "$plan_dir/{topic}.md"
 ```
 
-**Plan 状态**：agent 只写 `Draft`（agent 可写上限是 `Draft`, 不是 `Ready` / `Implemented` / `Active`）。`Ready` 由人工 reviewer 在 `## 复审 (Review)` 段签署三行后翻转。
+**Plan 状态块 4 行**：agent 产出时写 `> **状态**: Draft`（后三行 `状态主体` / `状态时间` / `状态依据` 可缺省）。**状态行只由 `bash scripts/ssdctl.sh advance` 代写**, agent 与 skill 都不手改状态行。
 
-**复审签署三行**：`## 复审 (Review)` 段的 `> **评审人**` / `> **评审日期**` / `> **评审结论**` 在 `Draft` 阶段**留空**（不留 `{}` 占位符）, agent 不得自行填写或翻转状态。
+**复审块 4 行**：`## 复审 (Review)` 段的 `> **评审人**` / `> **评审日期**` / `> **评审结论**` / `> **评审方式**` 由 **agent 起草自评**: `评审人` 写 `agent:<id>`, `评审方式` 写 `自动判据`。**agent 绝不写 `human:` 前缀, 也不代填人名**。人工复核由人自己填那几行, `评审方式` 写 `人工介入`。
+
+**稳定 ID**（与 `schema/plan.md` 对齐）:
+- 业务约束写 `- B-{n} {约束}`;
+- 验证用例写 `### V-{n}: {场景名}`, 紧跟一行 `**场景**: S-{n}` 指向 PRD 的场景 ID;
+- 每个 Change 同时引用 `KD-{n}` 与 `V-{n}`。
 
 ### 5. Validating Phase
 
 ```bash
-# schema 校验
-./scripts/check-md-schema.sh plan/{date}-{topic}/{topic}.md
+# 判据逐条判定 (Plan 层)
+bash scripts/ssdctl.sh criteria plan/{date}-{topic}/{topic}.md
 
-# 追溯校验（KD / V 闭环）
-./scripts/check-traceability.sh
+# 全仓门禁 (含派生数据再生)
+bash scripts/ssdctl.sh gate
 ```
 
-要求：多段结构 Plan（有 `## 变更索引`）→ 严格校验全部段；返回 0，无 `✗`。
+要求: 多段结构 Plan（有 `## 变更索引`）→ 严格校验全部段; 退出码 0 = 判据全绿, 1 = 有不通过项（逐条列出）, 2 = 用法错误。
 
-## 状态推进边界 (agent 权限天花板 = Draft)
+## 状态推进边界 (agent 主导, 人工可选手动介入)
 
-| 状态 | 谁能写 | agent 能做什么 |
-|------|--------|----------------|
-| `Draft` | **agent** | 写产出文件 + 跑门禁 + 报告结论 |
-| `Ready` | **人工 reviewer** | 只能等: 不得翻状态, 不得代填 `评审人` / `评审日期` / `评审结论` |
-| `Implemented` | **仅人工** | 只能等: 人工在外部 PR merged 后回写, 且 PRD / TD / Plan **三件套必须同时** |
-| `Deprecated` | **人工决策** | 只能等: 上游 Deprecated 之后的机械级联由人工触发 |
+| 状态 | 判定方 | 写入方 | agent 能做什么 |
+|------|--------|--------|----------------|
+| `Draft` | agent | agent | 写产出文件, 状态块 4 行写 `Draft` (后三行可缺省) |
+| `Ready` | **判据** | agent (机器代写) | 该层 `blocking:true` 判据全绿 + 上游 `upstream_ready`, 由 `bash scripts/ssdctl.sh advance` 代写状态块与复审块 |
+| `Implemented` | **外部事实** | agent (机器代写) | 拿到真实外部事实后 `advance --to Implemented`; PRD / TD / Plan **三件套必须同时** |
+| `Deprecated` | **决定记录** | agent (机器代写) | 需 `decision:` 或 `external:` 依据 (不允许 `criteria:`); 上游 Deprecated 之后的机械级联由 agent 执行 |
 
-- agent 产出 Plan 后**停在 `Draft`**, 汇报「已产出 Draft, 待人工 reviewer 签署后翻 Ready」。
-- `## 复审 (Review)` 段的三行签署载体在 `Draft` 阶段留空（不留 `{}` 占位符）。
+- **判定权归判据, 写入权归 agent, 人工可手动介入**: 判据全绿就推进, 人工要改结果就落一条 `control/decisions/` 决定记录, 再用 `--decision` 传入。
+- **复审块 4 行**由 agent 起草自评: `评审人` 写 `agent:<id>`, `评审方式` 写 `自动判据`; **agent 绝不写 `human:` 前缀, 也不代填人名**。
+- **状态块永远由 `ssdctl advance` 写**; skill 与 agent 都不手改状态行, 也不教人手改。
 
 ## 禁止行为 (Agent 权限边界)
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` | 只改工作区文件; 提交由人工决定。**Symphony 编排路径例外**: 在 Symphony 给你的工作区 + `spec/{issue-identifier}-{topic}` 分支上, 按仓根 `WORKFLOW.md` §8 提交与推送是**授权动作**; 仍禁止 push 主分支 / merge / 伪造评审 |
-| 把状态写成 `Ready` / `Implemented` | 只写 `Draft` |
-| 伪造 `Reviewed-by:` / SHA / 行号 / handle | 拿不准就不写 |
+| 自行 `git commit` / `git push` / `git add` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
+| 手改状态行 / 状态块 4 行 | 一律走 `bash scripts/ssdctl.sh advance` |
+| 在复审块写 `human:` 前缀或代填人名 | 写 `agent:<id>`; `human:` 前缀**只能由人自己填**, agent 不得代填 |
+| 伪造 `Reviewed-by:` / SHA / 行号 / handle / 外部依据 | 拿不准就不写 |
 | 修改 `schema/**` 下的模板 | 只读 `schema/plan.md` |
 | 静默覆盖冲突 | 登记冲突并交人工裁决 |
 | 留下 `{...}` 占位符 | 填真实值, 不适用就删整行 |
@@ -268,8 +280,9 @@ echo "$content" > "$plan_dir/{topic}.md"
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行把 Plan 状态写成 `Ready` / `Implemented` | agent 只写 `Draft`, 等人工 reviewer 签署 |
-| 自行填 `评审人` / `评审日期` / `评审结论` | `Draft` 阶段三行留空, 等人工 reviewer 填写 |
+| 手改状态行 / 状态块 4 行 | 一律走 `bash scripts/ssdctl.sh advance` |
+| 在复审块写 `human:` 前缀或代填人名 | 写 `agent:<id>`; `human:` 前缀**只能由人自己填**, agent 不得代填 |
+| 判据没跑就宣称可进 `Ready` | 先跑 `ssdctl criteria`, 再 `ssdctl advance` |
 | Change 不引用 KD / V | 每个 Change 必须引用 KD-{n} + V-{n} |
 | 写完整代码 | 只写策略和约束（代码在 TDD 阶段产出）|
 | V 用例 Then 模糊（"系统正常运行"）| Then 可被断言（"pendingUpdate 重置为 false"）|
@@ -286,7 +299,7 @@ echo "$content" > "$plan_dir/{topic}.md"
 
 ## Troubleshooting
 
-### Q1：check-md-schema.sh 报"缺少 ### Change #1:"
+### Q1：字段门禁报"缺少 ### Change #1:"
 
 **症状**：Plan 报缺变更清单
 
@@ -297,7 +310,7 @@ grep -E "^### Change #" plan/{date}-{topic}/{topic}.md
 
 **处理**：补 Change #1 段，格式 `### Change #1: {file-path}`。
 
-### Q2：check-md-schema.sh 报"缺少 ### V-1:"
+### Q2：字段门禁报"缺少 ### V-1:"
 
 **症状**：Plan 报缺验证用例
 
@@ -308,7 +321,7 @@ grep -E "^### V-[0-9]+:" plan/{date}-{topic}/{topic}.md
 
 **处理**：补 V-1 段，格式 `### V-1: {场景名}`。
 
-### Q3：check-md-schema.sh 报"缺少 ## 跨文件引用对账"
+### Q3：字段门禁报"缺少 ## 跨文件引用对账"
 
 **症状**：Plan 报缺对账表
 
@@ -317,16 +330,16 @@ grep -E "^### V-[0-9]+:" plan/{date}-{topic}/{topic}.md
 ```markdown
 ## 跨文件引用对账
 
-| 引用类型 | 标识 | 来源 | 已对账 |
-|----------|------|------|--------|
-| 关键决策 | KD-1 | `../../tech_design/{date}-{topic}/ards.md` (v4) 或 `../../tech_design/{date}-{topic}/decisions.md` (v3 存量) | [x] |
-| 时序图 | SYS-1 | `../../tech_design/{date}-{topic}/apis.md` (v4) 或 `../../tech_design/{date}-{topic}/interactions.md` (v3 存量) | [x] |
-| 验证用例 | V-1 | 本文件 | [x] |
+| 引用类型 | 标识 | 来源 | 已对账 | 覆盖 |
+|----------|------|------|--------|------|
+| 关键决策 | KD-1 | `../../tech_design/{date}-{topic}/ards.md` (v4) 或 `../../tech_design/{date}-{topic}/decisions.md` (v3 存量) | [x] | V-1 |
+| 时序图 | SYS-1 | `../../tech_design/{date}-{topic}/apis.md` (v4) 或 `../../tech_design/{date}-{topic}/interactions.md` (v3 存量) | [x] | V-1 |
+| 验证用例 | V-1 | 本文件 | [x] | S-1 |
 ```
 
-> **Change 标题层级**: 单仓用 `### Change #N: {路径}`; 多仓分仓时仓库组标题占 h3, Change 条目落 `#### Change #N: {标识}/{路径}`。`check-md-schema.sh` 两种层级都识别。
+> **Change 标题层级**: 单仓用 `### Change #N: {路径}`; 多仓分仓时仓库组标题占 h4, Change 条目落 `#### Change #N: {标识}/{路径}`。字段门禁两种层级都识别。
 
-### Q4：check-traceability.sh 报"引用 KD-N 但不存在"
+### Q4：追溯判据报"引用 KD-N 但不存在"
 
 **症状**：Plan 引用 KD-3，但 TD 里没有 `## KD-3:`
 
@@ -334,7 +347,7 @@ grep -E "^### V-[0-9]+:" plan/{date}-{topic}/{topic}.md
 - v4（默认）→ 在 `tech_design/{date}-{topic}/ards.md` 补 `## KD-3: ...` 段
 - v3 存量 → 在 `tech_design/{date}-{topic}/decisions.md` 补 `## KD-3: ...` 段
 
-### Q5：check-traceability.sh 报"引用 V-N 但未在验证用例段定义"
+### Q5：追溯判据报"引用 V-N 但未在验证用例段定义"
 
 **症状**：Change 引用 V-3，但 Plan 没 `### V-3:`
 
@@ -349,24 +362,24 @@ grep -E "^### V-[0-9]+:" plan/{date}-{topic}/{topic}.md
 ```markdown
 ## 变更清单
 
-### B 变更
+#### B 变更
 #### Change #1: B/app/services/auth.ts
 [...]
 
-### C 变更
+#### C 变更
 #### Change #N: C/api/...
 [...]
 ```
 
 ### Q7：v2 旧 Plan 报错
 
-**症状**：跑 check-md-schema.sh 报缺 ## 变更索引 或 V-N 命名
+**症状**：跑 `ssdctl criteria` 报缺 ## 变更索引 或 V-N 命名
 
 **原因**：v2 旧 Plan 用 `### V1:` / `### V01:` 等非标准命名，无 `## 变更索引` 段
 
 **处理**：
 - **新 Plan**：必须用多段结构
-- **v2 旧 Plan**：脚本走双模式 `○ v2 跳过`（已修复的 check-md-schema.sh）
+- **v2 旧 Plan**：底层校验脚本走双模式 `○ v2 跳过`, 判据引擎照此判定
 
 ### Q8：有代码仓但 Plan 没记基线
 
@@ -374,11 +387,11 @@ grep -E "^### V-[0-9]+:" plan/{date}-{topic}/{topic}.md
 
 **处理**：按「实现基线约定 (§1.6)」补一行基线摘要, 形如 `B @ a1b2c3d (main)`。仓库标识取 §1.1「标识」列。0 代码仓项目写「不适用: 本项目无关联代码仓」。
 
-> 顺带核对元信息 6 项是否写满: 状态 / 来源 Tech Design / 来源 PRD / 参考 Test Cases(可选) / 创建日期 / 最后更新。缺项时 `check-md-schema.sh` 可能仍然返回 0, 但产物与 `schema/plan.md` 不一致。
+> 顺带核对元信息是否写满: 状态块 4 行 / 来源 Tech Design / 来源 PRD / 参考 Test Cases(可选) / 创建日期 / 最后更新。缺项时底层校验脚本可能仍然返回 0, 但产物与 `schema/plan.md` 不一致。
 
 ## Tips
 
-- **状态字段**：agent 只写 `Draft`（`Ready` 由人工 reviewer 签署翻转）
+- **状态字段**：状态块 4 行由 `ssdctl advance` 代写; agent 产出时是 `Draft`, 判据全绿即推进到 `Ready`
 - **Change 必引用 KD + V**：双向引用缺一不可
 - **V 用例 3 类缺一不可**：正常 + 异常 + 边界
 - **Then 必须可断言**：禁止"系统正常运行"等模糊描述
@@ -402,11 +415,13 @@ Agent: 设计骨架：5 个 Change + 6 个 V 用例 + 4 段完成检查
 Agent: phase: grouping-by-repo
 Agent: 单仓项目（不涉及多仓），不分节
 Agent: phase: writing
-Agent: ✅ 写 plan/2026-07-03-login/login.md (状态 Draft, 评审签署三行留空)
+Agent: ✅ 写 plan/2026-07-03-login/login.md (状态块 Draft, 复审自评四行 agent:<id> / 自动判据)
 Agent: phase: validating
-Agent: 🟢 check-md-schema.sh 返回 0
-Agent: 🟢 check-traceability.sh 返回 0
-Agent: ⏸ 已产出 Draft，待人工 reviewer 签署后翻 Ready
+Agent: 🟢 ssdctl criteria 返回 0 (判据全绿)
+Agent: 🟢 ssdctl gate 返回 0
+Agent: phase: advancing
+Agent: 🟢 ssdctl advance --to Ready 代写状态块与复审块
+Agent: ⏸ 已推进到 Ready；人工可复核（可选），不复核不阻塞
 ```
 
 ### Complex (多仓)
@@ -449,7 +464,7 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 
 - `.codex/skills/to-prd/SKILL.md`：原始需求 → PRD
 - `.codex/skills/to-tech-design/SKILL.md`：PRD → Tech Design（本 skill 的上游）
-- `.codex/skills/validate-spec/SKILL.md`：跑全部校验脚本
+- `.codex/skills/validate-spec/SKILL.md`：跑仓内判据与门禁并出统一报告
 
 ## Cross-References
 
@@ -460,6 +475,6 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 - <repo>/schema/plan.md（多段模板）
 - <repo>/schema/tech_design/（v4 TD 模板目录）
 - <repo>/schema/tech_design/v3/（v3 存量 TD 模板目录）
-- <repo>/scripts/check-md-schema.sh（v4 / v3 双模式校验）
-- <repo>/scripts/check-traceability.sh（双模式校验）
+- <repo>/scripts/ssdctl.py（判据与门禁唯一入口：scan / criteria / gate / advance / queue / decide / evidence / verify）
+- <repo>/schema/criteria.json（判据机器权威）
 - <repo>/HOW_TO_USE.md（完整工作流）

@@ -1,6 +1,9 @@
 ---
 name: to-tech-design
-description: PRD → Tech Design 转换流程 (v2.0)。默认 v4 四子文件 (README 综合描述 + ards 架构决策与方案对比 + apis 接口契约与时序 + data-model ER 图); v3 六子文件为存量格式, 需显式 opt-in 才产出。Use when 收到已就绪的 PRD, 需要产出 Tech Design (默认 v4, 4 子文件)。agent 只能产出 Draft 状态, Ready 与 Implemented 由人工写入。
+description: >-
+  PRD → Tech Design 转换流程 (v2.1)。默认 v4 四子文件 (README 综合描述 + ards 架构决策与方案对比 + apis 接口契约与时序 + data-model ER 图);
+  v3 六子文件为存量格式, 需显式 opt-in 才产出。Use when 收到上游 PRD 已达 Ready, 需要产出 Tech Design (默认 v4, 4 子文件)。
+  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工可选复核并落决定记录。
 ---
 
 # to-tech-design
@@ -16,7 +19,7 @@ description: PRD → Tech Design 转换流程 (v2.0)。默认 v4 四子文件 (R
 
 > **默认代际 = v4**。新建 Tech Design 一律走 v4 四子文件, 不需要显式声明代际。
 > **v3 是存量兼容路径**: 模板已移入 `schema/tech_design/v3/`, 只在明确要求「按 v3 产出」时才走 v3 分支。
-> **校验脚本**: `check-md-schema.sh` 双模式识别 (按 `ards.md`/`apis.md` 存在判定 v4). v3 → v4 不强制迁移, 存量 v3 目录保留原样。
+> **代际识别**: 门禁引擎按 `ards.md` / `apis.md` 是否存在自动判定 v4 (双模式). v3 → v4 不强制迁移, 存量 v3 目录保留原样。
 
 ## 执行阶段 (内部 phase 标识)
 
@@ -29,12 +32,13 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | `reading` | 读 PRD + schema 子文件模板 (默认 v4 4 个; v3 显式 opt-in 时读 `schema/tech_design/v3/`) |
 | `structuring` | 设计子文件内容骨架 (默认 v4: README 场景映射 + ards + apis + data-model) |
 | `injecting-context` | 从 `AGENTS.md` §1 读多仓关系, 决定跨仓引用前缀 |
-| `writing` | 写子文件到 `tech_design/{date}-{topic}/` (默认 v4 4 个; v3 opt-in 时 6 个 + 条件 interactions), 状态行写 `Draft` |
-| `validating` | 跑 `scripts/check-md-schema.sh` 校验并汇报退出码 |
+| `writing` | 写子文件到 `tech_design/{date}-{topic}/` (默认 v4 4 个; v3 opt-in 时 6 个 + 条件 interactions), 状态块写 `Draft` |
+| `validating` | 跑 `bash scripts/ssdctl.sh criteria tech_design/{date}-{topic}/README.md` 逐条判定并汇报退出码 |
+| `advancing` | 判据全绿则 `bash scripts/ssdctl.sh advance tech_design/{date}-{topic}/README.md --to Ready` 代写状态块与复审块 |
 
 ## When to Use
 
-- 收到已就绪的 PRD (上游 PRD 状态为 `Ready`)
+- 收到已就绪的 PRD (上游 PRD 状态为 `Ready`, 由 `ssdctl advance` 按判据推进)
 - 需要产出符合 **v4 四子文件**结构的 Tech Design（默认形态, 无需声明代际）
 - 存量项目明确要求按 v3 格式增量补 TD（显式 opt-in）
 - 需要自动注入多仓上下文
@@ -51,11 +55,11 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | 依赖 | 路径 | 用途 |
 |------|------|------|
-| PRD 状态 | Ready | 前置条件 (上游 PRD 由人工 reviewer 签署后翻到 `Ready`) |
+| PRD 状态 | Ready | 前置条件 (上游 PRD 状态为 `Ready`; 由 `ssdctl advance` 按判据推进) |
 | Schema 模板 (默认 v4) | `schema/tech_design/{README,ards,apis,data-model}.md` | v4 四子文件模板 |
 | Schema 模板 (v3 opt-in) | `schema/tech_design/v3/*.md` | v3 存量模板, 仅显式 opt-in 时读 |
 | AGENTS.md | §1 仓库清单 + §1.2 跨仓引用约定 + §1.6 实现基线约定 | 多仓上下文 + 基线口径 |
-| 校验脚本 | `scripts/check-md-schema.sh` | 自动校验（v4 / v3 双模式）|
+| 判据与门禁 | `scripts/ssdctl.py` | 唯一入口: `criteria` 逐条判定 + `gate` 全仓（v4 / v3 双模式）|
 | Code 仓 | §1.1 登记的 code 仓 | 跨仓引用前缀 + 实现基线核对 |
 
 ## Core Concept
@@ -122,28 +126,31 @@ v4 的 `README.md` 含 `## 实现基线` 段, 固定 6 列（仓库 / 分支 / S
 | §1.2 跨仓引用约定 | 跨仓引用必须带前缀 |
 | §1.3 代码仓 AGENTS 索引 | 跨仓引用时给出 AGENTS 路径 |
 
-## 状态推进边界 (agent 权限天花板 = `Draft`)
+## 状态推进边界 (agent 主导, 人工可选手动介入)
 
 | 动作 | 责任方 | 说明 |
 |------|--------|------|
-| 写 Tech Design, 状态行写 `Draft` | agent | agent 能写的最高状态就是 `Draft` |
-| 填 `## 复审 (Review)` 的 `评审人` / `评审日期` / `评审结论` 三行 | 人工 reviewer | `Draft` 阶段三行**留空**(保留键名, 值留空; 不写 `{}` 占位符, 不写 `TBD` / `待定`) |
-| 把状态翻成 `Ready` | 人工 reviewer | reviewer 填完三行真值之后才翻转 |
-| 把状态翻成 `Implemented` | 人工 | 仅外部代码仓 PR merged 之后回写; PRD / Tech Design / Plan 三件套必须同时回写 |
-| 把状态改成 `Deprecated` | 人工决策 | agent 只执行**上游 PRD 已 Deprecated** 之后的机械级联, 不得自行发起废弃 |
+| 写 Tech Design, 状态块写 `Draft` | agent | 产出文件本身的状态块 (`状态` / `状态主体` / `状态时间` / `状态依据` 4 行; Draft 态后三行允许缺省) |
+| 起草 `## 复审 (Review)` 的 `评审人` / `评审日期` / `评审结论` / `评审方式` 四行 | agent | agent 自评: `评审人` 写 `agent:<id>`, `评审方式` 写 `自动判据`; **agent 绝不写 `human:` 前缀, 也不代填人名** |
+| 把状态翻成 `Ready` | agent (判据驱动) | 该层 `blocking:true` 判据全绿 + 上游 `upstream_ready`, 由 `bash scripts/ssdctl.sh advance` 代写状态块与复审块 |
+| 把状态翻成 `Implemented` | agent (外部事实) | 需 `external:` 依据或 `--decision` 指定的外部事实介入记录; PRD / Tech Design / Plan 三件套必须同时推进 |
+| 把状态改成 `Deprecated` | agent 或人工 | 需 `decision:` 或 `external:` 依据 (不允许 `criteria:`); 上游 PRD 已 Deprecated 之后的机械级联由 agent 执行 |
 
-- agent 跑完流程后只报告「已产出 `Draft`, 待人工评审」, **不自行推进状态**。
+- **判定权归判据, 写入权归 agent, 人工可手动介入**: 判据全绿就推进, 人工要改结果就落一条 `control/decisions/` 决定记录, 再用 `--decision` 传入。
+- **状态块永远由 `ssdctl advance` 写**; skill 与 agent 都不手改状态行, 也不教人手改。
+- **agent 的状态上限是 `Ready`**; `Implemented` 仍需外部事实证据, 不靠 agent 自述。
 
 ## 禁止行为 (Agent 权限边界)
 
 | ❌ agent 不做 | ✅ agent 改做 |
 |--------------|--------------|
-| 自行 `git commit` / `git push` | 只改工作区文件; 需要提交时走 `commit` skill 的授权流程。**Symphony 编排路径例外**: 按仓根 `WORKFLOW.md` §8 在本 issue 专用分支上提交与推送是**授权动作**; 仍禁止 push 主分支 / merge / 伪造评审 |
-| 把状态标成 `Ready` / `Implemented` | 状态只写 `Draft`, 报告「待人工评审」 |
-| 伪造 `Reviewed-by:` / SHA / 行号 / handle | 拿不准就不写; 无法核对时明确标注「未核对」 |
+| 自行 `git commit` / `git push` / `git add` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
+| 手改状态行 / 状态块 4 行 | 一律走 `bash scripts/ssdctl.sh advance` |
+| 在复审块写 `human:` 前缀或代填人名 | 写 `agent:<id>`; `human:` 前缀**只能由人自己填**, agent 不得代填 |
+| 伪造 `Reviewed-by:` / SHA / 行号 / handle / 外部依据 | 拿不准就不写; 无法核对时明确标注「未核对」 |
 | 改 `schema/**` 下的模板 | 模板是契约, 只读; 发现模板与实现不一致时报告, 不自行修改 |
 | 静默覆盖冲突 (两份素材对同一设计描述不一致) | 两份都保留, 登记冲突并报告人工裁决 |
-| 留下模板占位符 (`{KD-1}` / `{YYYY-MM-DD}` / `TBD`) | 填真实值; 确实无法确定时**删掉整行**而不是留占位符 |
+| 留下模板占位符 (`KD-1` / `YYYY-MM-DD` / `TBD`) | 填真实值; 确实无法确定时**删掉整行**而不是留占位符 |
 
 ## Execution Steps
 
@@ -237,15 +244,24 @@ if [[ "$mode" == "v3" ]]; then
 fi
 ```
 
+**TD 状态块与稳定 ID**（Writing Phase 收尾）:
+- 状态块 4 行写 `> **状态**: Draft`（后三行 `状态主体` / `状态时间` / `状态依据` 可缺省）; **状态行只由 `bash scripts/ssdctl.sh advance` 代写**。
+- 复审块 4 行由 agent 起草自评: `评审人` 写 `agent:<id>`, `评审方式` 写 `自动判据`; **agent 绝不写 `human:` 前缀, 也不代填人名**。
+- 每条架构决策写 `- KD-{n} {决策名}`, 供 Plan 的 Change 与 V 用例双向引用。
+
 ### 5. Validating Phase
 
 ```bash
-./scripts/check-md-schema.sh tech_design/{date}-{topic}/
+# 判据逐条判定 (Tech Design 层)
+bash scripts/ssdctl.sh criteria tech_design/{date}-{topic}/README.md
+
+# 全仓门禁 (含派生数据再生)
+bash scripts/ssdctl.sh gate
 ```
 
-要求：双模式自动识别（目录内有 `ards.md` 或 `apis.md` → v4 校验 4 子文件；否则 → v3 校验 6 子文件 + 条件 interactions.md）；返回 0，无 `✗`。
+要求: 双模式自动识别（目录内有 `ards.md` 或 `apis.md` → v4 校验 4 子文件；否则 → v3 校验 6 子文件 + 条件 interactions.md）; 退出码 0 = 判据全绿, 1 = 有不通过项（逐条列出）, 2 = 用法错误。
 
-门禁的 `## 复审 (Review)` 段校验是**阶段感知**的（`scripts/check-md-schema.sh` 的 `check_review_block`）：`Draft` 阶段只要段存在即通过（签署行残留占位符只报 ⚠）；`Ready` / `Implemented` 阶段额外要求评审日期为 `YYYY-MM-DD` 且评审人非空。agent 只产出 `Draft`，因此只需满足前者。
+复审块的判定是**阶段感知**的: `Draft` 阶段只要段存在即通过（签署行残留占位符只报 ⚠）; `Ready` / `Implemented` 阶段额外要求评审日期为 `YYYY-MM-DD` 且评审人非空。agent 产出时是 `Draft`, 推进到 `Ready` 由 `ssdctl advance` 在判据全绿后代写复审块。
 
 ## Anti-Patterns
 
@@ -262,14 +278,14 @@ fi
 | 外部接口无降级策略 | 每个外部调用必须有降级 |
 | 跨仓引用用裸路径（`app/services/auth.ts`）| 带仓库前缀（`B/app/services/auth.ts`）|
 | 跨仓引用口语化（"B 仓库"）| 用 §1.1 仓库清单的标识 |
-| 自行把状态翻成 `Ready` | 产出 `Draft` 后停下，等人工 reviewer 签署 |
-| 自行填 `评审人` / `评审日期` / `评审结论` | `Draft` 阶段三行留空，等人工 reviewer 填写 |
+| 手改状态行 / 状态块 4 行 | 一律走 `bash scripts/ssdctl.sh advance` |
+| 在复审块写 `human:` 前缀或代填人名 | 写 `agent:<id>`; `human:` 前缀**只能由人自己填**, agent 不得代填 |
 | 把数据用 `string` 泛指 | 用 TS / SQL / JSON Schema 具体类型 |
 | 错误码用 `4xx` 泛指 | 用具体值（`400` / `401` / `403`）|
 
 ## Troubleshooting
 
-### Q1：check-md-schema.sh 报"缺少必填子文件"
+### Q1：字段判据 报"缺少必填子文件"
 
 **症状**：报缺 README.md / ards.md / apis.md / data-model.md（v4）或 README.md / decisions.md 等（v3）
 
@@ -280,7 +296,7 @@ ls tech_design/{date}-{topic}/
 
 **处理**：先确认目录属于哪一代。目录内有 `ards.md` 或 `apis.md` → v4, 补齐 4 个必填子文件（README + ards + apis + data-model）。否则 → v3, 补齐 6 个必填子文件（README + decisions + data-model + api-contracts + scenario-mapping + quality）。
 
-### Q2：check-md-schema.sh 报"引用 KD-N 但不存在"
+### Q2：追溯判据 报"引用 KD-N 但不存在"
 
 **症状**：README.md 的"跨文件引用对账"段引用 KD-3, 但决策文件没有 `## KD-3:`
 
@@ -292,7 +308,7 @@ grep "^## KD-" tech_design/{date}-{topic}/decisions.md      # v3 存量
 
 **处理**：在对应代的决策文件补 `## KD-3: ...` 段，或从 README 删除 KD-3 引用。
 
-### Q3：check-md-schema.sh 报"缺少 interactions.md 且 README 未声明跳过"
+### Q3：字段判据 报"缺少 interactions.md 且 README 未声明跳过"
 
 **症状**：README 没标注 interactions.md 跳过
 
@@ -348,7 +364,7 @@ grep "^## KD-" tech_design/{date}-{topic}/decisions.md      # v3 存量
 - **实现基线**：有 code 仓时在 README 的 `## 实现基线` 段核对分支/SHA, 0 code 仓写「不适用」
 - **现状结论带锚点**：引用代码现状时用 `{标识}@{短SHA}:{路径}#L{行号}`（§1.7）
 - **interactions.md 条件触发**（仅 v3）：不强制创建，README 显式声明跳过即可
-- **Tech Design 状态**：agent 只写 `Draft`（不是 `Ready` / `Implemented` / `Active`）
+- **Tech Design 状态**：状态块 4 行由 `ssdctl advance` 代写; agent 产出时是 `Draft`, 判据全绿即推进到 `Ready`
 
 ## Examples
 
@@ -365,10 +381,12 @@ Agent: 设计子文件骨架：KD-1 (会话存储) / KD-2 (Token 刷新策略)
 Agent: phase: injecting-context
 Agent: 跨仓引用前缀: B/, C/
 Agent: phase: writing
-Agent: ✅ 写子文件到 tech_design/2026-07-03-login/ (4 个, 状态 Draft, 评审签署三行留空)
+Agent: ✅ 写子文件到 tech_design/2026-07-03-login/ (4 个, 状态块 Draft, 复审自评四行 agent:<id> / 自动判据)
 Agent: phase: validating
-Agent: 🟢 check-md-schema.sh 返回 0
-Agent: ⏸ 已产出 Draft，待人工 reviewer 签署后翻 Ready
+Agent: 🟢 ssdctl criteria 返回 0 (判据全绿)
+Agent: phase: advancing
+Agent: 🟢 ssdctl advance --to Ready 代写状态块与复审块
+Agent: ⏸ 已推进到 Ready；人工可复核（可选），不复核不阻塞
 ```
 
 ### Complex (多仓)
@@ -392,7 +410,7 @@ Agent: phase: reading
 Agent: 📋 读取 schema/tech_design/v3/*.md (v3 存量模板)
 Agent: phase: writing
 Agent: ✅ 写 6 子文件 (+ 条件 interactions) 到 tech_design/2026-07-03-legacy-feature/
-Agent: 🟢 check-md-schema.sh 返回 0 (v3 分支)
+Agent: 🟢 ssdctl criteria 返回 0 (v3 分支)
 ```
 
 ## 安装 (Installation)
@@ -411,7 +429,7 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 
 - `.codex/skills/to-prd/SKILL.md`：原始需求 → PRD（本 skill 的上游）
 - `.codex/skills/to-plan/SKILL.md`：Tech Design → Plan（本 skill 的下游）
-- `.codex/skills/validate-spec/SKILL.md`：跑全部校验脚本
+- `.codex/skills/validate-spec/SKILL.md`：跑仓内判据与门禁并出统一报告
 
 ## Cross-References
 
@@ -421,6 +439,6 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 - <repo>/AGENTS.md §3.1（工作流 Step 2）
 - <repo>/schema/tech_design/README.md（v4 模板）
 - <repo>/schema/tech_design/v3/（v3 存量模板目录）
-- <repo>/scripts/check-md-schema.sh（v4 / v3 双模式校验）
+- <repo>/scripts/ssdctl.py（判据与门禁唯一入口）
 - <repo>/HOW_TO_USE.md（完整工作流）
 

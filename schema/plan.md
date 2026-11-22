@@ -1,6 +1,9 @@
 # Plan: {主题}
 
 > **状态**: Draft | Ready | Implemented | Deprecated
+> **状态主体**: agent:{id} | human:{handle}
+> **状态时间**: {YYYY-MM-DDTHH:MM:SS±HH:MM}
+> **状态依据**: criteria:{id}[,{id}…] | decision:{path}#{anchor} | external:{ref}
 > **来源 Tech Design**: [../../tech_design/{YYYY-MM-DD}-{topic}/](../../tech_design/{YYYY-MM-DD}-{topic}/README.md)
 > **来源 PRD**: [../../prd/{YYYY-MM-DD}/{topic}.md](../../prd/{YYYY-MM-DD}/{topic}.md)
 > **参考 Test Cases**: `test_cases/{YYYY-MM-DD}/{topic}.md`
@@ -8,8 +11,12 @@
 > **最后更新**: {YYYY-MM-DD}
 
 > **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一, 不得自造状态名。
-> **状态推进**: agent 可写上限 = `Draft`;`Ready` 由**人工 reviewer** 在 `## 复审 (Review)` 签署后翻转;`Implemented` 仅人工在外部代码仓 PR merged 后回写(PRD / Tech Design / Plan 三件套**必须同时**回写);上游转 `Deprecated` 时, 引用本 Plan 的 Test Case 一并 `Deprecated`。
+> **主体口径**: `agent:<id>` = 机器写入, `human:<handle>` = 人工写入。**agent 不得填 `human:` 前缀、不得代填人名**(INV-3)。
+> **状态推进**: agent 按 `schema/criteria.json` 的判据推进 —— 判据全绿即可由机器代写 `Ready`;`Implemented` 需外部事实依据(`external:`, 如外部代码仓 PR merged), 且 PRD / Tech Design / Plan 三件套**必须同时**回写;上游转 `Deprecated` 时, 引用本 Plan 的 Test Case 一并 `Deprecated`。
+> **依据形式**: `criteria:<id>[,{id}…]` = 判据 id 列表, `decision:<path>#<anchor>` = 人工介入记录, `external:<ref>` = 外部事实。**状态块 4 行都要写** —— `Draft` 态写当次生成的 `状态主体` / `状态时间` / `状态依据`;升 `Ready` / `Implemented` 时后三行必填且非空。
+> **复审块 (4 行, 机器校验)**: `评审人` / `评审日期` / `评审结论` / `评审方式` 4 行都要写(`Draft` 态值可留空, 升 `Ready` 前 4 行必填非空)。取值: 评审人 = `agent:<id>` | 裸 handle(人工), 评审日期 = `YYYY-MM-DD`, 评审结论 = 通过 | 有条件通过 | 需返工, 评审方式 = 自动判据 | 人工介入 | 外部事实。`评审人` 为 `agent:*` 时 `评审方式` 不得为 `人工介入`。
 > **填写规则**: 「参考 Test Cases」是可选行 —— 填了必须是仓内**真实存在**、且以 test_cases/ 开头的路径(用反引号包裹);不适用就**删除整行**。
+> **稳定 ID**: 验证用例 `### V-n: <名称>`(标题即声明)+ `**场景**: S-n`(声明它覆盖哪个上游 PRD 场景);业务约束 `- B-n <约束>`;跨文件引用对账表末尾的「覆盖」列填被引用条目覆盖的 ID 集合。
 
 > ⚠️ **设计原则**: Plan 是"实施指南",**不是**"替代实现"。变更描述用文字说明策略和约束,指导参与的 agent 写出代码。完整代码在 TDD 阶段产出。
 
@@ -100,18 +107,19 @@ sequenceDiagram
 > **代际自适应**: Tech Design 有 v4 / v3 两代, 按目录内文件存在性判定(存在 `ards.md` 或 `apis.md` → v4)。
 > 下表「来源」列同时给出两代落点, 按本 Plan 实际引用的 TD 代际勾选对应那一行。
 
-| 引用类型 | 标识 | 来源 | 已对账 | 备注 |
-|----------|------|------|--------|------|
-| 关键决策 | KD-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/ards.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/decisions.md` | [ ] | Change #1 |
-| 时序图 | SYS-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/apis.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/interactions.md` | [ ] | V-1 |
-| 时序图 | MOD-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/apis.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/interactions.md` | [ ] | V-1 |
-| PRD 需求 | FR-XXX | `../../prd/{YYYY-MM-DD}/{topic}.md` | [ ] | V-1 |
-| 验证用例 | V-1 | 本文件 | [ ] | Change #1 |
-| 验证用例 | V-2 | 本文件 | [ ] | Change #2 |
-| 验证用例 | V-3 | 本文件 | [ ] | Change #2 |
+| 引用类型 | 标识 | 来源 | 已对账 | 备注 | 覆盖 |
+|----------|------|------|--------|------|------|
+| 关键决策 | KD-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/ards.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/decisions.md` | [ ] | Change #1 | AC-1 |
+| 时序图 | SYS-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/apis.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/interactions.md` | [ ] | V-1 | S-1 |
+| 时序图 | MOD-1 | v4: `../../tech_design/{YYYY-MM-DD}-{topic}/apis.md` / v3: `../../tech_design/{YYYY-MM-DD}-{topic}/interactions.md` | [ ] | V-1 | S-1 |
+| PRD 需求 | FR-XXX | `../../prd/{YYYY-MM-DD}/{topic}.md` | [ ] | V-1 | AC-1 |
+| 验证用例 | V-1 | 本文件 | [ ] | Change #1 | S-1 |
+| 验证用例 | V-2 | 本文件 | [ ] | Change #2 | S-2 |
+| 验证用例 | V-3 | 本文件 | [ ] | Change #2 | S-3 |
 
 **对账规则**:
-- 每一行都必须勾选 `[x]`
+- 每一行都必须勾选 `[x]`;**只要还有未勾选行, 判据即不通过**
+- 「覆盖」列填**被该行引用条目覆盖的稳定 ID 集合**(如 `AC-1, AC-2`), 该列不得为空
 - 找不到引用 = 门禁清单不通过,**禁止**进入 TDD 阶段
 
 ---
@@ -122,17 +130,23 @@ sequenceDiagram
 
 ### V-1: {正常路径场景名}
 
+**场景**: S-1
+
 - **Given**: {前置条件}
 - **When**: {动作}
 - **Then**: {预期结果}
 
 ### V-2: {异常场景}
 
+**场景**: S-2
+
 - **Given**: {错误前置}
 - **When**: {动作}
 - **Then**: {错误处理 / 降级行为}
 
 ### V-3: {边界场景}
+
+**场景**: S-3
 
 - **Given**: {边界条件}
 - **When**: {动作}
@@ -142,20 +156,22 @@ sequenceDiagram
 
 ## 业务约束 (Business Constraints)
 
+> 每条约束带稳定 ID `B-n`(行级裁决的最小单元载体);`B-n` 在本文件内唯一。
+
 **前置条件**:
-1. 调用前必须满足的条件
-2. ...
+- B-1 调用前必须满足的条件
+- B-2 ...
 
 **不变量**:
-- 执行过程中必须保持的条件
+- B-3 执行过程中必须保持的条件
 
 **后置条件**:
-1. 成功后系统状态变化
-2. ...
+- B-4 成功后系统状态变化
+- B-5 ...
 
 **副作用**:
-1. 触发的外部操作
-2. 失败时是否回滚
+- B-6 触发的外部操作
+- B-7 失败时是否回滚
 
 ---
 
@@ -195,12 +211,15 @@ sequenceDiagram
 
 ## 复审 (Review)
 
-> 本段是**机器必填段**。三行(`评审人` / `评审日期` / `评审结论`)是**评审签署**载体 —— `Draft` 阶段清空, 升 `Ready` 前由**人工 reviewer** 填写真值并翻转状态, agent 不得自行填写或翻转。
-> Plan 的 `Implemented` 仅在外部代码仓 PR merged 后由**人工**回写, 且 PRD / Tech Design / Plan 三件套必须同时回写。
+> 本段是**机器必填段**。四行(`评审人` / `评审日期` / `评审结论` / `评审方式`)是**评审签署**载体 —— `Draft` 阶段清空, 升 `Ready` 前由 agent 按 `schema/criteria.json` 的判据填写真值并翻转状态。
+> `评审人` 取值: `agent:<id>` = 机器签署, 裸 handle = 人工签署。**agent 不得填 `human:` 前缀、不得代填人名**(INV-3)。
+> `评审方式` 取值: `自动判据` / `人工介入` / `外部事实`;`评审人` 为 `agent:*` 时 `评审方式` 不得为 `人工介入`。
+> Plan 的 `Implemented` 需外部事实依据(外部代码仓 PR merged), 且 PRD / Tech Design / Plan 三件套必须同时回写。
 
-> **评审人**: {github-handle}
+> **评审人**: agent:{id} | {github-handle}
 > **评审日期**: {YYYY-MM-DD}
 > **评审结论**: {通过 / 有条件通过 / 需返工}
+> **评审方式**: {自动判据 / 人工介入 / 外部事实}
 
 ---
 

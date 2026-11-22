@@ -2,6 +2,13 @@
 
 > **本文件是 Layer 4 测试用例模板**. SSD-Template 默认**不启用** Layer 4, 仅当项目需要独立测试用例管理时创建 `test_cases/` 目录并按本模板产出文件.
 > 创建 test_cases/ 后, `scripts/check-md-schema.sh` 自动启用 Test Case 校验 (元信息 7 必填行 + 状态枚举 + 用例总览 + 要点伴生).
+>
+> **状态块 (4 行, 机器校验)**: 下面这 4 行是本文件状态的**唯一权威**;元信息表里的「状态」行是 `scripts/check-md-schema.sh` 读的镜像值, 两者必须一致。
+
+> **状态**: Draft | Ready | Implemented | Deprecated
+> **状态主体**: agent:{id} | human:{handle}
+> **状态时间**: {YYYY-MM-DDTHH:MM:SS±HH:MM}
+> **状态依据**: criteria:{id}[,{id}…] | decision:{path}#{anchor} | external:{ref}
 
 ---
 
@@ -32,24 +39,30 @@
 ## 状态机约定
 
 > **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一, 不得自造状态名。
-> **状态推进**: agent 可写上限 = `Draft`;`Ready` 由**人工 reviewer** 在 `## 复审 (Review)` 签署后翻转;`Implemented` 仅人工在用例实际执行通过后回写;上游转 `Deprecated` 时, 本文件一并 `Deprecated`(级联)。
+> **主体口径**: `agent:<id>` = 机器写入, `human:<handle}` = 人工写入。**agent 不得填 `human:` 前缀、不得代填人名**(INV-3)。
+> **状态推进**: agent 按 `schema/criteria.json` 的判据推进 —— 判据全绿即可由机器代写 `Ready`;`Implemented` 需外部事实依据(`external:`, 如用例已实际执行通过);上游转 `Deprecated` 时, 本文件一并 `Deprecated`(级联)。
+> **依据形式**: `criteria:<id>[,{id}…]` = 判据 id 列表, `decision:<path>#<anchor>` = 人工介入记录, `external:<ref>` = 外部事实。**状态块 4 行都要写** —— `Draft` 态写当次生成的 `状态主体` / `状态时间` / `状态依据`;升 `Ready` / `Implemented` 时后三行必填且非空。
+> **复审块 (4 行, 机器校验)**: `评审人` / `评审日期` / `评审结论` / `评审方式` 4 行都要写(`Draft` 态值可留空, 升 `Ready` 前 4 行必填非空)。取值: 评审人 = `agent:<id>` | 裸 handle(人工), 评审日期 = `YYYY-MM-DD`, 评审结论 = 通过 | 有条件通过 | 需返工, 评审方式 = 自动判据 | 人工介入 | 外部事实。`评审人` 为 `agent:*` 时 `评审方式` 不得为 `人工介入`。
 
 | 状态 | 含义 | 校验约束 |
 |------|------|----------|
-| **Draft** | 初稿, 内容可能不全 | 无(评审三行可留空) |
-| **Ready** | 内容完整, 评审通过 | 必须伴生 `{topic}-key-points.md`; `## 复审 (Review)` 三行已签署 |
-| **Implemented** | 用例已实际执行过 | 必须伴生 `{topic}-key-points.md`; 仅人工回写 |
+| **Draft** | 初稿, 内容可能不全 | 无(评审四行可留空) |
+| **Ready** | 内容完整, 评审通过 | 必须伴生 `{topic}-key-points.md`; `## 复审 (Review)` 四行已签署 |
+| **Implemented** | 用例已实际执行过 | 必须伴生 `{topic}-key-points.md`; 需外部事实依据 |
 | **Deprecated** | 已废弃, 不再维护 | 无; 上游 `Deprecated` 时**级联**转入 |
 
 ---
 
 ## 复审 (Review)
 
-> 本段是**机器必填段**。三行(`评审人` / `评审日期` / `评审结论`)是**评审签署**载体 —— `Draft` 阶段清空, 升 `Ready` 前由**人工 reviewer** 填写真值并翻转状态, agent 不得自行填写或翻转。
+> 本段是**机器必填段**。四行(`评审人` / `评审日期` / `评审结论` / `评审方式`)是**评审签署**载体 —— `Draft` 阶段清空, 升 `Ready` 前由 agent 按 `schema/criteria.json` 的判据填写真值并翻转状态。
+> `评审人` 取值: `agent:<id>` = 机器签署, 裸 handle = 人工签署。**agent 不得填 `human:` 前缀、不得代填人名**(INV-3)。
+> `评审方式` 取值: `自动判据` / `人工介入` / `外部事实`;`评审人` 为 `agent:*` 时 `评审方式` 不得为 `人工介入`。
 
-> **评审人**: {github-handle}
+> **评审人**: agent:{id} | {github-handle}
 > **评审日期**: {YYYY-MM-DD}
 > **评审结论**: {通过 / 有条件通过 / 需返工}
+> **评审方式**: {自动判据 / 人工介入 / 外部事实}
 
 ---
 
@@ -85,7 +98,7 @@
 | 1 | [操作] | [预期结果] |
 | 2 | [操作] | [预期结果] |
 
-**关联**: PRD 场景 {n} / V-{n} / KD-{n}
+**关联**: S-1(上游 PRD 场景) / V-1 / KD-1
 
 **等级**: P0 / P1 / P2
 
@@ -132,7 +145,7 @@
 
 - [ ] 元信息 7 必填行填写完整 (主题/业务产品/目标平台/来源/生成日期/状态/用例总数); 3 个可选项 (来源 Tech Design / 来源 Plan / 最后更新) 有则填、无则留空
 - [ ] 状态枚举值合法 (Draft/Ready/Implemented/Deprecated 四值之一, 不自造状态名)
-- [ ] `## 复审 (Review)` 三行已由**人工 reviewer** 填写, 状态从 `Draft` 改为 `Ready`
+- [ ] `## 复审 (Review)` 四行(评审人 / 评审日期 / 评审结论 / 评审方式)已由 agent 按 `schema/criteria.json` 判据填写, 状态从 `Draft` 改为 `Ready`; `评审人` 写 `agent:<id>`, 人工复核时改填人名
 - [ ] `## 用例总览` 段存在, 含 P0/P1/P2 数量统计
 - [ ] 每个 TC 有 完整 5 段 (用例名/前置条件/测试步骤/关联/等级)
 - [ ] 关联 PRD 场景 + V-{n} + KD-{n} 编号

@@ -25,11 +25,15 @@
 
 ### 复审机制
 
-每个 PRD 定期复审,防止 feature rot:
+每个 PRD 定期复审,防止 feature rot。三问由 **agent 起草并自评**,人类**可选复核**:
 
 - **仍然重要?** Yes / No / 重新定义
 - **应当保留?** Yes / No
 - **可以删除?** Yes / No
+
+> **谁写的,怎么区分**:三问答案与复审块一起落在 `## 复审 (Review)` 段,署名规则见「状态机详解 › 状态块与复审块 › 怎么区分署名」。
+> 署名为 `agent:<id>` = agent 起草自评;署名为**裸人名 handle**(无前缀)= 人类复核。
+> **agent 不得填 `human:` 前缀,也不得代填人名** —— 不得冒充人工。
 
 ### Harness 原则
 
@@ -44,6 +48,7 @@
 ### 谁来读
 
 本指南面向 AI agent 和开发者,用于规范从需求到代码的完整流程。
+**流程由 agent 推进**:agent 依仓内判据自动产出制品并推进状态;人类在需要决策时落一条决定记录(`control/decisions/*.md` 或 `bash scripts/ssdctl.sh decide`)即可,不必逐条盯流程 —— 见「状态机详解」。
 
 ### 从哪里开始
 
@@ -57,7 +62,7 @@
 
 > 可选 Layer 4:`test_cases/{YYYY-MM-DD}/{topic}.md`(项目启用时存在,配合 [schema/test_case.md](schema/test_case.md) 模板产出)
 > 可选素材区:`material/{YYYY-MM-DD}/`(见 [material/README.md](material/README.md))
-> **状态起点**:agent 产出的三层规格状态是 `Draft`;`Ready` 由人工评审签署后写入(见下方状态流转)。
+> **状态起点**:agent 产出的三层规格先落在 `Draft`;该层判据全绿后由 **agent 自动推进**到 `Ready`(人类可随时介入,见下方状态流转)。
 
 ### 遇到问题时
 
@@ -85,10 +90,10 @@ stateDiagram-v2
         state "Deprecated" as p_x
 
         [*] --> p_d
-        p_d --> p_r: 门禁全绿 + 人工评审签署
-        p_r --> p_i: 外部代码仓 PR merged → 人工回写 wiki
-        p_r --> p_x: 需求废弃
-        p_i --> p_x: 复审决定废弃
+        p_d --> p_r: 判据全绿 → agent 推进(人类可介入)
+        p_r --> p_i: 外部 PR merged 事实 → 三件套同时回写
+        p_r --> p_x: 决定记录(人工介入 / 外部事实)
+        p_i --> p_x: 决定记录(人工介入 / 外部事实)
         p_x --> [*]
     }
 
@@ -100,10 +105,10 @@ stateDiagram-v2
         state "Deprecated" as t_x
 
         [*] --> t_d
-        t_d --> t_r: v4 4 子文件门禁 + 跨引用闭环 + 人工签署
-        t_r --> t_i: 外部代码仓 PR merged → 人工回写 wiki
-        t_r --> t_x: 父 PRD 废弃
-        t_i --> t_x: 复审决定废弃
+        t_d --> t_r: 判据全绿 → agent 推进(人类可介入)
+        t_r --> t_i: 外部 PR merged 事实 → 三件套同时回写
+        t_r --> t_x: 决定记录(人工介入 / 外部事实)
+        t_i --> t_x: 决定记录(人工介入 / 外部事实)
         t_x --> [*]
     }
 
@@ -115,17 +120,19 @@ stateDiagram-v2
         state "Deprecated" as pl_x
 
         [*] --> pl_d
-        pl_d --> pl_r: 跨引用闭环 + 完成检查 + 人工签署
-        pl_r --> pl_i: 外部代码仓 PR merged → 人工回写 wiki
-        pl_r --> pl_x: 父 PRD/TD 废弃
-        pl_i --> pl_x: 复审决定废弃
+        pl_d --> pl_r: 判据全绿 → agent 推进(人类可介入)
+        pl_r --> pl_i: 外部 PR merged 事实 → 三件套同时回写
+        pl_r --> pl_x: 决定记录(人工介入 / 外部事实)
+        pl_i --> pl_x: 决定记录(人工介入 / 外部事实)
         pl_x --> [*]
     }
 ```
 
-> **agent 的权限天花板 = `Draft`**。`Ready` / `Implemented` / `Deprecated` 三个状态由**人**决定。
+> **推进主体 = agent**:状态由 agent 依仓内判据(`schema/criteria.json`)自动推进,写入由机器代写并留痕。
+> **agent 的权限天花板 = `Ready`**(判据驱动);`Implemented` 需要**外部事实**(外部 PR merged)或人工介入记录授权;`Deprecated` 需要决定记录或外部事实。
+> **人类可手动介入**:落一条 `control/decisions/*.md` 决定记录,或跑 `bash scripts/ssdctl.sh decide` —— **没有实时交互通道**。
 > **0 关联代码仓库**:规格停留在 Ready,标记 "Awaiting TDD in external code repo"(本仓库为纯 wiki)
-> **≥1 关联外部代码仓库**:外部代码仓(位于本仓库**之外**)PR merged 后,人工回写 wiki 状态进入 Implemented
+> **≥1 关联外部代码仓库**:外部代码仓(位于本仓库**之外**)PR merged 后,依据该事实把 wiki 三件套状态推进到 Implemented
 > **Deprecated**:3 层均支持,上游废弃时下游级联
 
 ## 目录组织(核心 4 个文件夹 + 可选层)
@@ -188,7 +195,7 @@ flowchart LR
     C -->|Step 2| D[Tech Design]
     D -->|Step 3| E[Plan]
     E -->|Step 4 交接| F[外部代码仓 TDD]
-    F -->|外部 PR merged + 人工回写 wiki| G[wiki 标 Implemented]
+    F -->|外部 PR merged 事实| G[wiki 三件套同时标 Implemented]
     F -->|0 关联代码仓| H[停留 Ready]
 ```
 
@@ -201,7 +208,7 @@ flowchart LR
 
 ### Step 1: 原始素材 → Layer 1 PRD
 
-经过分析和讨论收敛,产出 PRD 到 `prd/{YYYY-MM-DD}/{topic}.md`,状态 `Draft`,评审签署后转 `Ready`。
+经过分析和讨论收敛,产出 PRD 到 `prd/{YYYY-MM-DD}/{topic}.md`。agent 写入时状态是 `Draft`;该层判据全绿后由 **agent 推进到 `Ready`**(人类可在任意时刻介入)。
 
 **转换关系**:
 - **1:1**: 一份原始文档对应一个 PRD
@@ -221,7 +228,7 @@ flowchart LR
 
 ### Step 2: PRD → Layer 2 Tech Design
 
-基于状态为 `Ready` 的 PRD,产出 `tech_design/{YYYY-MM-DD}-{topic}/`(**v4 默认** 4 子文件):
+基于同 topic 的 PRD(上游 `Ready` 时可直接推进;上游仍 `Draft` 时可起草,但推进需上游先到 `Ready`),产出 `tech_design/{YYYY-MM-DD}-{topic}/`(**v4 默认** 4 子文件):
 
 - **README.md** — 综合描述 + `## 场景映射` + `## 实现基线`
 - **ards.md** — 架构决策 / 方案对比 / 探索机制 / Gap
@@ -241,7 +248,7 @@ flowchart LR
 
 ### Step 3: Tech Design → Layer 3 Plan
 
-基于状态为 `Ready` 的 Tech Design,产出 `plan/{YYYY-MM-DD}-{topic}/{topic}.md`(**Ready**):
+基于同 topic 的 Tech Design(上游 `Ready` 时可直接推进;上游仍 `Draft` 时可起草,但推进需上游先到 `Ready`),产出 `plan/{YYYY-MM-DD}-{topic}/{topic}.md`(**Ready**):
 变更索引 + 变更清单 + TDD 流程 + 跨文件引用对账 + 验证用例 + 业务约束 + 开发约束 + 完成检查。
 
 **Plan 必填**:
@@ -271,8 +278,9 @@ flowchart LR
 完成所有 V 用例后,wiki 状态按**外部关联代码仓情况**分两条路:
 
 - **≥1 关联外部代码仓**(代码仓位于本仓库**之外**,独立 Git 仓库 / monorepo 子目录):
-  - 外部 TDD 全过 + 外部 PR merged 后
-  - 由人类**人工回写**本 wiki 三件套状态:PRD → **Implemented**,Tech Design → **Implemented**,Plan → **Implemented**
+  - 外部 TDD 全过 + 外部 PR merged 后,**该事实**成为状态依据(`状态依据: external:<ref>`)
+  - agent 依据该事实回写本 wiki 三件套状态:PRD → **Implemented**,Tech Design → **Implemented**,Plan → **Implemented**(**三件套同时**,不允许单层先转)
+  - 人类也可以手动介入:落 `control/decisions/*.md` 或跑 `bash scripts/ssdctl.sh decide`,由机器代写并同样留痕
 - **0 关联代码仓**(纯文档项目,如 SSD-Template 自身):停留在 **Ready**,标记 "Awaiting TDD in external code repo"
 
 详见 [状态机详解](#状态机详解-state-machine)。
@@ -283,7 +291,7 @@ flowchart LR
 > - **wiki 文件本地可达** → coding agent 直接 `cat plan/.../topic.md` 即可消费,**零同步成本**
 > - **Plan Ready = 工作信号** → 不需要 wiki agent 派活 / issue kickoff
 > - **coding agent 自带 spec→code 工作流** → "读 plan → 写代码 → 跑测试"是其原生能力
-> - **人工回写 wiki 状态** 是**唯一**的人工介入点(外部 PR merged 后)
+> - **人工介入 = 落决定记录**( `control/decisions/*.md` 或 `bash scripts/ssdctl.sh decide`),不是实时交互通道
 >
 > **不要**为 coding agent fork 引入 wiki agent kickoff / `Implementing` 中间态 / 调度机制。
 > 这是把 "Plan = 可执行规约"(executable specification)的简单模型,人为退化为 "Plan = 待派工单"的复杂模型。
@@ -291,7 +299,9 @@ flowchart LR
 
 ## 状态机详解 (State Machine)
 
-> 每层独立维护自己的状态(per-layer independent lifecycle)。上方"状态流转"段的 3 个 stateDiagram-v2 已包含完整图,本节补充状态值枚举、转换触发、跨层协调规则。
+> 每层独立维护自己的状态(per-layer independent lifecycle)。上方"状态流转"段的 3 个 stateDiagram-v2 已包含完整图,本节补充状态值枚举、状态块与复审块、转换触发、跨层协调规则。
+>
+> **推进主体 = agent**:agent 依仓内判据自动推进状态并留痕;人类不充当流水线节拍器 —— 需要介入时落一条决定记录,不需要介入时流程自己往前走。
 
 ### 状态值枚举
 
@@ -307,44 +317,92 @@ flowchart LR
 > - **三件套 = Implemented** 3 层状态机统一终态;Plan 侧重"已被消费/执行完毕",PRD / Tech Design 侧重"对应代码已落地到生产(已实施)"
 > - **Deprecated** 3 层统一支持;上游废弃时下游级联
 
-### 转换触发条件
+### 状态块与复审块
 
-> **脚本只强制「格式与追溯」,不强制「状态判定」。**
-> `scripts/check-md-schema.sh` 校验的是必填段、状态枚举取值、占位符清零与**阶段感知**(`Ready` 阶段复审段三行必须是真值);
-> `scripts/check-traceability.sh` 校验的是跨层引用闭环与 `Deprecated` 级联一致性。
-> **脚本无法判定评审的实质**:`Draft → Ready` 取决于人是否真的评审过,`Ready → Implemented` 取决于外部 PR 是否真的 merged,
-> `* → Deprecated` 取决于是否真的废弃。这三件事一律由**人**决定,门禁只提供"可评审"的保证。
-
-| 当前 → 下一 | 触发条件 | 校验命令 | 责任方 |
-|------------|---------|----------|--------|
-| — → Draft (PRD / TD / Plan) | 产物写完 + 该层门禁全绿 | `scripts/check-naming.sh` + `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` | **agent** |
-| Draft → Ready (PRD) | `check-md-schema.sh <prd>` 返回 0 **且** 人工在 `## 复审 (Review)` 段填入 `> **评审人**` / `> **评审日期**` / `> **评审结论**` 三行 | `scripts/check-md-schema.sh prd/{YYYY-MM-DD}/{topic}.md` | 人工 reviewer |
-| Draft → Ready (TD) | `check-md-schema.sh <td_dir>` 返回 0 **且** 所有子文件状态就绪 **且** 人工签署复审段 | `scripts/check-md-schema.sh tech_design/{YYYY-MM-DD}-{topic}/` | 人工 reviewer |
-| Draft → Ready (Plan) | `check-md-schema.sh <plan>` 与 `check-traceability.sh` 均返回 0 **且** 人工签署复审段 | `scripts/check-md-schema.sh plan/{YYYY-MM-DD}-{topic}/{topic}.md` + `scripts/check-traceability.sh` | 人工 reviewer |
-| Ready → Implemented (PRD/TD/Plan) | **≥1 外部代码仓**:外部 TDD 全过 + 外部 PR merged + 人工回写 wiki 三件套状态 | 人工检查外部仓库(无脚本) | 外部 reviewer + wiki 人工回写 |
-| Ready (停留) | **0 关联代码仓**:无外部回写源 | N/A | (无动作) |
-| * → Deprecated | 需求废弃 / 复审决定废弃 | 人工决策(级联一致性由 `scripts/check-traceability.sh` 兜底) | 人工 reviewer |
-
-**评审签署载体**(Ready 的机器可核验依据):
+**状态块**是状态的**唯一权威**;台账状态列、`control/state.json`、各类索引全部是**派生**数据,由机器再生成,不手写。
 
 ```markdown
-## 复审 (Review)
-
-> **评审人**: {github-handle}
-> **评审日期**: YYYY-MM-DD
-> **评审结论**: 通过 / 不通过(附理由)
+> **状态**: Draft
+> **状态主体**: agent:sddctl
+> **状态时间**: 2026-11-22T23:30:00+08:00
+> **状态依据**: criteria:PRD-READY-01,PRD-READY-02
 ```
 
-> 三行必须填**真值**,不能留占位符。`Draft` 阶段三行**留空**(段本身存在),由人签署。
-> 提交信息里的 `Reviewed-by:` trailer 是评审动作的**记录**,取值只能来自人工填写的 `> **评审人**`;它**不是**门禁依据。
+| 行 | 取值 | 解析规则 |
+|---|---|---|
+| `状态` | `Draft` \| `Ready` \| `Implemented` \| `Deprecated` | 4 值枚举 |
+| `状态主体` | `agent:<id>` \| `human:<handle>` | `human:` 前缀**只允许人工写入** |
+| `状态时间` | ISO-8601 带时区 | `YYYY-MM-DDTHH:MM:SS±HH:MM` |
+| `状态依据` | `criteria:<id>[,<id>…]` \| `decision:<path>#<anchor>` \| `external:<ref>` | 逗号分隔,至少一项 |
 
-**三件套一致性规则**(Ready → Implemented 转换):
-- PRD / Tech Design / Plan 三个状态**必须同时**进入 Implemented(不允许单层先 Implemented)
-- 状态转换由**人类手动**回写 wiki,**不**自动触发(避免外部 PR merged 与 wiki 状态不一致)
+`状态主体` / `状态时间` / `状态依据` 三行在 `Draft` 态允许缺省(此时为空值);状态一旦为 `Ready` / `Implemented`,三行**必填且非空**。
+
+**复审块**:
+
+```markdown
+> **评审人**: agent:sddctl
+> **评审日期**: 2026-11-22
+> **评审结论**: 通过
+> **评审方式**: 自动判据
+```
+
+| 行 | 取值 |
+|---|---|
+| `评审人` | `agent:<id>` \| `<human-handle>`(裸值即人工) |
+| `评审日期` | `YYYY-MM-DD` |
+| `评审结论` | `通过` \| `有条件通过` \| `需返工` |
+| `评审方式` | `自动判据` \| `人工介入` \| `外部事实` |
+
+**怎么区分署名**(复审块与三问表共用同一规则):
+
+- `agent:<id>` = **agent 起草自评**,人类尚未复核;
+- **裸人名 handle**(无前缀)= **人类复核**;
+- `human:<handle>` 前缀只允许人工自己写 —— **agent 不得冒充人工,也不得代填人名**;
+- `评审人` 为 `agent:*` 时,`评审方式` **不得**写成 `人工介入`(只能是 `自动判据` 或 `外部事实`)。
+
+### 转换触发条件
+
+> **判据决定"能不能进",机器决定"谁写进去"。**
+> 判据的唯一权威位置是 `schema/criteria.json`;`bash scripts/ssdctl.sh criteria <artifact>` 逐条判定并给出 `claims[]`。
+> 既有 `scripts/check-md-schema.sh` / `scripts/check-traceability.sh` 仍然强制**格式与追溯**;「能否标 `Ready`」由判据引擎判定,不由人临时决定,也不由单个脚本的退出码单独决定。
+
+| 当前 → 下一 | 触发条件 | 命令 | 主体 |
+|------------|---------|------|------|
+| — → Draft (PRD / TD / Plan) | 产物写完 + 该层门禁全绿 | `bash scripts/check-naming.sh` + `bash scripts/check-md-schema.sh` + `bash scripts/check-traceability.sh` | **agent** |
+| Draft → Ready (PRD / TD / Plan) | 该层全部 `blocking:true` 判据通过;`blocking:false` 的失败项必须有 `control/decisions/` 里的对应决定记录 | `bash scripts/ssdctl.sh advance <artifact> --to Ready` | **agent**(判据驱动);人类可介入 |
+| Ready → Implemented (PRD/TD/Plan) | 外部 PR merged 事实成立(`状态依据: external:<ref>`),或人工介入记录授权 | `bash scripts/ssdctl.sh advance <artifact> --to Implemented` | **agent**(依据外部事实);人类可介入 |
+| Ready (停留) | **0 关联代码仓**:无外部回写源 | N/A | (无动作) |
+| * → Deprecated | 需求废弃 / 复审决定废弃;**必须**有 `decision:` 或 `external:` 依据(不接受 `criteria:`) | `bash scripts/ssdctl.sh advance <artifact> --to Deprecated` | **agent**(执行);判定来自人工决定或外部事实 |
+
+> **每次转换都留痕**:转换前必须留下可回读证据(`control/evidence/**`),否则转换视为非法。`bash scripts/ssdctl.sh evidence --artifact <path>` 可回读。
+> **`--dry-run`** 只校验并输出计划,不写任何文件 —— 校验失败时 `advance` 直接退出非零且**文件零改动**。
+
+**三件套一致性规则**(`Ready → Implemented` 转换):
+- PRD / Tech Design / Plan 三个状态**必须同时**进入 `Implemented`(不允许单层先 Implemented)
+- 转换由 `advance` 统一写入并留痕,避免外部 PR merged 与 wiki 状态不一致
+- 提交信息里的 `Reviewed-by:` trailer 是评审动作的**记录**,取值只能来自复审块里人工填写的 `评审人`;它**不是**门禁依据
+
+**人类怎么手动介入**(唯一的介入形式,没有实时交互通道):
+
+```bash
+# 方式一:人工手写决定记录 control/decisions/<YYYY-MM-DD>-<topic>.md
+# 方式二:用 CLI 生成决定记录
+bash scripts/ssdctl.sh decide --artifact prd/2026-11-22/layer-checklist.md \
+  --action approve --actor <name> --reason "<理由>"
+```
+
+决定记录被 `advance` 消费后写入 `状态依据: decision:<path>#<anchor>`,并进入证据链。
+
+**待裁决清单**(可选,给想逐条看的人类):
+
+```bash
+bash scripts/ssdctl.sh queue <artifact>   # 行级待裁决清单
+```
 
 > **scripts 使用方法**:统一用 `bash scripts/<name>.sh` 调用(不要用 `./`;脚本从自身位置推导仓根,任何 cwd 都可以)。
 > 根目录跑 `bash scripts/check-naming.sh` + `bash scripts/check-md-schema.sh` + `bash scripts/check-traceability.sh`,三个脚本全返回 0 即"可评审"。
 > 项目有关联代码仓时,额外跑 `bash scripts/check-repo-baseline.sh` 核对 Tech Design 的实现基线(见 [AGENTS.md](AGENTS.md) §1.6)。
+> 判据与状态推进由 `bash scripts/ssdctl.sh` 承担(`scan` / `criteria` / `gate` / `advance` / `queue` / `decide` / `evidence` / `verify`)。
 
 ### 跨层协调规则
 
@@ -356,6 +414,7 @@ flowchart TB
         E3[TD Plan 重大修改]
         E4[外部代码仓 PR merged]
         E5[复审超期]
+        E6[人工决定记录<br/>control/decisions/*.md]
     end
 
     subgraph actions [联动动作]
@@ -364,6 +423,7 @@ flowchart TB
         A3[PRD TD 标需重审]
         A4[三件套回写终态]
         A5[发送复审提醒]
+        A6[agent 依决定记录推进状态<br/>状态依据 decision:...]
     end
 
     E1 --> A1
@@ -371,7 +431,12 @@ flowchart TB
     E3 --> A3
     E4 --> A4
     E5 --> A5
+    E6 --> A6
+    E6 --> A1
+    E6 --> A4
 ```
+
+> **事件源 E6 = 人工介入**:人类不直接改状态行,而是落一条决定记录(`control/decisions/*.md` 或 `bash scripts/ssdctl.sh decide`);agent 读到决定记录后推进状态,并把 `状态依据: decision:<path>#<anchor>` 写进状态块。其余事件源(上游废弃、上游变更、PR merged、复审超期)同样由 agent 检测并推进 —— **推进主体始终是 agent,人类只在需要决策时提供依据**。
 
 ### 0 关联代码仓库的特殊语义
 
@@ -387,13 +452,13 @@ flowchart TB
 | **0 关联代码仓库** | 本 wiki 未关联任何外部代码仓库(纯文档项目) |
 | **≥1 关联代码仓库** | 本 wiki 关联了 N 个**外部**代码仓库(代码仓位于本仓库**之外**) |
 | **外部代码仓** | 独立 Git 仓库 / monorepo 子目录,通过 `{仓库标识}/{path}` 跨仓引用(详见 [AGENTS.md](AGENTS.md) §1.2) |
-| **wiki 的 Implemented** | 外部代码仓 PR merged 后,**人工回写**到本 wiki 的镜像状态 |
+| **wiki 的 Implemented** | 外部代码仓 PR merged 后,依据该事实(或人工决定记录)回写到本 wiki 的镜像状态 |
 
 #### 本模板自身(0 关联代码仓库)
 
-- Step 1 产出:`prd/{YYYY-MM-DD}/{topic}.md` 状态 **Draft**(评审后 Ready)
-- Step 2 产出:`tech_design/{YYYY-MM-DD}-{topic}/*` 状态 **Draft**(评审后 Ready,v4 默认 4 子文件)
-- Step 3 产出:`plan/{YYYY-MM-DD}-{topic}/{topic}.md` 状态 **Draft**(评审后 Ready)
+- Step 1 产出:`prd/{YYYY-MM-DD}/{topic}.md` 状态 **Draft**(判据全绿后由 agent 推进到 Ready)
+- Step 2 产出:`tech_design/{YYYY-MM-DD}-{topic}/*` 状态 **Draft**(判据全绿后由 agent 推进到 Ready,v4 默认 4 子文件)
+- Step 3 产出:`plan/{YYYY-MM-DD}-{topic}/{topic}.md` 状态 **Draft**(判据全绿后由 agent 推进到 Ready)
 - 不进入 Implemented(无外部代码仓作为回写源)
 - Tech Design 的 `## 实现基线` 段写「不适用: 本项目无关联代码仓」(见 [AGENTS.md](AGENTS.md) §1.6)
 
@@ -404,7 +469,7 @@ flowchart TB
 - 按 [AGENTS.md](AGENTS.md) §4.A 定制指南 在 §1.1 登记外部代码仓清单(仓库地址 / 主要语言 / 角色)
 - 跨仓引用统一使用 `{仓库标识}/{path}` 写法
 - Step 4 (TDD) 在**外部代码仓**内执行,**不**在本仓库
-- 外部 PR merged 后,由人类**人工回写**本 wiki 三件套状态为 Implemented
+- 外部 PR merged 后,agent 依据该**外部事实**(`状态依据: external:<ref>`)把本 wiki 三件套状态推进为 Implemented;人类也可手动介入,落 `control/decisions/*.md` 或跑 `bash scripts/ssdctl.sh decide`
 - 维护"外部代码仓 → 本 wiki"的状态同步规则
 
 ### 为什么不引入 `Implementing` 中间态?
@@ -458,8 +523,19 @@ flowchart TB
 | `scripts/check-repo-baseline.sh` | 有关联代码仓时 | Tech Design `## 实现基线` 的 6 列快照 |
 | `scripts/sync-prd.sh --check` | 启用了 PRD 台账时 | README 统计块与实际制品一致 |
 | `scripts/sync-test-index.sh --check` | 仅 Layer 4 | `test_cases/_index.md` 与用例元信息一致 |
+| `bash scripts/ssdctl.sh scan --check` | **每次都跑**(CI) | 状态块 / 复审块 / 派生数据(台账、`control/state.json`)是否一致 |
+| `bash scripts/ssdctl.sh gate` | **每次都跑**(CI) | 当前目标状态的判据集是否全部满足 |
 
-**调用方式**:三件套 Ready 前跑上表前 5 个脚本,全返回 0 方可提交评审;`Ready` 由人工签署复审段后写入。
+**调用方式**:上表前 5 个脚本全返回 0 → 「可评审」。此后由 **agent** 调 `bash scripts/ssdctl.sh advance <artifact> --to <状态>` 推进状态(机器判据驱动 + 留痕);人类需要介入时落 `control/decisions/*.md` 或跑 `bash scripts/ssdctl.sh decide`,**不**手工改状态行。
+`bash scripts/ssdctl.sh` 的子命令全集:`scan` / `criteria` / `gate` / `advance` / `queue` / `decide` / `evidence` / `verify`;退出码统一 `0` = 通过 / `1` = 存在违规 / `2` = 调用或环境错误。
+
+> **为什么命令形态是 `bash scripts/ssdctl.sh` 而不是「直接用 `python` 跑 `scripts/ssdctl.py`」**:
+> `scripts/ssdctl.sh` 是 `scripts/ssdctl.py` 的**解释器解析包装器**。不同机器上 `python` 未必可用
+> (Windows 的 Microsoft Store 占位符会命中 exit 9009 —— 命令存在但不是解释器),而 `python3` 只在
+> POSIX 机器上有。包装器会依次尝试 `$SSDCTL_PYTHON` / `python3` / `python` / `py -3` /
+> `~/.dsh/dsh-runtimes/*/dependencies/python/python.exe`,每个候选都要通过 `-c 'import sys'` 自检;
+> 全都不行时 exit 2 并列出试过的候选,**不静默继续**。显式指定解释器:
+> `SSDCTL_PYTHON=/path/to/python bash scripts/ssdctl.sh <子命令>`。
 
 ## 可选层
 
@@ -482,6 +558,9 @@ flowchart TB
 | [WORKFLOW.md](WORKFLOW.md) | **契约唯一真源**:编排配置 + agent 工作契约 |
 | [README.md](README.md) | 仓库入口(总览 + 规格统计 + PRD 关联矩阵) |
 | [AGENTS.md](AGENTS.md) | 仓库操作契约(仓库清单 / 跨仓引用 / 多仓 Plan / 基线 / 证据锚点) |
+| [docs/agent-first-direction.md](docs/agent-first-direction.md) | agent 优先的实施方向与取舍依据 |
+| [docs/operation-flow.md](docs/operation-flow.md) | 端到端操作流程说明 |
+| [docs/process-analysis.md](docs/process-analysis.md) | 现状流程分析(哪些步骤由 agent 承担、哪些保留人工) |
 | [schema/prd.md](schema/prd.md) | PRD 模板 |
 | [schema/tech_design/](schema/tech_design/) | Tech Design 模板 (v4 默认 4 子文件,v3 存量 7 子文件) |
 | [schema/plan.md](schema/plan.md) | Plan 模板 |
@@ -491,3 +570,17 @@ flowchart TB
 | [.codex/skills/](.codex/skills/) | 8 个 skill 定义(仓内随仓库分发) |
 | [ARCHIVE.md](ARCHIVE.md) | 已移出仓内的历史目录指针 |
 | [new-factors.md](new-factors.md) | 深度概念参考 |
+| `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
+| `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `decide` / `evidence` / `verify`) |
+| `control/` | **控制面**:决定记录 / 状态快照 / 证据链(布局见下) |
+
+### `control/` 布局
+
+| 路径 | 内容 | 谁写 |
+|------|------|------|
+| `control/decisions/<YYYY-MM-DD>-<topic>.md` | 人工决定记录(批准 / 驳回 / 废弃 / 授权) | **人**(或 `ssdctl decide` 代写) |
+| `control/state.json` | 全仓状态快照(**派生**,可再生成) | agent(机器) |
+| `control/evidence/<YYYY-MM>/*.jsonl` | 每次状态转换的证据链 | agent(机器) |
+| `control/README.md` | 控制面说明 | agent(机器) |
+
+> 人类介入的**唯一**形式就是 `control/decisions/*.md` 决定记录(或 `bash scripts/ssdctl.sh decide` 生成它)—— **没有实时交互通道**,也没有"人在回路里逐条点头"的流程。

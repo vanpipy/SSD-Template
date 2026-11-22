@@ -5,7 +5,7 @@
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
-> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态行, 由人工统一翻转, agent 不得自行改写。
+> **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一;本子文件状态**跟随** [./README.md](./README.md) 的状态块 由 `ssdctl advance` 统一代写, 本文件不单独改写。
 
 ---
 
@@ -19,8 +19,8 @@
 | 可用性 | 服务可用性 | {n}% | 健康检查 |
 | 质量 | 错误率 | < {n}% | 日志统计 |
 
-**关联场景**: PRD 场景 {n}
-**引用决策**: KD-{n}
+**关联场景**: S-1
+**引用决策**: KD-1
 
 ---
 

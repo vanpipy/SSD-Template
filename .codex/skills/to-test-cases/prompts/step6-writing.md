@@ -25,7 +25,7 @@ test_cases/
 主/冒烟文档 = 元信息表 + 用例总览 + S-NNN 场景段：
 
 - 元信息 7 必填行：主题 / 业务产品 / 目标平台 / 来源 / 生成日期 / 状态 / 用例总数
-- 来源方向 = 上游 **PRD + Tech Design**：优先 `prd/{date}/{topic}.md` 与 `tech_design/{date}-{topic}/`（反引号 + 仓库根路径，check-traceability T9 校验存在性）
+- 来源方向 = 上游 **PRD + Tech Design**：优先 `prd/{date}/{topic}.md` 与 `tech_design/{date}-{topic}/`（反引号 + 仓库根路径，追溯判据校验上游引用存在性）
 - 已建立配对的 Plan 记入可选 `Plan` 行（本文档作为其参考比照对象）
 - 状态枚举与三件套统一：**Draft / Ready / Implemented / Deprecated**（新生成 = Draft）
 
@@ -42,11 +42,11 @@ bash scripts/sync-test-index.sh
 ## 收尾校验（强制）
 
 ```bash
-./scripts/check-md-schema.sh test_cases/{date}/{topic}.md   # 元信息 + 状态枚举 + 用例总览 + 伴生
-./scripts/check-naming.sh                                    # 命名规范
+bash scripts/ssdctl.sh criteria test_cases/{date}/{topic}.md   # 判据逐条判定（元信息 + 状态枚举 + 用例总览 + 伴生）
+bash scripts/ssdctl.sh gate                                     # 全仓门禁（含命名规范与派生数据再生）
 ```
 
-两个脚本对该文件返回 0 方可交付；随后按 Step 5 评审结论把状态从 Draft 升 Ready（评审通过 + 要点伴生就位）。
+判据对该文件返回 0（退出码 0）方可交付；随后由 `bash scripts/ssdctl.sh advance test_cases/{date}/{topic}.md --to Ready` 按判据推进状态（判据全绿才推进，人工复核可选，落 `control/decisions/`）。
 
 ## 测试要点沉淀
 
@@ -129,7 +129,7 @@ bash scripts/sync-test-index.sh
 
 ## 版本管理
 
-- 首次生成：`{topic}.md`（状态: Draft）
-- Step 5 评审通过 + 要点就位：状态更新为 Ready（可带说明后缀，如「Ready（2 轮 4 角色评审）」）
-- 执行验收通过：人工回写 Implemented（本 skill 不负责）
+- 首次生成：`{topic}.md`（状态块: Draft）
+- 判据通过 + 要点就位：由 `bash scripts/ssdctl.sh advance` 推进到 Ready（状态依据写 `criteria:{id}`）
+- 执行验收通过：推进到 Implemented 需 `external:` 依据（本 skill 不负责, 由 `ssdctl advance` 执行）
 - 上游 PRD/TD Deprecated：级联 Deprecated；上游复审变更：回退 Draft 并备注「需重审」

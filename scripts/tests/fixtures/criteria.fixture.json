@@ -1,0 +1,375 @@
+{
+  "version": 1,
+  "criteria": [
+    {
+      "id": "PRD-SEC-WHY",
+      "layer": "prd",
+      "title": "PRD 必须有「为什么 (Why)」段",
+      "kind": "section_exists",
+      "params": { "sections": ["为什么 (Why)"] },
+      "blocking": true,
+      "source": "schema/prd.md:10"
+    },
+    {
+      "id": "PRD-SEC-GOAL",
+      "layer": "prd",
+      "title": "PRD 必须有「目标 (Goal)」段",
+      "kind": "section_exists",
+      "params": { "sections": ["目标 (Goal)"] },
+      "blocking": true,
+      "source": "schema/prd.md:18"
+    },
+    {
+      "id": "PRD-SEC-SCEN",
+      "layer": "prd",
+      "title": "PRD 必须有「场景 (Scenarios)」段",
+      "kind": "section_exists",
+      "params": { "sections": ["场景 (Scenarios)"] },
+      "blocking": true,
+      "source": "schema/prd.md:27"
+    },
+    {
+      "id": "PRD-SEC-OOS",
+      "layer": "prd",
+      "title": "PRD 必须有「不在范围内 (Out of Scope)」段",
+      "kind": "section_exists",
+      "params": { "sections": ["不在范围内 (Out of Scope)"] },
+      "blocking": true,
+      "source": "schema/prd.md:47"
+    },
+    {
+      "id": "PRD-SEC-REVIEW",
+      "layer": "prd",
+      "title": "PRD 必须有「复审 (Review)」段",
+      "kind": "section_exists",
+      "params": { "sections": ["复审 (Review)"] },
+      "blocking": true,
+      "source": "schema/prd.md:64"
+    },
+    {
+      "id": "PRD-STATE-LINE",
+      "layer": "prd",
+      "title": "PRD 必须有状态行",
+      "kind": "line_present",
+      "params": { "regex": "^> \\*\\*状态\\*\\*:" },
+      "blocking": true,
+      "source": "schema/prd.md:3"
+    },
+    {
+      "id": "PRD-NO-RAW-SOURCE",
+      "layer": "prd",
+      "title": "PRD 不得把原始素材当来源",
+      "kind": "line_absent",
+      "params": { "regex": "^\\|\\s*来源\\s*\\|\\s*Raw" },
+      "blocking": true,
+      "source": "schema/prd.md:54"
+    },
+    {
+      "id": "PRD-STATE-ENUM",
+      "layer": "prd",
+      "title": "状态取值必须是四态枚举",
+      "kind": "enum_field",
+      "params": {
+        "field": "状态",
+        "values": ["Draft", "Ready", "Implemented", "Deprecated"]
+      },
+      "blocking": true,
+      "source": "schema/prd.md:3"
+    },
+    {
+      "id": "PRD-REVIEW-DATE",
+      "layer": "prd",
+      "title": "复审日期应为 YYYY-MM-DD",
+      "kind": "date_format",
+      "params": { "field": "评审日期" },
+      "blocking": false,
+      "source": "schema/prd.md:64"
+    },
+    {
+      "id": "PRD-GOAL-CHECKBOX",
+      "layer": "prd",
+      "title": "目标段至少两条复选框",
+      "kind": "checkbox_present",
+      "params": { "min_count": 2 },
+      "blocking": true,
+      "source": "schema/prd.md:18"
+    },
+    {
+      "id": "PRD-AC-FORMAT",
+      "layer": "prd",
+      "title": "目标条目的 AC 编号格式必须合法",
+      "kind": "id_format",
+      "params": { "prefix": "AC", "pattern": "^AC-[0-9]+$" },
+      "blocking": true,
+      "source": "schema/prd.md:20"
+    },
+    {
+      "id": "PRD-AC-UNIQUE",
+      "layer": "prd",
+      "title": "AC 编号在文件内必须唯一",
+      "kind": "id_unique",
+      "params": { "prefix": "AC" },
+      "blocking": true,
+      "source": "schema/prd.md:20"
+    },
+    {
+      "id": "PRD-SCEN-REF",
+      "layer": "prd",
+      "title": "覆盖行引用的 AC 必须存在",
+      "kind": "id_refs_resolve",
+      "params": { "from_prefix": "S", "to_prefix": "AC", "via_field": "覆盖" },
+      "blocking": true,
+      "source": "schema/prd.md:27"
+    },
+    {
+      "id": "PRD-READY-COVER",
+      "layer": "prd",
+      "title": "每个 AC 至少被一个场景覆盖",
+      "kind": "coverage_complete",
+      "params": { "from_prefix": "AC", "to_prefix": "S", "via_field": "覆盖" },
+      "blocking": true,
+      "source": "schema/prd.md:27"
+    },
+    {
+      "id": "PRD-SCEN-COUNT",
+      "layer": "prd",
+      "title": "至少一个场景标题",
+      "kind": "count_min",
+      "params": { "regex": "^### 场景:", "min_count": 1 },
+      "blocking": true,
+      "source": "schema/prd.md:27"
+    },
+    {
+      "id": "PRD-NO-PLACEHOLDER",
+      "layer": "prd",
+      "title": "PRD 不得残留模板占位符",
+      "kind": "no_placeholder",
+      "params": { "regex": "\\{[^}]+\\}" },
+      "blocking": true,
+      "source": "schema/prd.md:4"
+    },
+    {
+      "id": "TD-SEC-GATE",
+      "layer": "td",
+      "title": "Tech Design 必须有「门禁清单 (Completion Gate)」段",
+      "kind": "section_exists",
+      "params": { "sections": ["门禁清单 (Completion Gate)"] },
+      "blocking": true,
+      "source": "schema/tech_design/README.md:40"
+    },
+    {
+      "id": "TD-SEC-CHANGELOG",
+      "layer": "td",
+      "title": "Tech Design 必须有「变更记录 (Change Log)」段",
+      "kind": "section_exists",
+      "params": { "sections": ["变更记录 (Change Log)"] },
+      "blocking": true,
+      "source": "schema/tech_design/README.md:44"
+    },
+    {
+      "id": "TD-KD-UNIQUE",
+      "layer": "td",
+      "title": "KD 编号在文件内必须唯一",
+      "kind": "id_unique",
+      "params": { "prefix": "KD" },
+      "blocking": true,
+      "source": "schema/tech_design/ards.md:3"
+    },
+    {
+      "id": "TD-STATE-ENUM",
+      "layer": "td",
+      "title": "Tech Design 状态取值必须是四态枚举",
+      "kind": "enum_field",
+      "params": {
+        "field": "状态",
+        "values": ["Draft", "Ready", "Implemented", "Deprecated"]
+      },
+      "blocking": true,
+      "source": "schema/tech_design/README.md:3"
+    },
+    {
+      "id": "TD-KD-FORMAT",
+      "layer": "td",
+      "title": "KD 编号格式必须合法",
+      "kind": "id_format",
+      "params": { "prefix": "KD", "pattern": "^KD-[0-9]+$" },
+      "blocking": true,
+      "source": "schema/tech_design/ards.md:3"
+    },
+    {
+      "id": "TD-NO-PLACEHOLDER",
+      "layer": "td",
+      "title": "Tech Design 不得残留模板占位符",
+      "kind": "no_placeholder",
+      "params": { "regex": "\\{[^}]+\\}" },
+      "blocking": true,
+      "source": "schema/tech_design/README.md:4"
+    },
+    {
+      "id": "PLAN-SEC-CHANGES",
+      "layer": "plan",
+      "title": "Plan 必须有「变更清单 (Changes)」段",
+      "kind": "section_exists",
+      "params": { "sections": ["变更清单 (Changes)"] },
+      "blocking": true,
+      "source": "schema/plan.md:30"
+    },
+    {
+      "id": "PLAN-SEC-RECONCILE",
+      "layer": "plan",
+      "title": "Plan 必须有「跨文件引用对账」段",
+      "kind": "section_exists",
+      "params": { "sections": ["跨文件引用对账"] },
+      "blocking": true,
+      "source": "schema/plan.md:60"
+    },
+    {
+      "id": "PLAN-CHANGE-COUNT",
+      "layer": "plan",
+      "title": "Plan 至少一个 Change 条目",
+      "kind": "count_min",
+      "params": { "regex": "^#{3,4} Change #[0-9]+:", "min_count": 1 },
+      "blocking": true,
+      "source": "schema/plan.md:32"
+    },
+    {
+      "id": "PLAN-V-COUNT",
+      "layer": "plan",
+      "title": "Plan 至少一个 V 用例",
+      "kind": "count_min",
+      "params": { "regex": "^### V-[0-9]+:", "min_count": 1 },
+      "blocking": true,
+      "source": "schema/plan.md:44"
+    },
+    {
+      "id": "PLAN-IDREF-COLUMNS",
+      "layer": "plan",
+      "title": "对账表列序固定为 引用类型 | 标识 | 来源 | 已对账 | 备注 | 覆盖",
+      "kind": "line_present",
+      "params": { "regex": "^\\| 引用类型 \\| 标识 \\| 来源 \\| 已对账 \\| 备注 \\| 覆盖 \\|$" },
+      "blocking": true,
+      "source": "schema/plan.md:110"
+    },
+    {
+      "id": "PLAN-IDREF",
+      "layer": "plan",
+      "title": "对账表逐行已对账且覆盖列非空",
+      "kind": "count_min",
+      "params": { "regex": "^\\|[^|]*\\|[^|]*\\|[^|]*\\|\\s*\\[x\\]\\s*\\|[^|]*\\|[^|]*\\S[^|]*\\|$", "min_count": 1 },
+      "blocking": true,
+      "source": "schema/plan.md:62"
+    },
+    {
+      "id": "PLAN-NO-PLACEHOLDER",
+      "layer": "plan",
+      "title": "Plan 不得残留模板占位符",
+      "kind": "no_placeholder",
+      "params": { "regex": "\\{[^}]+\\}" },
+      "blocking": true,
+      "source": "schema/plan.md:4"
+    },
+    {
+      "id": "PLAN-SEC-REVIEW",
+      "layer": "plan",
+      "title": "Plan 必须有「复审 (Review)」段",
+      "kind": "section_exists",
+      "params": { "sections": ["复审 (Review)"] },
+      "blocking": true,
+      "source": "schema/plan.md:70"
+    },
+    {
+      "id": "PLAN-STATE-ENUM",
+      "layer": "plan",
+      "title": "Plan 状态取值必须是四态枚举",
+      "kind": "enum_field",
+      "params": {
+        "field": "状态",
+        "values": ["Draft", "Ready", "Implemented", "Deprecated"]
+      },
+      "blocking": true,
+      "source": "schema/plan.md:3"
+    },
+    {
+      "id": "PLAN-V-FORMAT",
+      "layer": "plan",
+      "title": "V 编号格式必须合法",
+      "kind": "id_format",
+      "params": { "prefix": "V", "pattern": "^V-[0-9]+$" },
+      "blocking": true,
+      "source": "schema/plan.md:44"
+    },
+    {
+      "id": "PLAN-COVERAGE-S",
+      "layer": "plan",
+      "title": "PRD 声明的每个场景至少被 Plan 的一个验证用例覆盖",
+      "kind": "coverage_complete",
+      "params": {
+        "from_prefix": "S",
+        "to_prefix": "V",
+        "via_field": "场景",
+        "scope": "repo",
+        "from_layer": "prd",
+        "to_layer": "plan"
+      },
+      "blocking": true,
+      "source": "schema/plan.md:44"
+    },
+    {
+      "id": "TC-SEC-OVERVIEW",
+      "layer": "test-case",
+      "title": "Test Case 必须有「用例总览」段",
+      "kind": "section_exists",
+      "params": { "sections": ["用例总览"] },
+      "blocking": true,
+      "source": "schema/test_case.md:30"
+    },
+    {
+      "id": "TC-STATE-ENUM",
+      "layer": "test-case",
+      "title": "Test Case 状态取值必须是四态枚举",
+      "kind": "enum_field",
+      "params": {
+        "field": "状态",
+        "values": ["Draft", "Ready", "Implemented", "Deprecated"]
+      },
+      "blocking": true,
+      "source": "schema/test_case.md:22"
+    },
+    {
+      "id": "TC-GEN-DATE",
+      "layer": "test-case",
+      "title": "生成日期应为 YYYY-MM-DD",
+      "kind": "date_format",
+      "params": { "field": "生成日期" },
+      "blocking": true,
+      "source": "schema/test_case.md:20"
+    },
+    {
+      "id": "TC-V-REF",
+      "layer": "test-case",
+      "title": "用例引用的场景必须存在",
+      "kind": "id_refs_resolve",
+      "params": { "from_prefix": "V", "to_prefix": "S", "via_field": "场景" },
+      "blocking": true,
+      "source": "schema/test_case.md:50"
+    },
+    {
+      "id": "TC-NO-PLACEHOLDER",
+      "layer": "test-case",
+      "title": "Test Case 不得残留模板占位符",
+      "kind": "no_placeholder",
+      "params": { "regex": "\\{[^}]+\\}" },
+      "blocking": true,
+      "source": "schema/test_case.md:25"
+    },
+    {
+      "id": "REPO-LINE-ENDING",
+      "layer": "repo",
+      "title": "仓库文本不得残留 CR 字节",
+      "kind": "line_absent",
+      "params": { "regex": "\r" },
+      "blocking": true,
+      "source": "scripts/check-line-endings.sh:1"
+    }
+  ]
+}
