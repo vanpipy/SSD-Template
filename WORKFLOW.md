@@ -885,7 +885,7 @@ flowchart TB
 | [schema/prd-ledger.md](schema/prd-ledger.md) | 批次 PRD 台账模板 (可选 material/ 启用) |
 | [schema/prd-matrix.md](schema/prd-matrix.md) | PRD 关联矩阵模板 (多 PRD 协作启用) |
 | [.codex/skills/](.codex/skills/) | 9 个 skill 定义(仓内随仓库分发) |
-| [ARCHIVE.md](ARCHIVE.md) | 已移出仓内的历史目录指针 |
+| 历史代际(不再留档) | `git log --all -- <path>` / `git show <commit>:<path>`(历史代际仅存于 git 历史) |
 | `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
 | `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `decide` / `evidence` / `verify`) |
 | `control/` | **控制面**:决定记录 / 状态快照 / 证据链(布局见下) |

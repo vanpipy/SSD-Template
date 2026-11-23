@@ -447,7 +447,7 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 | PRD 台账同步(可选) | `scripts/sync-prd.sh` |
 | 用例索引再生 | `scripts/sync-test-index.sh` |
 | 文档死链校验 | `scripts/check-doc-links.py` |
-| 归档内容指针 | `ARCHIVE.md` |
+| 历史代际 | `git log --all -- <path>`(仓内不再保留归档目录) |
 | 概念参考 | `WORKFLOW.md` §12 概念参考 |
 
 ---

@@ -47,7 +47,7 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 | 模板定义 | [schema/](schema/) |
 | Skill 定义 | [.codex/skills/](.codex/skills/) |
 | 校验脚本 | [scripts/](scripts/) |
-| 历史目录归档位置 | [ARCHIVE.md](ARCHIVE.md) |
+| 历史代际 | `git log --all -- <path>`(仓内不再保留归档目录) |
 
 ## 状态推进
 
@@ -156,7 +156,7 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 | [docs/agent-first-direction.md](docs/agent-first-direction.md) | agent 优先的实施方向与取舍依据 |
 | [docs/operation-flow.md](docs/operation-flow.md) | 端到端操作流程说明 |
 | [docs/process-analysis.md](docs/process-analysis.md) | 现状流程分析(哪些步骤由 agent 承担、哪些保留人工) |
-| [ARCHIVE.md](ARCHIVE.md) | 已移出仓内的历史目录(`legacy/` / `legacy-simple/`)的归档位置 |
+| 历史代际(不再留档) | `git log --all -- <path>` / `git show <commit>:<path>`(历史代际仅存于 git 历史) |
 | `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
 | `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `decide` / `evidence` / `verify`) |
 | `control/` | **控制面**:决定记录 / 状态快照 / 证据链(布局见 [WORKFLOW.md](WORKFLOW.md) §11.9 的 `control/` 一节) |
