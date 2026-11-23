@@ -3,6 +3,7 @@
 > **文档状态**:本文是 agent-first 改造的**分析依据与决策留痕**(2026-11-22)。文中引用的「agent 权限天花板 = `Draft`」等均为**改前基线**,改造后已由 `ssdctl advance` + `schema/criteria.json` 取代;最终落地形态见 [WORKFLOW.md](../WORKFLOW.md) 与实施契约 `.swarm/requirements/agent-first-implementation.md`。
 
 > **本文性质**:方向调整分析。**本轮不改流程代码、契约或脚本**;只产出结论、目标架构与分期路线。
+> **行号基线说明**:本文中的 `WORKFLOW.md:NNN` 与 `HOW_TO_USE.md:NNN` 行号引用指向 **2026-11-22 agent-first 改造前**的基线文件(commit `6fe6c4c`):agent-first 改造重写了 `WORKFLOW.md`,2026-11-23 又把 `HOW_TO_USE.md` 并入 [WORKFLOW.md](../WORKFLOW.md) §11(使用指南)/ §12(概念参考) —— **行号不再对应现文件位置**,保留原文仅作取证。
 > **需求真源**:`.swarm/requirements/agent-first-direction.md`(R1–R8)。
 > **与既有文档的关系**:
 > - [`docs/process-analysis.md`](process-analysis.md) = **结构分析**(流程长什么样、哪里断) —— [既有]
@@ -538,7 +539,7 @@ R3 要求把根因分成三类且**各自独立验收**。以下给出分离依�
 
 | | |
 |---|---|
-| **默认推荐** | **全部提交**,并挂进 `README.md` / `HOW_TO_USE.md` 的「相关文件」表(**不进 `WORKFLOW.md` 的可信度排序**) |
+| **默认推荐** | **全部提交**,并挂进 `README.md` / `WORKFLOW.md` §11.9 的「相关文件」表(**不进 `WORKFLOW.md` 的可信度排序**) |
 | **理由** | 三份文档是本轮唯一的可交付结论;不入 git ⇒ 下一个 session 找不到,`.swarm/` 同类问题 |
 | **另一分支后果** | 不入 git ⇒ 结论只活在对话里,方向调整无法沉淀成可审计的基线 |
 

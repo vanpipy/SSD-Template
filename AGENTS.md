@@ -425,7 +425,7 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 | **执行工作流**(首选) | `.codex/skills/{to-prd,to-tech-design,to-plan,validate-spec,to-test-cases,sync-status,sync-prd,to-deep-understand}/SKILL.md` ★ |
 | 仓库契约唯一真源 | `WORKFLOW.md` |
 | 仓库入口(总览) | `README.md` |
-| 工作流指南与状态机 | `HOW_TO_USE.md` |
+| 工作流指南与状态机 | `WORKFLOW.md` §11 使用指南 / §5 状态推进规则 |
 | PRD 模板 | `schema/prd.md` |
 | Tech Design 模板 | `schema/tech_design/` (v4 默认 4 子模板) |
 | Plan 模板 | `schema/plan.md` |
@@ -448,7 +448,7 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 | 用例索引再生 | `scripts/sync-test-index.sh` |
 | 文档死链校验 | `scripts/check-doc-links.py` |
 | 归档内容指针 | `ARCHIVE.md` |
-| 概念参考 | `new-factors.md` |
+| 概念参考 | `WORKFLOW.md` §12 概念参考 |
 
 ---
 
@@ -485,7 +485,7 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 - **适用**:多 code agent / 多 repo fork(罕见)
 - **工作量**:+1 张状态图 + 1 套转换规则 + 1 个跨仓写权限
 - **原理**:wiki agent 创建 kickoff issue,code agent 认领后执行
-- **反例论证**:见 HOW_TO_USE.md「为什么不引入 `Implementing` 中间态」。仅在 (B) 不可行时才升级到 (C)
+- **反例论证**:见 `WORKFLOW.md` §11.5「为什么不引入 `Implementing` 中间态」。仅在 (B) 不可行时才升级到 (C)
 
 ### B. Skill 策略选择
 

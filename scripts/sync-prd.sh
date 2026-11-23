@@ -2,7 +2,7 @@
 # sync-prd.sh — PRD 台账登记 + 规格统计同步(幂等)
 #
 # 职责边界(契约 M12):
-#   - **不写**仓根的其它顶层文档(AGENTS.md / HOW_TO_USE.md / new-factors.md …)。M12 的禁令
+#   - **不写**仓根的其它顶层文档(AGENTS.md / WORKFLOW.md …)。M12 的禁令
 #     只针对「顶层文档」。
 #   - **写**两处, 且仅这两处:
 #       1) 可选层 `material/{YYYY-MM-DD}/PRDS.md` — 批次台账: 补登骨架行 + 标记待办行
@@ -223,7 +223,7 @@ prd_dist=""; td_dist=""; plan_dist=""; test_dist=""
 [ "$test_other" -gt 0 ] && test_dist="${test_dist:+$test_dist · }其他 $test_other"
 
 # --- 台账(可选层: material/{date}/PRDS.md) ---
-# M12 的禁令只针对「顶层文档」(AGENTS.md / HOW_TO_USE.md 等仓根文档);
+# M12 的禁令只针对「顶层文档」(AGENTS.md / WORKFLOW.md 等仓根文档);
 # material/ 是可选层, 批次台账是本脚本的原始职责: 补登骨架行 + 标记待办行 + 幂等。
 #
 # 退出码(material/README.md 与 Lead 口径一致):

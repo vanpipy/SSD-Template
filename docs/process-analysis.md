@@ -2,6 +2,8 @@
 
 > **文档状态**:本文记录 **2026-11-22 agent-first 改造前**的流程结构基线。改造后的流程以 [WORKFLOW.md](../WORKFLOW.md) 与 `scripts/ssdctl.py` 为准;文中「agent 天花板是 `Draft`」等表述均为**改前基线**,不再适用。
 
+> **行号基线说明**:本文中的 `WORKFLOW.md:NNN` 与 `HOW_TO_USE.md:NNN` 行号引用指向 **2026-11-22 agent-first 改造前**的基线文件(commit `6fe6c4c`):agent-first 改造重写了 `WORKFLOW.md`,2026-11-23 又把 `HOW_TO_USE.md` 并入 [WORKFLOW.md](../WORKFLOW.md) §11(使用指南)/ §12(概念参考) —— **行号不再对应现文件位置**,保留原文仅作取证。
+
 > **分析对象**:SSD-Template 自身的 SDD(Spec-Driven Development)流程。**不含** Symphony 编排层 —— 按用户 m01732 的指示,Symphony 线程搁置。
 > **证据基线**:`D:\project\SSD-Template` @ HEAD `3b47494`,2026-11-22 实读脚本源码与文档源码。
 > **口径**:【事实】= 有 `file:line` 可复核;【推断】= 由事实推出,标出推理链;【未验证】= 声明但本次未复核。

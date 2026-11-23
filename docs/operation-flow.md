@@ -2,10 +2,11 @@
 
 > **文档状态**:本文记录 **2026-11-22 agent-first 改造前**的流程基线。改造后的流程以 [WORKFLOW.md](../WORKFLOW.md) 与 `scripts/ssdctl.py` 为准(见 WORKFLOW.md §5 状态推进 / §7 调度);本文保留作决策留痕,文中「agent 天花板 = `Draft`」「只由人回写」等表述均为**改前基线**,不再适用。
 
+> **行号基线说明**:本文中的 `WORKFLOW.md:NNN` 与 `HOW_TO_USE.md:NNN` 行号引用指向 **2026-11-22 agent-first 改造前**的基线文件(commit `6fe6c4c`);行号不再对应现文件位置,保留原文仅作取证。
+
 > **本文件是派生视图,不新增权威。** 冲突时一律以以下分列的权威为准:
-> [WORKFLOW.md](../WORKFLOW.md)(agent 工作契约 · 仓根唯一真源) ·
+> [WORKFLOW.md](../WORKFLOW.md)(agent 工作契约 · 仓根唯一真源;**怎么用**见 §11 使用指南) ·
 > [AGENTS.md](../AGENTS.md)(仓库操作契约) ·
-> [HOW_TO_USE.md](../HOW_TO_USE.md)(怎么用) ·
 > `schema/**`(模板与门禁权威定义) ·
 > `scripts/**`(裁判)。
 >

@@ -25,7 +25,7 @@
 
 语料范围 (通用, 与业务无关):
   - 目录: material/ prd/ tech_design/ plan/ test_cases/ docs/ schema/ (存在才收录, 递归 *.md)
-  - 根级: 全部 *.md (README.md / AGENTS.md / HOW_TO_USE.md 等入口文档)
+  - 根级: 全部 *.md (README.md / AGENTS.md / WORKFLOW.md 等入口文档)
   - 不收录: deep/ (本层自身), skills/ scripts/ (流程资产), legacy/ (历史归档)
 
 只重写 <!-- inventory-begin --> 与 <!-- inventory-end --> 之间的内容,
