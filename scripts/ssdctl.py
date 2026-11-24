@@ -7,12 +7,14 @@
     python scripts/ssdctl.py criteria <artifact> [--json]
     python scripts/ssdctl.py gate [--json]
     python scripts/ssdctl.py advance <artifact> --to <Ready|Implemented|Deprecated>
-                                     [--actor A] [--decision <path>#<anchor>] [--dry-run]
+                                     [--actor agent:<id>] [--external <ref>] [--dry-run]
     python scripts/ssdctl.py queue <artifact> [--json]
-    python scripts/ssdctl.py decide --artifact <path> --action <approve|reject|hold|override>
-                                    --actor <name> --reason <text> [--criterion <id>]
-    python scripts/ssdctl.py evidence [--artifact <path>] [--json]
     python scripts/ssdctl.py verify <artifact>
+
+F9(单载体):仓内**没有控制平面**。状态与评审的唯一权威载体 = 制品本身;
+人与 agent 跑的是**同一条** `advance` —— 差异只在署名来源:
+agent 用 `--actor agent:<id>`(机器写复审块),人**先**在制品 `## 复审 (Review)`
+段自己写好署名再跑同一条命令(机器原样保留、不覆盖)。
 
 退出码(契约 INV-7):0=通过/成功,1=违规/校验失败,2=用法或内部错误。
 判据文件缺失时一律退 2 并明确报错 —— **绝不静默放行**。
@@ -39,41 +41,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True, metavar="<command>")
 
-    scan = sub.add_parser("scan", help="扫描制品并生成派生状态 control/state.json")
+    scan = sub.add_parser("scan", help="扫描制品并打印派生视图(不落盘)")
     scan.add_argument("--json", action="store_true", help="输出 JSON")
     scan.add_argument("--layer", default=None, help="只处理某一层(prd/td/plan/test-case)")
-    scan.add_argument("--check", action="store_true", help="只比对 control/state.json 与磁盘,不一致退 1")
+    scan.add_argument("--check", action="store_true", help="跨制品一致性检查(上游闸门/三件套原子性/字段自洽),不通过退 1")
 
     criteria = sub.add_parser("criteria", help="对单个制品跑判据")
     criteria.add_argument("artifact", help="制品路径(仓库相对)")
     criteria.add_argument("--json", action="store_true", help="输出 JSON")
 
-    gate = sub.add_parser("gate", help="跑全部仓内门禁 + 判据,并写派生数据")
+    gate = sub.add_parser("gate", help="跑全部仓内门禁 + 判据 + 制品自洽性")
     gate.add_argument("--json", action="store_true", help="输出 JSON")
 
     advance = sub.add_parser("advance", help="推进制品状态(先全量校验,再一次性写入)")
     advance.add_argument("artifact", help="制品路径(仓库相对)")
     advance.add_argument("--to", required=True, help="目标状态:Ready/Implemented/Deprecated")
-    advance.add_argument("--actor", default="agent:sddctl", help="操作者(默认 agent:sddctl)")
-    advance.add_argument("--decision", default=None, help="授权决定 `control/decisions/<file>#<id>`")
+    advance.add_argument("--actor", default="agent:ssdctl", help="操作者(只接受 agent:<id>;人工署名写在制品的 `## 复审 (Review)` 段内)")
+    advance.add_argument("--external", default=None, help="外部事实依据 `external:<ref>`(Implemented / Deprecated 必填)")
     advance.add_argument("--dry-run", action="store_true", help="只校验并打印计划,不写任何文件")
 
     queue = sub.add_parser("queue", help="列出待人工裁决的判据项")
     queue.add_argument("artifact", help="制品路径(仓库相对)")
     queue.add_argument("--json", action="store_true", help="输出 JSON")
 
-    decide = sub.add_parser("decide", help="写一条人工介入决定")
-    decide.add_argument("--artifact", required=True, help="目标制品路径")
-    decide.add_argument("--action", required=True, help="approve/reject/hold/override")
-    decide.add_argument("--actor", required=True, help="操作人")
-    decide.add_argument("--reason", required=True, help="理由")
-    decide.add_argument("--criterion", default=None, help="作用范围:某条判据 id(默认 all)")
-
-    evidence = sub.add_parser("evidence", help="读回证据链")
-    evidence.add_argument("--artifact", default=None, help="只看某个制品")
-    evidence.add_argument("--json", action="store_true", help="输出 JSON")
-
-    verify = sub.add_parser("verify", help="校验状态块/复审块/证据链是否自洽")
+    verify = sub.add_parser("verify", help="校验状态块/复审块是否自洽")
     verify.add_argument("artifact", help="制品路径(仓库相对)")
 
     return parser
@@ -108,8 +99,6 @@ def main(argv: list[str] | None = None) -> int:
         "gate": commands.cmd_gate,
         "advance": commands.cmd_advance,
         "queue": commands.cmd_queue,
-        "decide": commands.cmd_decide,
-        "evidence": commands.cmd_evidence,
         "verify": commands.cmd_verify,
     }[args.command]
     try:

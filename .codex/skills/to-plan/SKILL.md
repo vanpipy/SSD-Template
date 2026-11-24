@@ -4,7 +4,7 @@ description: >-
   Tech Design → Plan 转换流程 (v2.0), 按 schema/plan.md 多段结构产出实施计划。引用来源自适应, v4 TD 取 ards.md / apis.md,
   v3 存量 TD 取 decisions.md / interactions.md。Use when 收到已就绪的 Tech Design (默认 v4 四子文件), 需要产出多段结构 Plan
   (含变更索引 + TDD Flow + 跨文件引用对账 + 4 段完成检查)。多仓项目按 §1.5 强制分仓分组 Change。
-  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工可选复核并落决定记录。
+  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工接入走同一条流水线（在制品复审段写署名, 再跑同一条 advance）。
 ---
 
 # to-plan
@@ -78,7 +78,7 @@ Plan 头部的元信息块 = **状态块 4 行** + **来源/日期 4 行**, 顺�
 | 1 | `> **状态**` | `Draft` / `Ready` / `Implemented` / `Deprecated` | agent 产出时写 `Draft`; 推进由 `ssdctl advance` 代写 |
 | 2 | `> **状态主体**` | `agent:<id>` / `human:<handle>` | 谁推进的; `Draft` 态可缺省; `human:` 前缀只能由人自己填 |
 | 3 | `> **状态时间**` | `YYYY-MM-DDTHH:MM:SS±HH:MM` | ISO-8601 带时区; `Draft` 态可缺省 |
-| 4 | `> **状态依据**` | `criteria:{id}[,{id}…]` / `decision:{path}#{anchor}` / `external:{ref}` | 逗号分隔, ≥1 项; `Draft` 态可缺省 |
+| 4 | `> **状态依据**` | `criteria:{id}[,{id}…]` / `external:{ref}` | 逗号分隔, ≥1 项; `Draft` 态可缺省 |
 | 5 | `> **来源 Tech Design**` | `../../tech_design/{date}-{topic}/` | 两级相对路径 |
 | 6 | `> **来源 PRD**` | `../../prd/{date}/{topic}.md` | 两级相对路径 |
 | 7 | `> **参考 Test Cases**` | `test_cases/{YYYY-MM-DD}/{topic}.md` | **可选行**: 填了必须是仓内真实存在、且以 `test_cases/` 开头的路径(用反引号包裹); 不适用就**删掉整行** |
@@ -258,9 +258,9 @@ bash scripts/ssdctl.sh gate
 | `Draft` | agent | agent | 写产出文件, 状态块 4 行写 `Draft` (后三行可缺省) |
 | `Ready` | **判据** | agent (机器代写) | 该层 `blocking:true` 判据全绿 + 上游 `upstream_ready`, 由 `bash scripts/ssdctl.sh advance` 代写状态块与复审块 |
 | `Implemented` | **外部事实** | agent (机器代写) | 拿到真实外部事实后 `advance --to Implemented`; PRD / TD / Plan **三件套必须同时** |
-| `Deprecated` | **决定记录** | agent (机器代写) | 需 `decision:` 或 `external:` 依据 (不允许 `criteria:`); 上游 Deprecated 之后的机械级联由 agent 执行 |
+| `Deprecated` | **外部事实** | agent (机器代写) | 需 `external:` 依据 (不允许 `criteria:`); 上游 Deprecated 之后的机械级联由 agent 执行 |
 
-- **判定权归判据, 写入权归 agent, 人工可手动介入**: 判据全绿就推进, 人工要改结果就落一条 `control/decisions/` 决定记录, 再用 `--decision` 传入。
+- **判定权归判据, 写入权归 agent, 人工走同一条流水线**: 判据全绿就推进; 人工要改结果就在仓内新增素材, 或自己在制品的 `## 复审 (Review)` 段写署名, 再跑**同一条** `advance`。
 - **复审块 4 行**由 agent 起草自评: `评审人` 写 `agent:<id>`, `评审方式` 写 `自动判据`; **agent 绝不写 `human:` 前缀, 也不代填人名**。
 - **状态块永远由 `ssdctl advance` 写**; skill 与 agent 都不手改状态行, 也不教人手改。
 
@@ -475,6 +475,6 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 - <repo>/schema/plan.md（多段模板）
 - <repo>/schema/tech_design/（v4 TD 模板目录）
 - <repo>/schema/tech_design/v3/（v3 存量 TD 模板目录）
-- <repo>/scripts/ssdctl.py（判据与门禁唯一入口：scan / criteria / gate / advance / queue / decide / evidence / verify）
+- <repo>/scripts/ssdctl.py（判据与门禁唯一入口：scan / criteria / gate / advance / queue / verify）
 - <repo>/schema/criteria.json（判据机器权威）
 - <repo>/WORKFLOW.md（完整工作流）

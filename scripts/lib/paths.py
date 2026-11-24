@@ -1,6 +1,8 @@
-"""仓库根、判据文件、控制平面路径解析。
+"""仓库根、判据文件路径解析。
 
-契约来源:`docs/contracts/agent-first-implementation.md` §4(判据文件)与 §6(控制平面)。
+契约来源:`docs/contracts/agent-first-implementation.md` §4(判据文件)。
+F9:仓内**不再有控制平面**(`control/` 目录已整体删除)—— 状态与评审的唯一
+权威载体是制品本身,所以这里不再解析任何控制面路径。
 本模块不读任何环境变量以外的配置;唯一的例外是 `SSDCTL_CRITERIA`(测试与临时判据用)。
 """
 
@@ -11,7 +13,6 @@ from pathlib import Path
 
 CRITERIA_RELPATH = Path("schema") / "criteria.json"
 CRITERIA_ENV = "SSDCTL_CRITERIA"
-CONTROL_DIRNAME = "control"
 
 
 def _looks_like_repo(candidate: Path) -> bool:
@@ -59,26 +60,6 @@ def criteria_path(root: Path) -> Path:
         candidate = Path(override)
         return candidate if candidate.is_absolute() else (root / candidate)
     return root / CRITERIA_RELPATH
-
-
-def control_dir(root: Path) -> Path:
-    """控制平面根目录 `control/`。"""
-    return root / CONTROL_DIRNAME
-
-
-def decisions_dir(root: Path) -> Path:
-    """人工介入决定目录 `control/decisions/`。"""
-    return control_dir(root) / "decisions"
-
-
-def evidence_dir(root: Path) -> Path:
-    """证据链目录 `control/evidence/`。"""
-    return control_dir(root) / "evidence"
-
-
-def state_path(root: Path) -> Path:
-    """派生状态文件 `control/state.json`。"""
-    return control_dir(root) / "state.json"
 
 
 def relative_to_root(path: Path, root: Path) -> str:

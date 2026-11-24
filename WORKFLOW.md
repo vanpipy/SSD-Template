@@ -60,8 +60,8 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
   - §12     = 概念参考(为什么长成这样; 不定义任何可执行规则)。
   - §13     = 与编排层(DSH swarm)的协作分工(谁派谁、谁能写什么、决定怎么分流; 规范冲突时以 §1–§10 为准)。
 
-「实施契约」= `docs/contracts/agent-first-implementation.md`(§3 元数据 / §5 CLI / §7 调度谓词);
-决策真源 = `control/decisions/2026-11-22-agent-primary.md`(D-01 / D-03 / D-05 / D-07)。
+「实施契约」= `docs/contracts/agent-first-implementation.md`(§3 元数据 / §5 CLI / §7 调度谓词);**现行规范真源**。
+历史决策记录 = `docs/contracts/decisions/2026-11-22-agent-primary.md`(D-01…D-20)**(历史)** —— D-02 / D-10 / D-11 已被 2026-11-24 的 F9 裁决取代。
 -->
 
 # SSD-Template 规格流水线 · Agent 工作契约
@@ -82,8 +82,8 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
 - 本仓**只有规格文档,没有业务代码**。业务实现发生在**外部代码仓**(仓库清单见 `AGENTS.md` §1.1)。
 - 你的产出是**规格制品**(PRD / Tech Design / Plan / Test Case),不是代码,也不是方案讨论稿。
 - 你的权限天花板 = **`Ready`**,且由**判据**决定而不是由你自述。`bash scripts/ssdctl.sh advance` 会**代你**写入
-  状态块与复审块;判据不过就停在 `Draft`。`Implemented` 仍需**外部事实**(`external:` 依据或人工决定记录,实施契约 §5.2),
-  `Deprecated` 需决定记录。**你能写状态,不能冒充人**(§3 第 1 条)。
+  状态块与复审块;判据不过就停在 `Draft`。`Implemented` 仍需**外部事实**(`external:` 依据,实施契约 §5.2),
+  `Deprecated` 同样需要 `external:` 依据。**你能写状态,不能冒充人**(§3 第 1 条)。
 - **调度依据 = 仓内 `ssdctl scan`,不是外部编排器。** 哪些制品可推进由
   `bash scripts/ssdctl.sh scan` 的 5 合取谓词 `dispatchable` 判定(实施契约 §7);
   front matter 的 Symphony 配置块**保留原样但已搁置**,不参与调度(实施契约 §11)。
@@ -92,9 +92,10 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
   任何一处与本文件冲突,**以本文件为准**,并在 workpad 里记一笔冲突,**不要自行调和**。
 - **workpad** = 工作区内的进度笔记(路径 `.symphony/workpad.md`)。它记录:目标层与 topic、上游路径、
   跑过的门禁命令与退出码、冲突与遗留问题。workpad **不入库**(不要 `git add` 它)。
-- **过程状态的权威载体** = 制品内的状态块(实施契约 §3.1)+ `control/evidence/**` 证据链(实施契约 §6.2);
-  `control/state.json` 与台账状态列都是**派生**(实施契约 INV-1 / D-09)。想知道自己推进到哪一步,
-  跑 `bash scripts/ssdctl.sh scan` 与 `bash scripts/ssdctl.sh evidence`,不要凭记忆。
+- **过程状态的唯一权威载体 = 制品本身**:制品内的状态块与复审块(实施契约 §3.1 / §3.2)。
+  留痕 = **制品 + git 历史**(实施契约 R-5);`scan` 只**打印**派生视图,不再落盘。
+  想知道自己推进到哪一步,跑 `bash scripts/ssdctl.sh scan` 与 `bash scripts/ssdctl.sh verify <artifact>`,不要凭记忆。
+  **(历史)**:2026-11-24 之前,仓内另有一个 `control/` 控制平面(决定记录 / 证据链 / 状态快照),F9 裁决已将其整体删除。
 
 ## 2. Issue→层映射
 
@@ -132,8 +133,8 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
 2. **状态推进必须走 `ssdctl advance`,不得手改状态行**:状态块 4 行、复审块 4 行一律由
    `bash scripts/ssdctl.sh advance <artifact> --to <Ready|Implemented|Deprecated>` 代写(实施契约 §3 / §5.1)。
    **手改状态行 = 绕过判据与证据链 = 违规**;`--dry-run` 只校验、不写任何文件(实施契约 §5.2)。
-3. **不凭推测写终态**:`Implemented` 要求证据链里存在 `external:` 依据,或 `--decision` 指定了外部事实的介入记录
-   (实施契约 §5.2);`Deprecated` 的 `状态依据` **不允许**写 `criteria:`,必须是 `decision:<path>#<anchor>` 或 `external:<ref>`。
+3. **不凭推测写终态**:`Implemented` 要求有 `external:` 依据 —— 来自 `--external <ref>`,或制品正文里出现的
+   `external:<ref>` token(实施契约 §5.2);`Deprecated` 同样需要 `external:` 依据,**不允许**写 `criteria:`。
 4. **不自动合并 PR**:不调用 `gh pr merge`,不调用任何合并 API,不关闭 PR。合并是人的动作。
 5. **不改 `schema/**`**:模板是合同不是产物。唯一例外是 issue 显式要求「更新工作流规范」。
 6. **不改别人的产物**:只写本 issue 目标层、本 topic 的文件;不碰同层其它 topic,不碰其它层的既有文件。
@@ -216,13 +217,15 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
 | `状态` | `Draft` \| `Ready` \| `Implemented` \| `Deprecated` | 4 值枚举 |
 | `状态主体` | `agent:<id>` \| `human:<handle>` | `human:` 前缀**只允许人工写入** |
 | `状态时间` | ISO-8601 带时区 | `YYYY-MM-DDTHH:MM:SS±HH:MM` |
-| `状态依据` | `criteria:<id>[,…]` \| `decision:<path>#<anchor>` \| `external:<ref>` | 逗号分隔,至少一项 |
+| `状态依据` | `criteria:<id>[,…]` \| `external:<ref>` | 逗号分隔,至少一项 |
 
 - `状态主体` = `agent:<id>` | `human:<handle>`;**`human:` 只允许人写**,你一律写 `agent:<id>`(实施契约 INV-3 / §3.1)。
-- `状态时间` = ISO-8601 带时区(`YYYY-MM-DDTHH:MM:SS±HH:MM`);`状态依据` = `criteria:<id>[,…]` | `decision:<path>#<anchor>` | `external:<ref>`,至少一项。
+- `状态时间` = ISO-8601 带时区(`YYYY-MM-DDTHH:MM:SS±HH:MM`);`状态依据` = `criteria:<id>[,…]` | `external:<ref>`,至少一项。
+  **(历史)**:`decision:<path>#<anchor>` 前缀已于 2026-11-24 的 F9 裁决删除 —— 授权来源只剩 `criteria:` 与 `external:` 两种。
 - `Draft` 态允许后三行缺省;状态为 `Ready` / `Implemented` 时**三行必填且非空**(实施契约 §3.1 兼容条款)。
 - PRD / Tech Design README / Plan 用上面 4 行;Test Case 用元信息表 `| **状态** | Draft |` + 同等语义的行。
-- **状态块是状态的唯一权威**;台账状态列、`control/state.json`、各类索引全部是**派生**数据,由机器再生成,不手写。
+- **状态块是状态的唯一权威**;台账状态列、各类索引、`scan` 打印的派生视图全部是**派生**数据,由机器再生成,不手写。
+  `scan` **只打印、不落盘**(实施契约 R-5)。
 
 **复审块**(实施契约 §3.2):
 
@@ -239,10 +242,13 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
 | `评审日期` | `YYYY-MM-DD` |
 | `评审结论` | `通过` \| `有条件通过` \| `需返工` |
 | `评审方式` | `自动判据` \| `人工介入` \| `外部事实` |
+| `已知问题` | `<criterion-id> — <说明>`(**可选**,可多行;人工接入时放这里) |
 
 - `评审人` = `agent:<id>` | 裸 human handle;`评审日期` = `YYYY-MM-DD`;
   `评审结论` = `通过` | `有条件通过` | `需返工`;`评审方式` = `自动判据` | `人工介入` | `外部事实`。
 - `评审方式` 是**新增必填行**(状态 ≥ `Ready` 时);`评审人` 为 `agent:*` 时 `评审方式` **不得**为 `人工介入`。
+- `已知问题` 行**可选**:形状为 `> **已知问题**: <criterion-id> — <说明>`,`criterion-id` 形如 `[A-Z0-9-]+`。
+  **非阻断判据失败时,必须在复审段内出现该判据 id,`advance` 才放行**;没出现 ⇒ 阻断并给出该指引(实施契约 R-4 / R-10)。
 
 **怎么区分署名**(复审块与 PRD 的三问表共用同一规则):
 
@@ -251,41 +257,45 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
 - `human:<handle>` 前缀只允许人工自己写 —— **agent 不得冒充人工,也不得代填人名**;
 - `评审人` 为 `agent:*` 时,`评审方式` **不得**写成 `人工介入`(只能是 `自动判据` 或 `外部事实`)。
 
-**推进规则**(发起主体 = agent(判据驱动)或人工(手动介入);**写入一律由机器代写**):
+**推进规则**(发起主体 = agent(判据驱动)或人工(手动接入);**写入一律由机器代写**):
 
 | 当前 → 下一 | 谁能发起 | 准入条件 | 写入方式 |
 |-------------|---------|----------|----------|
 | — → `Draft` | **你(agent)** | 产物写完 + 该层门禁全绿 | 新建制品时随文件写出初始 `> **状态**: Draft`;`advance` 只处理 `Ready` / `Implemented` / `Deprecated`(实施契约 §5) |
-| `Draft` → `Ready` | **agent(判据驱动)/ 人工(手动介入)** | 该层全部 `blocking:true` 判据通过;若有 `blocking:false` 失败项,须有 `control/decisions/` 中的对应决定记录;上游 `upstream_ready` 成立;`--decision` 或判据全绿二者之一提供授权来源(实施契约 §5.2) | `bash scripts/ssdctl.sh advance <artifact> --to Ready` |
-| `Ready` → `Implemented` | **agent(凭外部事实)/ 人工** | 证据链存在 `external:` 依据,或 `--decision` 指定了外部事实的介入记录;PRD / Tech Design / Plan **三件套必须同时**回写(见下方「三件套一致性规则」+ 实施契约 §5.2) | `bash scripts/ssdctl.sh advance <artifact> --to Implemented` |
-| `*` → `Deprecated` | **agent(凭决定记录)/ 人工** | 需求废弃或复审决定废弃;`状态依据` 必须是 `decision:<path>#<anchor>` 或 `external:<ref>`,**不允许** `criteria:`;上游转 `Deprecated` 时,引用它的下游(TD / Plan / Test Case)一并转 `Deprecated` 并备注来源 | `bash scripts/ssdctl.sh advance <artifact> --to Deprecated` |
+| `Draft` → `Ready` | **agent(判据驱动)/ 人工(手动介入)** | 该层全部 `blocking:true` 判据通过;若有 `blocking:false` 失败项,须在**制品的复审段内出现该判据 id**(见「已知问题」行);上游 `upstream_ready` 成立(实施契约 §5.2 / R-4) | `bash scripts/ssdctl.sh advance <artifact> --to Ready` |
+| `Ready` → `Implemented` | **agent(凭外部事实)/ 人工** | 存在 `external:` 依据 —— 来自 `--external <ref>`,或制品正文里出现的 `external:<ref>` token;PRD / Tech Design / Plan **三件套必须同时**回写(见下方「三件套一致性规则」+ 实施契约 §5.2) | `bash scripts/ssdctl.sh advance <artifact> --to Implemented` |
+| `*` → `Deprecated` | **agent(凭外部事实)/ 人工** | 需求废弃或复审决定废弃;`状态依据` 必须是 `external:<ref>`,**不允许** `criteria:`;上游转 `Deprecated` 时,引用它的下游(TD / Plan / Test Case)一并转 `Deprecated` 并备注来源 | `bash scripts/ssdctl.sh advance <artifact> --to Deprecated` |
 
 **三件套一致性规则**(`Ready → Implemented` 转换):
 
 - PRD / Tech Design / Plan 三个状态**必须同时**进入 `Implemented`(不允许单层先 `Implemented`);
 - 转换由 `advance` 统一写入并留痕,避免外部 PR merged 与 wiki 状态不一致;
 - 提交信息里的 `Reviewed-by:` trailer 是评审动作的**记录**,取值只能来自复审块里 `评审人` 的实际值;
-  它**不是**门禁依据(门禁依据是判据 + 证据链)。
+  它**不是**门禁依据(门禁依据是判据 + 留痕 = 状态块 + 复审块 + git 历史)。
 
-**人类如何介入**(可选通道,实施契约 §5.1 / §6):
+**人与 agent 走同一条流水线**(实施契约 R-2 / R-3):
+
+人的接入只有两种形态 —— (a) 在仓内**新增素材**(如 `material/{date}/*.md`);(b) 直接在**制品的 `## 复审 (Review)` 段里写署名**。
+**不存在**「决定文件」「专属人工通道」这类旁路。写完之后,人跑的是**同一条**命令:
 
 ```bash
-bash scripts/ssdctl.sh queue <artifact>                       # 行级待裁决清单
-bash scripts/ssdctl.sh decide --artifact <path> --action approve --actor <name> --reason <text>
-bash scripts/ssdctl.sh advance <artifact> --to Ready --decision control/decisions/<date>-<topic>.md#D1
+bash scripts/ssdctl.sh advance <artifact> --to Ready          # 与 agent 完全同一条
 ```
 
-人只需落一条决定记录并授权,**不需要手改任何状态行**。
-`advance` 校验失败时**直接退出非零且文件零改动**;`--dry-run` 只校验、不写任何文件(实施契约 §5.2)。
-`advance` 校验失败时**直接退出非零且文件零改动**;`--dry-run` 只校验并输出计划,不写任何文件(实施契约 §5.2)。
+- 复审块**为空** ⇒ 由机器写(评审人 = `--actor`,评审日期 = 今天,评审结论 = `通过`,评审方式 = `自动判据`);
+- 复审块**非空** ⇒ **原样保留**,机器只写状态块 —— `advance` **永不覆盖**已写的署名;
+- `--actor` **只允许 `agent:<id>` 形态**;`--actor human:x` ⇒ exit 1,提示「人工署名请写在制品的 `## 复审 (Review)` 段内」;
+- 非阻断判据失败时,人把该判据 id 写进复审段的 `已知问题` 行,`advance` 才放行;
+- `advance` 校验失败时**直接退出非零且文件零改动**;`--dry-run` 只校验并输出计划,不写任何文件(实施契约 §5.2)。
+- **(历史)**:原「人工决定记录」通道(`decide` 子命令 / `advance --decision`)已于 2026-11-24 的 F9 裁决**删除**,不再使用。
 
 四条不可越过的线:
 
 1. **你的天花板是 `Ready`**,且由**判据**决定,不由你自述:判据不过就停在 `Draft`。
 2. **不得冒充人工**:`human:` 前缀只允许人写(实施契约 INV-3 / §3.1);你只写 `agent:<id>`。
-3. **`Implemented` 需要外部事实**:没有 `external:` 依据或人工决定记录,不得写(实施契约 §5.2)。
-4. **每次状态转换都必须留下可回读证据**(`control/evidence/**`,实施契约 INV-4 / §6.2);无证据的转换视为非法。
-   状态块 / 复审块 / 证据链不一致时用 `bash scripts/ssdctl.sh verify <artifact>` 查。
+3. **`Implemented` 需要外部事实**:没有 `external:` 依据,不得写(实施契约 §5.2)。
+4. **每次状态转换都必须留下可回读留痕** = 状态块 + 复审块 + git 历史(实施契约 R-5);无留痕的转换视为非法。
+   状态块 / 复审块 / 制品正文不一致时用 `bash scripts/ssdctl.sh verify <artifact>` 查。
 
 > **状态图与跨层联动**(三层状态机图、事件源 → 联动动作图、`0 关联代码仓` 的特殊语义)见 §11.5;
 > **判据决定「能不能进」,机器决定「谁写进去」** —— 判据的唯一权威位置是 `schema/criteria.json`,
@@ -315,8 +325,8 @@ bash scripts/ssdctl.sh advance <artifact> --to Ready --decision control/decision
 | `scripts/sync-test-index.sh` | 启用 Layer 4 时跑(写模式, 幂等) | 重生成 `test_cases/_index.md` |
 | `scripts/sync-test-index.sh --check` | 只读复查 | 用例索引与用例元信息一致 |
 | `scripts/deep-scan.py` | 仅当仓内启用 `deep/` 底座时 | 理解底座台账 |
-| `bash scripts/ssdctl.sh gate` | **每次都跑** | 全仓门禁(既有 8 个)+ 判据引擎 + 派生数据再生(实施契约 §8) |
-| `bash scripts/ssdctl.sh scan --check` | **每次都跑** | 派生索引 `control/state.json` 与现盘一致(实施契约 §8) |
+| `bash scripts/ssdctl.sh gate` | **每次都跑** | 全仓门禁(既有 8 个)+ 判据引擎(实施契约 §8) |
+| `bash scripts/ssdctl.sh scan --check` | **每次都跑** | **跨制品一致性**:上游闸门 + 三件套原子性 + 字段自洽(实施契约 R-6);**只读**,不比对任何快照文件 |
 
 执行规则:
 
@@ -341,8 +351,9 @@ bash scripts/ssdctl.sh advance <artifact> --to Ready --decision control/decision
 
 - **不增删章节**:标题文字照抄(`## 复审 (Review)` 不是 `## 复审`),不写模板外的章节。
 - **占位符清零**:所有 `{...}` 占位符替换为真实值;用不到的行(例如 Plan 的 `> **参考 Test Cases**:`)整行删除。
-- **状态块与复审块按 §5 的 4+4 行写**:`> **状态**` 必填;`> **状态主体**` / `> **状态时间**` / `> **状态依据**`
-  与 `> **评审人**` / `> **评审日期**` / `> **评审结论**` / `> **评审方式**` 在 `Draft` 阶段允许缺省,
+- **状态块与复审块按 §5 的 4+4(+1 可选)行写**:`> **状态**` 必填;`> **状态主体**` / `> **状态时间**` / `> **状态依据**`
+  与 `> **评审人**` / `> **评审日期**` / `> **评审结论**` / `> **评审方式**` 在 `Draft` 阶段允许缺省
+  (复审段另有可选的 `> **已知问题**: <criterion-id> — <说明>` 行),
   但**不留占位符、不填假值**。署名主体只能是 `agent:<id>`(§3 第 1 条);**推进由 `ssdctl advance` 代写**(§3 第 2 条)。
 - **跨层引用写两级相对路径**:Tech Design → PRD 写 `../../prd/{date}/{topic}.md`;Plan → Tech Design 写
   `../../tech_design/{date}-{topic}/`;Plan → PRD 写 `../../prd/{date}/{topic}.md`。单级 `../` 会被追溯门禁漏检。
@@ -400,7 +411,7 @@ Issue: {{ issue.identifier }}
 4. **状态推进全部经 `ssdctl advance`**:推进到的状态**不超过判据允许的上限**;没有手改状态行;
    没有冒充人工署名(§3 第 1 / 2 条)。判据不过就停在 `Draft` 并如实报告失败项。
 5. **汇报**:输出「产物路径 + 门禁命令与退出码 + 当前状态(谁写的、依据是什么)+ 遗留问题 + 需要人做什么
-   (合并 PR / 补人工决定记录 / 确认外部事实)」。
+   (合并 PR / 在制品里补署名 / 确认外部事实)」。
 
 **不满足就不要声称完成。** 缺上游、门禁非 0、无法确定目标层 —— 这三种情况按 §2 / §6 如实报告并结束 turn,
 不要产出猜测内容来「凑完成」。
@@ -417,7 +428,7 @@ Issue: {{ issue.identifier }}
 - 上轮因**门禁 exit 1** 中断:**这轮先跑门禁**,拿到具体违规清单再改,不要凭印象改。
 - 上轮因**exit 2**(环境 / 调用错误)中断:先修命令(路径、参数、解释器),确认脚本能跑起来再谈产物。
 - **不要重复提交**同一份内容;一次改动一次提交。
-- **状态以仓内机器记录为准**:跑 `bash scripts/ssdctl.sh scan` 与 `bash scripts/ssdctl.sh evidence --artifact <path>`
+- **状态以仓内机器记录为准**:跑 `bash scripts/ssdctl.sh scan` 与 `bash scripts/ssdctl.sh verify <artifact>`
   复核上轮到底推进到哪一步、依据是什么,不要凭记忆。
 - 若本轮判断「本 issue 在当前状态无法推进」(缺上游 / 判据不通过 / 目标层无法确定),
   **直接报告并结束**,不要靠反复重试硬推。
@@ -481,7 +492,9 @@ Issue: {{ issue.identifier }}
 #### 谁来读
 
 本指南面向 AI agent 和开发者,用于规范从需求到代码的完整流程。
-**流程由 agent 推进**:agent 依仓内判据自动产出制品并推进状态;人类在需要决策时落一条决定记录(`control/decisions/*.md` 或 `bash scripts/ssdctl.sh decide`)即可,不必逐条盯流程 —— 见 §5。
+**流程由 agent 推进**:agent 依仓内判据自动产出制品并推进状态;人类**走同一条流水线** —— 需要介入时,
+在仓内**新增素材**或直接在制品的 `## 复审 (Review)` 段写署名,然后跑**同一条** `bash scripts/ssdctl.sh advance <artifact> --to <状态>`,
+不必逐条盯流程 —— 见 §5。
 
 #### 从哪里开始
 
@@ -652,7 +665,7 @@ flowchart LR
 - **≥1 关联外部代码仓**(代码仓位于本仓库**之外**,独立 Git 仓库 / monorepo 子目录):
   - 外部 TDD 全过 + 外部 PR merged 后,**该事实**成为状态依据(`状态依据: external:<ref>`)
   - agent 依据该事实回写本 wiki 三件套状态:PRD → **Implemented**,Tech Design → **Implemented**,Plan → **Implemented**(**三件套同时**,不允许单层先转,见 §5)
-  - 人类也可以手动介入:落 `control/decisions/*.md` 或跑 `bash scripts/ssdctl.sh decide`,由机器代写并同样留痕
+  - 人类也可以手动介入:在制品的 `## 复审 (Review)` 段写好署名,再跑**同一条** `bash scripts/ssdctl.sh advance <artifact> --to Implemented --external <ref>`,机器代写并同样留痕
 - **0 关联代码仓**(纯文档项目,如 SSD-Template 自身):停留在 **Ready**,标记 "Awaiting TDD in external code repo"
 
 > 💡 **AI Coding Agent 场景的简化路径**:
@@ -661,7 +674,7 @@ flowchart LR
 > - **wiki 文件本地可达** → coding agent 直接 `cat plan/.../topic.md` 即可消费,**零同步成本**
 > - **Plan Ready = 工作信号** → 不需要 wiki agent 派活 / issue kickoff
 > - **coding agent 自带 spec→code 工作流** → "读 plan → 写代码 → 跑测试"是其原生能力
-> - **人工介入 = 落决定记录**( `control/decisions/*.md` 或 `bash scripts/ssdctl.sh decide`),不是实时交互通道
+> - **人工接入 = 新增素材 / 在制品里写署名**,然后跑同一条 `advance`,不是实时交互通道,也没有专属的人工通道
 >
 > **不要**为 coding agent fork 引入 wiki agent kickoff / `Implementing` 中间态 / 调度机制。
 > 这是把 "Plan = 可执行规约"(executable specification)的简单模型,人为退化为 "Plan = 待派工单"的复杂模型。
@@ -689,8 +702,8 @@ stateDiagram-v2
         [*] --> p_d
         p_d --> p_r: 判据全绿 → agent 推进(人类可介入)
         p_r --> p_i: 外部 PR merged 事实 → 三件套同时回写
-        p_r --> p_x: 决定记录(人工介入 / 外部事实)
-        p_i --> p_x: 决定记录(人工介入 / 外部事实)
+        p_r --> p_x: 外部事实(external: 依据)
+        p_i --> p_x: 外部事实(external: 依据)
         p_x --> [*]
     }
 
@@ -704,8 +717,8 @@ stateDiagram-v2
         [*] --> t_d
         t_d --> t_r: 判据全绿 → agent 推进(人类可介入)
         t_r --> t_i: 外部 PR merged 事实 → 三件套同时回写
-        t_r --> t_x: 决定记录(人工介入 / 外部事实)
-        t_i --> t_x: 决定记录(人工介入 / 外部事实)
+        t_r --> t_x: 外部事实(external: 依据)
+        t_i --> t_x: 外部事实(external: 依据)
         t_x --> [*]
     }
 
@@ -719,15 +732,15 @@ stateDiagram-v2
         [*] --> pl_d
         pl_d --> pl_r: 判据全绿 → agent 推进(人类可介入)
         pl_r --> pl_i: 外部 PR merged 事实 → 三件套同时回写
-        pl_r --> pl_x: 决定记录(人工介入 / 外部事实)
-        pl_i --> pl_x: 决定记录(人工介入 / 外部事实)
+        pl_r --> pl_x: 外部事实(external: 依据)
+        pl_i --> pl_x: 外部事实(external: 依据)
         pl_x --> [*]
     }
 ```
 
 > **推进主体 = agent**:状态由 agent 依仓内判据(`schema/criteria.json`)自动推进,写入由机器代写并留痕。
-> **agent 的权限天花板 = `Ready`**(判据驱动);`Implemented` 需要**外部事实**(外部 PR merged)或人工介入记录授权;`Deprecated` 需要决定记录或外部事实。
-> **人类可手动介入**:落一条 `control/decisions/*.md` 决定记录,或跑 `bash scripts/ssdctl.sh decide` —— **没有实时交互通道**。
+> **agent 的权限天花板 = `Ready`**(判据驱动);`Implemented` 需要**外部事实**(外部 PR merged);`Deprecated` 同样需要 `external:` 依据。
+> **人与 agent 同路**:人类可手动介入,形态只有「新增素材」或「在制品的 `## 复审 (Review)` 段写署名」,然后跑**同一条** `bash scripts/ssdctl.sh advance` —— **没有实时交互通道**。
 > **0 关联代码仓库**:规格停留在 Ready,标记 "Awaiting TDD in external code repo"(本仓库为纯 wiki)
 > **≥1 关联外部代码仓库**:外部代码仓(位于本仓库**之外**)PR merged 后,依据该事实把 wiki 三件套状态推进到 Implemented
 > **Deprecated**:3 层均支持,上游废弃时下游级联
@@ -742,7 +755,7 @@ flowchart TB
         E3[TD Plan 重大修改]
         E4[外部代码仓 PR merged]
         E5[复审超期]
-        E6[人工决定记录<br/>control/decisions/*.md]
+        E6[人工新增素材<br/>或在制品复审段署名]
     end
 
     subgraph actions [联动动作]
@@ -751,7 +764,7 @@ flowchart TB
         A3[PRD TD 标需重审]
         A4[三件套回写终态]
         A5[发送复审提醒]
-        A6[agent 依决定记录推进状态<br/>状态依据 decision:...]
+        A6[agent 与人同路推进状态<br/>状态依据 external:...]
     end
 
     E1 --> A1
@@ -764,7 +777,9 @@ flowchart TB
     E6 --> A4
 ```
 
-> **事件源 E6 = 人工介入**:人类不直接改状态行,而是落一条决定记录(`control/decisions/*.md` 或 `bash scripts/ssdctl.sh decide`);agent 读到决定记录后推进状态,并把 `状态依据: decision:<path>#<anchor>` 写进状态块。其余事件源(上游废弃、上游变更、PR merged、复审超期)同样由 agent 检测并推进 —— **推进主体始终是 agent,人类只在需要决策时提供依据**。
+> **事件源 E6 = 人工接入**:人类不直接改状态行,而是**新增素材**或直接在**制品的 `## 复审 (Review)` 段写署名**;
+> agent(或人自己)跑**同一条** `bash scripts/ssdctl.sh advance <artifact> --to <状态>`,机器把状态块写好。
+> 若需要外部事实,状态依据写 `状态依据: external:<ref>`。其余事件源(上游废弃、上游变更、PR merged、复审超期)同样由 agent 检测并推进 —— **人与 agent 走同一条流水线**。
 
 #### 0 关联代码仓库的特殊语义
 
@@ -780,7 +795,7 @@ flowchart TB
 | **0 关联代码仓库** | 本 wiki 未关联任何外部代码仓库(纯文档项目) |
 | **≥1 关联代码仓库** | 本 wiki 关联了 N 个**外部**代码仓库(代码仓位于本仓库**之外**) |
 | **外部代码仓** | 独立 Git 仓库 / monorepo 子目录,通过 `{仓库标识}/{path}` 跨仓引用(详见 [AGENTS.md](AGENTS.md) §1.2) |
-| **wiki 的 Implemented** | 外部代码仓 PR merged 后,依据该事实(或人工决定记录)回写到本 wiki 的镜像状态 |
+| **wiki 的 Implemented** | 外部代码仓 PR merged 后,依据该外部事实(`状态依据: external:<ref>`)回写到本 wiki 的镜像状态 |
 
 **本模板自身(0 关联代码仓库)**:
 
@@ -797,7 +812,7 @@ flowchart TB
 - 按 [AGENTS.md](AGENTS.md) §4.A 定制指南 在 §1.1 登记外部代码仓清单(仓库地址 / 主要语言 / 角色)
 - 跨仓引用统一使用 `{仓库标识}/{path}` 写法
 - Step 4 (TDD) 在**外部代码仓**内执行,**不**在本仓库
-- 外部 PR merged 后,agent 依据该**外部事实**(`状态依据: external:<ref>`)把本 wiki 三件套状态推进为 Implemented;人类也可手动介入,落 `control/decisions/*.md` 或跑 `bash scripts/ssdctl.sh decide`
+- 外部 PR merged 后,agent 依据该**外部事实**(`状态依据: external:<ref>`)把本 wiki 三件套状态推进为 Implemented;人类也可手动介入 —— 在制品的 `## 复审 (Review)` 段写好署名,再跑**同一条** `bash scripts/ssdctl.sh advance <artifact> --to Implemented --external <ref>`
 - 维护"外部代码仓 → 本 wiki"的状态同步规则
 
 #### 为什么不引入 `Implementing` 中间态?
@@ -823,8 +838,8 @@ flowchart TB
 
 | 触发条件 | 升级方案 | 状态 |
 |---------|---------|------|
-| 决策影响 ≥3 个 PRD 或长期架构 | 独立 ARD:`tech_design/{date}-{topic}/ards.md` 的 `## KD-{n}` 段已内建;跨 PRD 的决策再落 `control/decisions/*.md` | 已内建 |
-| 多需求聚合管理 | 批次 PRD 台账 `material/{date}/PRDS.md` + `control/state.json` 全仓快照 | 可选层,启用即用 |
+| 决策影响 ≥3 个 PRD 或长期架构 | 独立 ARD:`tech_design/{date}-{topic}/ards.md` 的 `## KD-{n}` 段已内建;跨 PRD 的决策写进对应制品的复审段 / 正文 | 已内建 |
+| 多需求聚合管理 | 批次 PRD 台账 `material/{date}/PRDS.md` + `scan` 打印的派生视图 | 可选层,启用即用 |
 | 需要可执行 BDD 框架 | 已在 PRD/Plan 内联 Given/When/Then,无需独立 | N/A |
 
 ### 11.7 门禁清单(权威定义见 `schema/*`)
@@ -840,8 +855,8 @@ flowchart TB
 | Plan | [schema/plan.md](schema/plan.md) 完成检查段 + `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` | ✓ |
 | 实现基线(可选) | Tech Design `## 实现基线` 段 + `scripts/check-repo-baseline.sh` | ✓(有关联代码仓时) |
 
-**调用方式**:§6 表中标「**每次都跑**」的脚本全部返回 0(按层 / 按条件启用的脚本按其条件额外跑)→ 「可评审」。此后由 **agent** 调 `bash scripts/ssdctl.sh advance <artifact> --to <状态>` 推进状态(机器判据驱动 + 留痕);人类需要介入时落 `control/decisions/*.md` 或跑 `bash scripts/ssdctl.sh decide`,**不**手工改状态行。
-`bash scripts/ssdctl.sh` 的子命令全集:`scan` / `criteria` / `gate` / `advance` / `queue` / `decide` / `evidence` / `verify`;退出码统一 `0` = 通过 / `1` = 存在违规 / `2` = 调用或环境错误。
+**调用方式**:§6 表中标「**每次都跑**」的脚本全部返回 0(按层 / 按条件启用的脚本按其条件额外跑)→ 「可评审」。此后由 **agent** 调 `bash scripts/ssdctl.sh advance <artifact> --to <状态>` 推进状态(机器判据驱动 + 留痕);人类需要介入时**新增素材**或**在制品的 `## 复审 (Review)` 段写署名**,然后跑**同一条** `advance`,**不**手工改状态行。
+`bash scripts/ssdctl.sh` 的子命令全集:`scan` / `criteria` / `gate` / `advance` / `queue` / `verify`;`advance` 常用参数:`--to <Ready|Implemented|Deprecated>` / `--external <ref>` / `--actor agent:<id>` / `--dry-run`;退出码统一 `0` = 通过 / `1` = 存在违规 / `2` = 调用或环境错误。
 
 判据引擎的单元测试(CI 也跑这一条):
 `PY="$(bash scripts/ssdctl.sh --python)"; "$PY" -m unittest discover -s scripts/tests -t scripts/tests`
@@ -882,7 +897,7 @@ flowchart TB
 | [docs/contracts/agent-first-implementation.md](docs/contracts/agent-first-implementation.md) | **实施契约**:agent 流水线的元数据 / CLI / 调度谓词 |
 | [docs/contracts/agent-first-direction.md](docs/contracts/agent-first-direction.md) | agent 优先的需求真源(R1–R8) |
 | [docs/contracts/phase2-task-flow.md](docs/contracts/phase2-task-flow.md) | 阶段任务流契约(阶段划分 / 门禁 / 回写) |
-| [control/decisions/2026-11-22-agent-primary.md](control/decisions/2026-11-22-agent-primary.md) | **决策真源**:D-01…D-20(人工决定载体) |
+| `docs/contracts/decisions/2026-11-22-agent-primary.md` | **(历史)** 历史决策记录:D-01…D-20(其中 D-02 / D-10 / D-11 已被 2026-11-24 的 F9 裁决取代) |
 | [schema/prd.md](schema/prd.md) | PRD 模板 |
 | [schema/tech_design/](schema/tech_design/) | Tech Design 模板 (v4 默认 4 子文件,v3 存量 7 子文件) |
 | [schema/plan.md](schema/plan.md) | Plan 模板 |
@@ -892,19 +907,17 @@ flowchart TB
 | [.codex/skills/](.codex/skills/) | 9 个 skill 定义(仓内随仓库分发) |
 | 历史代际(不再留档) | `git log --all -- <path>` / `git show <commit>:<path>`(历史代际仅存于 git 历史) |
 | `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
-| `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `decide` / `evidence` / `verify`) |
-| `control/` | **控制面**:决定记录 / 状态快照 / 证据链(布局见下) |
+| `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `verify`) |
+| **(历史)** `control/` 控制平面 | **(历史)** 决定记录 / 状态快照 / 证据链三件套 —— 已于 2026-11-24 的 F9 裁决**整体删除**;现行载体是**制品本身**(状态块 + 复审段)+ git 历史 |
 
-#### `control/` 布局
+#### **(历史)** `control/` 布局(已删除)
 
-| 路径 | 内容 | 谁写 |
-|------|------|------|
-| `control/decisions/<YYYY-MM-DD>-<topic>.md` | 人工决定记录(批准 / 驳回 / 废弃 / 授权) | **人**(或 `ssdctl decide` 代写) |
-| `control/state.json` | 全仓状态快照(**派生**,可再生成) | agent(机器) |
-| `control/evidence/<YYYY-MM>/*.jsonl` | 每次状态转换的证据链 | agent(机器) |
-| `control/README.md` | 控制面说明 | agent(机器) |
+> **(历史)** 2026-11-24 之前,仓内曾有一个 `control/` 控制平面(决定记录 / 状态快照 / 证据链 / README)。
+> F9 裁决把它整体删除:**过程状态的唯一权威载体是制品本身**(状态块 + 复审段),留痕 = 制品 + git 历史;
+> `scan` 只打印派生视图、不落盘。需要历史事实时看 git 历史。
 
-> 人类介入的**唯一**形式就是 `control/decisions/*.md` 决定记录(或 `bash scripts/ssdctl.sh decide` 生成它)—— **没有实时交互通道**,也没有"人在回路里逐条点头"的流程。
+> 人工接入的形态只有两种:**新增素材**,或在制品的 `## 复审 (Review)` 段**写署名**;然后跑**同一条**
+> `bash scripts/ssdctl.sh advance <artifact> --to <状态>` —— **没有实时交互通道**,也没有"人在回路里逐条点头"的流程。
 
 ---
 
@@ -954,7 +967,7 @@ flowchart TB
 **如何强制 (Enforced by)**: `scripts/check-repo-baseline.sh`(设计所基于的代码现状快照)
 ```
 
-> 决策落到「必须留痕并可回读」时,载体是 `control/decisions/<YYYY-MM-DD>-<topic>.md`(见 §11.9)。
+> 决策落到「必须留痕并可回读」时,载体是**制品本身**:制品的 `## 复审 (Review)` 段(署名 + 日期 + 结论)或正文里的 `external:` / `criteria:` 依据,加上 git 历史(见 §5、§11.9)。
 
 ### 12.3 PRDs
 
@@ -1118,13 +1131,13 @@ Agent gets early feedback and works through it to reach the goal.
 |---|---|---|---|
 | **R-1 身份唯一** | 权威身份 = **SDD 制品路径**;板任务 `description` 必含 `artifact: <path>`;板 id 永不是制品状态的权威 | Lead 建板任务时在 `description` 写 `artifact: prd/2026-11-22/layer-checklist.md` 这类**制品路径**;板 id 只当会话标识 | `bash scripts/ssdctl.sh scan --json` 的 `artifacts[].path` 与板任务里的 `artifact:` 路径一致;任何状态断言都引制品路径(§5),不引板 id |
 | **R-2 派发必查** | Lead 派发前必须跑 `bash scripts/ssdctl.sh scan --json`,**只取 `dispatchable=true`**;swarm 板不是资格源 | Lead 在派工前先跑一次 scan,把 `dispatchable=false` 的制品**排除**在派工集合外;不派「板上看似 ready」的制品 | 派工前的那次 scan 有执行记录;被派工制品在 scan 输出里 `dispatchable=true`;板字段 `ready` / `blockedBy` **不出现在**判定依据里(§13.2) |
-| **R-3 状态只走机器** | lane 只写**内容**;状态块 / 复审块**只能**由 `ssdctl advance` 写。lane 可达 `Ready`(判据驱动),**不可达 `Implemented`**(需 `external:` 或决定记录) | lane 写完产物内容后跑 `bash scripts/ssdctl.sh advance <artifact> --to Ready`;手改状态行 = 违规(§3 第 2 条) | 状态块 4 行的「状态主体」是 `agent:<id>`;`bash scripts/ssdctl.sh verify <artifact>` 回读 `control/evidence/**` 与状态块一致(§5) |
-| **R-4 决定分流** | **人类**决定 → `control/decisions/<date>-<topic>.md#D1`(本仓,受版本控制);**编排**决定 → 编排层自己的工作区(其决定目录**不在本仓**,锚点形态不可被 `--decision` 消费) | `advance --decision` 只接受 `control/decisions/` 下、锚点形态为 `D<n>` 的记录;编排决定留在编排层,**仅作参考** | `advance --decision <编排层决定路径>#D-01 --dry-run` → **exit 2**(实测:`✗ 找不到决定记录: …`);指向 `control/decisions/` 的同形路径才 exit 0 |
-| **R-5 证据分流** | 转换证据唯一权威 = `control/evidence/**`;编排层的**叙事报告**(编排层工作区的 reports 目录)不作为验收证据 | lane 的叙事报告写编排层工作区;**验收只看** `control/evidence/**` | `bash scripts/ssdctl.sh evidence --artifact <path> --json` 能查到该次转换;任何门禁都不读编排层的报告目录 |
+| **R-3 状态只走机器** | lane 只写**内容**;状态块 / 复审块**只能**由 `ssdctl advance` 写。lane 可达 `Ready`(判据驱动),**不可达 `Implemented`**(需 `external:` 依据) | lane 写完产物内容后跑 `bash scripts/ssdctl.sh advance <artifact> --to Ready`;手改状态行 = 违规(§3 第 2 条) | 状态块 4 行的「状态主体」是 `agent:<id>`;`bash scripts/ssdctl.sh verify <artifact>` 回读**制品状态块 / 复审段**,并用 git 历史核对留痕(§5) |
+| **R-4 决定载体已取消** | 人与 agent **走同一条流水线**:没有专属的「决定文件」通道。人类的接入形态只有两种 —— **新增素材**,或在制品的 `## 复审 (Review)` 段**写署名**;然后跑**同一条** `bash scripts/ssdctl.sh advance <artifact> --to <状态>` | 人先在制品复审段写好署名(复审块非空时 `advance` **原样保留、永不覆盖**),再跑 `advance`;agent 与人用的是同一条命令 | `advance` 写出的复审块与人工预写的署名一致;`--actor` 只接受 `agent:<id>`(人工署名写在制品里,不走 `--actor`) |
+| **R-5 留痕分流** | 转换留痕的唯一权威 = **制品本身(状态块 + 复审段)+ git 历史**;编排层的**叙事报告**(编排层工作区的 reports 目录)不作为验收证据 | lane 的叙事报告写编排层工作区;**验收只看**制品里的状态块 / 复审段与 git 历史 | `bash scripts/ssdctl.sh verify <artifact>` 读回该制品的状态块与复审段;任何门禁都不读编排层的报告目录 |
 | **R-6 交互分层** | Lead(Coordinator)可对话;**执行 lane 静默**,只对 Lead 说话(`send_message` 给 Lead),不直接 `ask_user_question` | lane 需要澄清时把问题写进 workpad 并 `send_message` 给 Lead,由 Lead 决定是否问人 | lane 侧不出现对用户的提问;§1「你不与用户对话」约束的是**产制品那一轮**,不约束 Lead |
 | **R-7 提交归人** | 交互式会话里 lane **不 commit**;提交 / 推送由人做。**swarm 侧对 git 写权限零规则 ⇒ brief 是唯一保险** | brief 必须写明「本轮不 commit / 不 push」;需要提交时把改动留在工作区,在汇报里列出路径 | 工作区改动**未提交**(§8「交互式会话里提交由人自己做」);§3 第 15 条的 git 边界不被越过 |
 | **R-8 skill 双轨** | SDD 9 skill 管**怎么做制品**(§4 通用步骤第 2 步优先);swarm `swarm-craft-*` 管**怎么干活**;冲突时以 `WORKFLOW.md` 为准 | 做制品读 `.codex/skills/<name>/SKILL.md`;干活方法读 swarm 侧技能;两者冲突以本文件为准 | 产物形状按 §4 / §7 核对,不按通用模板核对;§1「参考资料可信度排序」以本文件最高 |
-| **R-9 写集隔离** | 并行 lane **不得**写:`README.md` 统计块、`test_cases/_index.md` 索引块、`control/**`;`write_scopes` advisory,须由 Lead 在 brief 里点名排除 | brief 里点名三项禁写路径;lane 发现需要改这三处 → **报告**,不改(§3 第 12 条) | 工作区改动清单里不出现这三类路径(§13.4 第 2 项) |
+| **R-9 写集隔离** | 并行 lane **不得**写:`README.md` 统计块、`test_cases/_index.md` 索引块;也不得写**别人 issue 的制品**。`write_scopes` advisory,须由 Lead 在 brief 里点名排除 | brief 里点名两项禁写路径 + 别人的制品;lane 发现需要改这些 → **报告**,不改(§3 第 12 条) | 工作区改动清单里不出现这两类路径与别人的制品(§13.4 第 2 项) |
 
 ### 13.2 派发前置:唯一机器资格源 = 仓内 `ssdctl scan`
 
@@ -1173,8 +1186,8 @@ bash scripts/ssdctl.sh scan --json
 | 板上的信号 | 最多能触发 | 前置条件 |
 |---|---|---|
 | `completed` | `bash scripts/ssdctl.sh advance <artifact> --to Ready` | 判据全绿(`blocking:true` 全过);不绿就停在 `Draft` |
-| `implemented` / `done` | **无** | `Implemented` 只能由 `bash scripts/ssdctl.sh advance <artifact> --to Implemented` 触发,且须带 `external:` 依据,或 `--decision control/decisions/<date>-<topic>.md#D1` |
-| `deprecated` | `advance <artifact> --to Deprecated` | 状态依据必须是 `decision:` 或 `external:`;**不允许** `criteria:`(§3 第 3 条) |
+| `implemented` / `done` | **无** | `Implemented` 只能由 `bash scripts/ssdctl.sh advance <artifact> --to Implemented` 触发,且须带 `external:` 依据(`--external <ref>` 或制品正文里的 `external:` token) |
+| `deprecated` | `advance <artifact> --to Deprecated` | 状态依据必须是 `external:`;**不允许** `criteria:`(§3 第 3 条) |
 | `ready` / `blockedBy` | **不参与** | 宿主字段,与 `upstream_ready` 无关;资格只看 scan |
 
 ### 13.4 brief 必含项(Lead 派工时必须点名)
@@ -1184,17 +1197,18 @@ bash scripts/ssdctl.sh scan --json
 | # | brief 必含 | 写法(可直接抄) | 不写会怎样 |
 |---|---|---|---|
 | 1 | **权威身份 = 制品路径** | `artifact: prd/2026-11-22/layer-checklist.md`(板任务 `description` 同步写上) | lane 不知道改哪个 topic,可能改到别人的制品(§3 第 6 条) |
-| 2 | **禁写清单(三项)** | 根 `README.md` 的 `<!-- prd-stats:begin -->` … `<!-- prd-stats:end -->` 统计块、`test_cases/_index.md` 的 `<!-- test-index:begin -->` … `<!-- test-index:end -->` 索引块、`control/**` | 并行 lane 抢写机器写点 → 派生数据互相覆盖(§3 第 12 条) |
+| 2 | **禁写清单(两项)** | 根 `README.md` 的 `<!-- prd-stats:begin -->` … `<!-- prd-stats:end -->` 统计块、`test_cases/_index.md` 的 `<!-- test-index:begin -->` … `<!-- test-index:end -->` 索引块 | 并行 lane 抢写机器写点 → 派生数据互相覆盖(§3 第 12 条) |
 | 3 | **禁用 `swarm_worktree`** | 「本仓**不得**调用 `swarm_worktree`」 | worktree = 新分支 + 干净检出:算出的 `dispatchable` 基于另一快照,`advance` 写的状态块落在**不会合并**的分支上;且违反 §3 第 15 条(禁 `git checkout`) |
 | 4 | **git 写权限** | 「本轮**不 commit、不 push**;提交由人做」 | lane 自造 `Reviewed-by:` 署名痕迹,或直接改主分支(§8、§3 第 7 / 15 条) |
-| 5 | **决定载体分流** | 人类决定 → `control/decisions/<date>-<topic>.md#D1`;编排决定 → 编排层自己的工作区(仅参考,`--decision` 不消费) | `advance --decision` 指向编排层决定路径 → exit 2,推进失败(R-4) |
+| 5 | **人工接入形态** | 「人需要介入时:新增素材,或在制品的 `## 复审 (Review)` 段写署名,然后跑**同一条** `advance`」 | lane 以为有专属的人工通道,或手改状态行 = 违规(§3 第 2 条 / R-4) |
 
-> 第 2 项的三个路径**逐字点名**,不要只写「别改自动生成块」—— 并行时 lane 只认得路径。
+> 第 2 项的两个路径**逐字点名**,不要只写「别改自动生成块」—— 并行时 lane 只认得路径。
 > 第 4 项与 §8「交互式会话里提交由人自己做」是同一条规则的两个说法:**交互式会话**里提交由人做;
 > **本仓自主流水线**的工作区里,commit / push 只发生在 §3 第 15 条允许的专用分支上。两处都不得越界。
 
 ### 13.5 已知缺口(不掩饰)
 
 - `dispatchable=false` 的制品**仍可被手写产出**:`dispatch.py` 是**谓词函数**,不是写拦截器。本节消掉的是「派发」这一半旁路;「写入」这一半需要仓内加写拦截,不在本节范围。
-- 本节目前是**可引用、不可强制**:swarm 侧对 git 写权限与写集**零机器强制**;能被机器核对的只有仓内门禁(`bash scripts/ssdctl.sh gate`)、状态块与证据链。把上游层登记为板任务依赖能否机器强制,取决于宿主,**当前未证实** ⇒ brief 是唯一保险。
+- 本节目前是**可引用、不可强制**:swarm 侧对 git 写权限与写集**零机器强制**;能被机器核对的只有仓内门禁(`bash scripts/ssdctl.sh gate`)、制品状态块与复审段。把上游层登记为板任务依赖能否机器强制,取决于宿主,**当前未证实** ⇒ brief 是唯一保险。
+- **(历史)与已知代价**:2026-11-24 之前,仓内曾有 `control/` 控制平面(决定记录 / 状态快照 / 证据链),F9 裁决已整体删除。删除的代价是**机器不再能证明某个署名确系本人所写**(人工署名只以「复审段里有署名」的形式存在);这是「人与 agent 同一条流水线」的既定取舍(实施契约 R-11)。
 - 板任务 `status` 无枚举、宿主板实现不可读 ⇒ 降级映射(§13.3)按**最保守**取:任何板信号都**不直接**改制品状态,只允许**触发一次 advance 尝试**。

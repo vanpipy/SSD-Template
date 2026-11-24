@@ -179,7 +179,7 @@ def a5_negative(cwd: Path) -> None:
 
 
 def a5b_human_actor_guard(cwd: Path) -> None:
-    """规则 5:人工 handle 无决定记录 ⇒ advance 必须拒绝且零改动(防 agent 冒充人工)。"""
+    """F9 R-3:`--actor` 只接受 `agent:<id>` ⇒ 传人名必须被拒且零改动(防 agent 冒充人工)。"""
     target = cwd / "prd/2026-11-22/layer-checklist.md"
     if not target.exists():
         record("A-5b", False, "仓内唯一制品不存在")
@@ -193,58 +193,98 @@ def a5b_human_actor_guard(cwd: Path) -> None:
     record(
         "A-5b",
         ok,
-        f"人工署名无决定记录 rc={rc}(期望 1), 文件零改动={before == after}, 输出={out.strip()[:120]}",
+        f"`--actor alice` 被拒 rc={rc}(期望 1), 文件零改动={before == after}, 输出={out.strip()[:120]}",
     )
 
 
-def a6_evidence(cwd: Path) -> None:
-    """正例:判据全绿的制品 advance 成功 ⇒ 证据链可回读。"""
-    target = cwd / "prd/2026-11-22/layer-checklist.md"
-    if not target.exists():
+def a6_advance_writes_the_artifact(cwd: Path) -> None:
+    """A-6:判据全绿的制品 advance 成功 ⇒ 状态块 + 复审块被代写;留痕 = 制品(不再有 control/)。
+
+    F9 之后「证据链」不存在了:advance 只写制品文件,不写 `control/evidence/**`,
+    也不写 `control/state.json`;`scan` 只打印派生视图。
+    """
+    src = cwd / "prd/2026-11-22/layer-checklist.md"
+    if not src.exists():
         record("A-6", False, "仓内唯一制品不存在")
         return
+    # 用一份副本,避免与 A-7(人工回路用原制品)互相干扰
+    target = cwd / "prd/2026-11-22/zz-advance-ok.md"
+    shutil.copyfile(src, target)
     rc, out = py_run(
         ["scripts/ssdctl.py", "advance", str(target), "--to", "Ready", "--actor", "agent:acceptance-bot"], cwd
     )
     if rc != 0:
         record("A-6", False, f"advance 未成功(rc={rc}): {out.strip()[:300]}")
         return
-    rc2, out2 = py_run(["scripts/ssdctl.py", "evidence", "--artifact", "prd/2026-11-22/layer-checklist.md"], cwd)
-    ok = rc2 == 0 and ("Ready" in out2)
-    record("A-6", ok, f"证据链可回读(rc={rc2}): {out2.strip()[:160]}")
+    text = target.read_text(encoding="utf-8")
+    problems: list[str] = []
+    if "> **状态**: Ready" not in text:
+        problems.append("状态块未写 Ready")
+    if "> **评审人**: agent:acceptance-bot" not in text:
+        problems.append("复审块未代写 agent 署名")
+    if "decision:" in text:
+        problems.append("状态依据里出现了 decision: 前缀(F9 已删除该前缀)")
+    if (cwd / "control").exists():
+        problems.append("advance 之后仍存在 control/ 目录(留痕应只在制品里)")
+    # 证据链子命令已删(退出码 2 = 用法错)
+    rc2, _ = py_run(
+        ["scripts/ssdctl.py", "evidence", "--artifact", "prd/2026-11-22/zz-advance-ok.md"], cwd
+    )
+    if rc2 != 2:
+        problems.append(f"evidence 子命令仍可用(rc={rc2},期望 2)")
+    record(
+        "A-6",
+        not problems,
+        "advance 成功且留痕只在制品内"
+        if not problems
+        else "; ".join(problems) + f" (advance 输出={out.strip()[:160]})",
+    )
 
 
 def a7_human_loop(cwd: Path) -> None:
-    """人工介入回路:手写决定文件 ⇒ advance 消费 ⇒ 证据链含 decision 引用。"""
-    dec_dir = cwd / "control/decisions"
-    dec_dir.mkdir(parents=True, exist_ok=True)
-    dec = dec_dir / "2026-11-22-acceptance.md"
-    dec.write_text(
-        "# 人工介入记录 · acceptance\n\n"
-        "> **决定 ID**: D1\n"
-        "> **时间**: 2026-11-22T23:30:00+08:00\n"
-        "> **操作人**: acceptance-bot\n"
-        "> **目标制品**: prd/2026-11-22/layer-checklist.md\n"
-        "> **动作**: approve\n"
-        "> **范围**: all\n"
-        "> **理由**: 验收用例:人工介入通道可用\n",
-        encoding="utf-8",
-    )
+    """F9 R-3 人工介入回路:人**先**在制品复审段写署名 ⇒ 跑**同一条** advance
+    ⇒ 复审块逐字保留、状态推进、依据不含 `decision:`。
+
+    署名形态用**裸 handle**(实施契约 §5.2 / A-7 + 权威判据 `PRD-REVIEWER`:
+    评审人取值只能是 `agent:<id>` 或裸 handle,**禁止 `human:` 前缀**)。
+    """
     target = cwd / "prd/2026-11-22/layer-checklist.md"
-    rc, out = py_run(
-        [
-            "scripts/ssdctl.py", "advance", str(target), "--to", "Ready",
-            "--actor", "acceptance-bot",
-            "--decision", "control/decisions/2026-11-22-acceptance.md#D1",
-        ],
-        cwd,
-    )
-    rc2, out2 = py_run(["scripts/ssdctl.py", "evidence", "--artifact", "prd/2026-11-22/layer-checklist.md"], cwd)
-    ok = rc == 0 and "decision" in out2
+    if not target.exists():
+        record("A-7", False, "仓内唯一制品不存在")
+        return
+    text = target.read_text(encoding="utf-8")
+    # 人自己写署名(裸 handle)
+    text = text.replace("> **评审人**:", "> **评审人**: acceptance-bot", 1)
+    text = text.replace("> **评审日期**:", "> **评审日期**: 2026-11-22", 1)
+    text = text.replace("> **评审结论**:", "> **评审结论**: 通过", 1)
+    text = text.replace("> **评审方式**:", "> **评审方式**: 人工介入", 1)
+    target.write_text(text, encoding="utf-8", newline="\n")
+    human_lines = [
+        "> **评审人**: acceptance-bot",
+        "> **评审日期**: 2026-11-22",
+        "> **评审结论**: 通过",
+        "> **评审方式**: 人工介入",
+    ]
+    rc, out = py_run(["scripts/ssdctl.py", "advance", str(target), "--to", "Ready"], cwd)
+    after = target.read_text(encoding="utf-8")
+    problems: list[str] = []
+    if rc != 0:
+        problems.append(f"advance rc={rc}(期望 0)")
+    if "> **状态**: Ready" not in after:
+        problems.append("状态未推进到 Ready")
+    for line in human_lines:
+        if line not in after:
+            problems.append(f"人工写的复审行被覆盖: {line}")
+    if "decision:" in after:
+        problems.append("状态依据含 decision: 前缀")
+    if (cwd / "control").exists():
+        problems.append("advance 之后仍存在 control/ 目录")
     record(
         "A-7",
-        ok,
-        f"人工介入回路 rc={rc}, 证据含 decision 引用={'decision' in out2}",
+        not problems,
+        f"人工署名逐字保留 + 状态推进到 Ready(保留 {len(human_lines)} 行)"
+        if not problems
+        else "; ".join(problems) + f" (输出={out.strip()[:160]})",
     )
 
 
@@ -446,6 +486,83 @@ def a10_contract_consistency(cwd: Path) -> None:
         record("A-10", True, f"{len(CONTRACT_FILES)} 个契约文件无旧表述残留")
 
 
+LEGACY_COMMAND = "python scripts/ssdctl.py"
+
+# A-13 的否定语境豁免:文档里**解释为什么不要用**旧命令形态的句子,不算「残留」。
+# 判别方式 = 命中行同时含否定/说明标记(与 A-10 的 NEGATIONS 同一套路)。
+A13_EXEMPT_CONTEXT = (
+    "不再",
+    "不存在",
+    "禁止",
+    "不得",
+    "不能",
+    "不要",
+    "没有",
+    "取消",
+    "废止",
+    "移除",
+    "已删",
+    "勿",
+    "而不是",
+    "会失败",
+    "失败",
+    "instead",
+)
+
+
+def legacy_command_hits(text: str) -> tuple[list[str], list[str]]:
+    """A-13 的规则本体(可单测):返回 (违规行, 否定语境豁免行),行号从 1 起。
+
+    违规 = 文档里出现旧命令形态 `python scripts/ssdctl.py`,且它**看起来是在让 agent 照着跑**:
+      - 命中行在**围栏代码块**里 ⇒ 一律违规(代码块就是可照抄的指令);
+      - 命中行在正文里 ⇒ 看它所在的**段落**(空行分隔)有没有否定/警示标记:
+        有 ⇒ 豁免(那是解释**为什么不能用**);没有 ⇒ 违规。
+
+    为什么按段落而不是按行:契约文档里那类说明常常跨行(「写 X 会让 agent 在本机
+    第一步就失败」被排版拆成两行),只按行看会误报。
+    """
+    lines = text.splitlines()
+    # 段落块(空行分隔)→ 每行属于哪个块
+    blocks: list[list[int]] = []
+    current: list[int] = []
+    for i, line in enumerate(lines):
+        if line.strip() == "":
+            if current:
+                blocks.append(current)
+                current = []
+        else:
+            current.append(i)
+    if current:
+        blocks.append(current)
+    block_of: dict[int, list[int]] = {}
+    for block in blocks:
+        for i in block:
+            block_of[i] = block
+
+    offenders: list[str] = []
+    exempted: list[str] = []
+    in_fence = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            if LEGACY_COMMAND in stripped:
+                offenders.append(f"{i + 1}: {stripped[:100]}")
+            continue
+        if LEGACY_COMMAND not in line:
+            continue
+        if in_fence:
+            offenders.append(f"{i + 1}: {stripped[:100]}")
+            continue
+        block = block_of.get(i, [i])
+        paragraph = "\n".join(lines[j] for j in block)
+        if any(marker in paragraph for marker in A13_EXEMPT_CONTEXT):
+            exempted.append(f"{i + 1}: {stripped[:100]}")
+        else:
+            offenders.append(f"{i + 1}: {stripped[:100]}")
+    return offenders, exempted
+
+
 # ---------------------------------------------------------------- main
 def a13_wrapper(cwd: Path) -> None:
     """A-13: `scripts/ssdctl.sh` 解释器解析包装器。
@@ -455,6 +572,7 @@ def a13_wrapper(cwd: Path) -> None:
          并真的把命令跑起来 —— stdout 必须含 ssdctl 的 argparse 用法行。
       2. 全仓文档与 skill 不得再出现 `python scripts/ssdctl.py` 这种命令形态
          (否则 agent 在本机跑第一步就会失败, 然后退回去手改状态行)。
+         —— 否定语境(「写 X 会失败」这类解释句)不算残留,豁免项会在明细里列出来。
     """
     wrapper = cwd / "scripts/ssdctl.sh"
     if not wrapper.exists():
@@ -466,16 +584,22 @@ def a13_wrapper(cwd: Path) -> None:
     detail = f"rc={rc}; stdout={len(out.strip())}B; 首行: {head}"
 
     leftovers: list[str] = []
+    exempted: list[str] = []
     for path in cwd.rglob("*.md"):
         rel = path.relative_to(cwd)
         if any(part in {".git", ".swarm", "__pycache__", "node_modules"} for part in rel.parts):
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
-        if "python scripts/ssdctl.py" in text:
-            leftovers.append(str(rel))
+        offenders, ex = legacy_command_hits(text)
+        for line in offenders:
+            leftovers.append(f"{rel}:{line}")
+        for line in ex:
+            exempted.append(f"{rel}:{line}")
     if leftovers:
         ok = False
         detail += f"; 残留旧命令形态: {leftovers}"
+    if exempted:
+        detail += f"; 否定语境豁免 {len(exempted)} 处"
     record("A-13", ok, detail)
 
 
@@ -502,7 +626,7 @@ def main() -> int:
     try:
         a5_negative(clone)
         a5b_human_actor_guard(clone)
-        a6_evidence(clone)
+        a6_advance_writes_the_artifact(clone)
         a7_human_loop(clone)
         a8_dispatch(clone)
         # A-8 自建的临时 TD 制品用完即删(不留残件给后续用例,尤其制品级门禁整仓扫描)

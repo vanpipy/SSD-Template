@@ -46,7 +46,7 @@ bash scripts/ssdctl.sh criteria test_cases/{date}/{topic}.md   # 判据逐条判
 bash scripts/ssdctl.sh gate                                     # 全仓门禁（含命名规范与派生数据再生）
 ```
 
-判据对该文件返回 0（退出码 0）方可交付；随后由 `bash scripts/ssdctl.sh advance test_cases/{date}/{topic}.md --to Ready` 按判据推进状态（判据全绿才推进，人工复核可选，落 `control/decisions/`）。
+判据对该文件返回 0（退出码 0）方可交付；随后由 `bash scripts/ssdctl.sh advance test_cases/{date}/{topic}.md --to Ready` 按判据推进状态（判据全绿才推进；人工接入走同一条流水线: 在制品复审段写署名后跑同一条 advance）。
 
 ## 测试要点沉淀
 

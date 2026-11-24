@@ -24,7 +24,7 @@
 #   I  不得残留 Slash Command 标题或 [MODE: ...] 标记
 #   J  旧表述零命中（黑名单数据文件 legacy-wording.txt, 不在代码里写字面量）
 #      + 占位式回写表述只允许出现在否定句里
-#      + ssdctl 子命令名封闭（白名单 scan/criteria/gate/advance/queue/decide/evidence/verify）
+#      + ssdctl 子命令名封闭（白名单 scan/criteria/gate/advance/queue/verify）
 
 set -uo pipefail
 
@@ -301,8 +301,8 @@ EOF
 done
 [ "$ph_bad" -eq 0 ] && ok '没有未加否定限定的占位式回写表述'
 
-# J3 ssdctl 子命令白名单: 只能出现契约 §5 定义的 8 个子命令.
-SSDCTL_CMDS='scan criteria gate advance queue decide evidence verify'
+# J3 ssdctl 子命令白名单: 只能出现契约 §5 定义的 6 个子命令.
+SSDCTL_CMDS='scan criteria gate advance queue verify'
 ssd_bad=0
 for f in $(scan_files); do
     cmds=$(grep -ohE 'ssdctl(\.py)?[[:space:]]+[a-z][a-z-]*' "$f" 2>/dev/null | sed -E 's/.*[[:space:]]//' | sort -u || true)

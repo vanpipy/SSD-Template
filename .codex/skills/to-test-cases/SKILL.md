@@ -3,7 +3,7 @@ name: to-test-cases
 description: >-
   从 PRD + Tech Design 生成黑盒测试用例 (Markdown) (v2.6)。适配 TD v4 四子文件结构 (README/ards/apis/data-model), 存量 v3 六子文件按对应关系读取。
   PRD But 逐条覆盖 + 环境边界 Checklist + 默认值用例 + OQ 收敛用例。Use when 需要为已就绪的 PRD + TD 产出黑盒用例集, 或只做功能点分析 / 只出冒烟用例。
-  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工可选复核并落决定记录。
+  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工接入走同一条流水线（在制品复审段写署名, 再跑同一条 advance）。
 ---
 
 # to-test-cases
@@ -73,9 +73,9 @@ Step 6: Writing             → 输出 Markdown 用例 + 要点 + 索引再生�
 | `Draft` | agent | agent | 写用例文档 + 跑判据 + 报告结论 |
 | `Ready` | **判据** | agent（机器代写）| 判据全绿 + `-key-points.md` 伴生文件就位，就 `advance --to Ready`; 人工复核是可选兜底 |
 | `Implemented` | **外部事实** | agent（机器代写）| 用例实际执行通过且有外部事实依据后 `advance --to Implemented`; 不得编造依据 |
-| `Deprecated` | **决定记录** | agent（机器代写）| 需 `decision:` 或 `external:` 依据（不允许 `criteria:`）; 由 `sync-status` 编排级联 |
+| `Deprecated` | **外部事实** | agent（机器代写）| 需 `external:` 依据（不允许 `criteria:`）; 由 `sync-status` 编排级联 |
 
-- **判定权归判据, 写入权归 agent, 人工可手动介入**: 判据全绿就推进，人工要改结果就落一条 `control/decisions/` 决定记录，再用 `--decision` 传入。
+- **判定权归判据, 写入权归 agent, 人工走同一条流水线**: 判据全绿就推进; 人工要改结果就在仓内新增素材, 或自己在制品的 `## 复审 (Review)` 段写署名, 再跑**同一条** `advance`。
 - **复审块 4 行**（`评审人` / `评审日期` / `评审结论` / `评审方式`）由 agent 起草自评: `评审人` 写 `agent:<id>`，`评审方式` 写 `自动判据`; **agent 绝不写 `human:` 前缀，也不代填人名**。
 - **状态块永远由 `ssdctl advance` 写**; skill 与 agent 都不手改状态行，也不教人手改。
 

@@ -1,5 +1,7 @@
 # 决策记录 · 2026-11-22 · SDD 流程转为「agent 为主」
 
+> **历史记录(已被取代)**:本文件是 2026-11-22 的历史决策记录;其中 **D-02**(控制平面落仓内 `control/`)、**D-10**(人类介入载体 = `ssdctl decide`)、**D-11**(证据链 `control/evidence/**`)已被 **2026-11-24 的 F9 裁决取代** —— 仓内控制平面整体删除,状态与评审的唯一权威载体 = 制品本身,人工接入 = 新增素材 / 在制品里署名。
+
 > 用户指令 (m02160, verbatim):「都调整为以agent为主，仓内数据都有agent处理，人可以手动介入」
 > 本文件是**决策真源**;实施细节见 `D:\project\SSD-Template\docs\contracts\agent-first-implementation.md`。
 

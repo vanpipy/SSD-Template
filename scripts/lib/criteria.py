@@ -47,6 +47,13 @@ from .artifacts import (
 # `**覆盖**: AC-1` 这种无 `>` 的粗体字段(契约 §3.3 / §3.4 用的就是这种写法)
 _BOLD_FIELD_RE = re.compile(r"^\s*\*\*(?P<key>[^*]+)\*\*\s*[:：]\s*(?P<value>.*?)\s*$")
 
+# 状态块的 4 个字段行(机器写的元数据,不是规格正文)。
+# 它的「状态依据」行装的是判据 id(如 `PRD-AC-FORMAT`)—— 扫内容 id 时必须跳过,
+# 否则机器自己写的依据行会把 id 形态判据打挂(`AC-FORMAT` 被当成不合法的内容 id)。
+_STATUS_BLOCK_FIELD_RE = re.compile(
+    r"^>\s*\*\*(状态|状态主体|状态时间|状态依据)\*\*:"
+)
+
 
 def field_match(line: str) -> tuple[str, str] | None:
     """识别一行里的「字段: 值」。支持引用块、表格、粗体三种写法。"""
@@ -575,6 +582,8 @@ def _id_tokens(files: list[tuple[str, list[str]]], prefix: str) -> list[tuple[st
     out: list[tuple[str, str, int]] = []
     for rel, lines in files:
         for number, line in enumerate(lines, 1):
+            if _STATUS_BLOCK_FIELD_RE.match(line):
+                continue
             for token in pattern.findall(line):
                 out.append((token, rel, number))
     return out

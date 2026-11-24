@@ -3,7 +3,7 @@ name: to-prd
 description: >-
   原始需求 → PRD 转换流程, 按 schema/prd.md 模板提炼产出 PRD (v2.0)。Use when 收到 prd/{YYYY-MM-DD}/ 下的原始素材
   (用户抱怨、会议纪要、技术方案), 需要提炼为符合规范的 PRD 文件 (输出到 prd/{YYYY-MM-DD}/{topic}.md, 无 -processed 后缀)。
-  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工可选复核并落决定记录。
+  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工接入走同一条流水线（在制品复审段写署名, 再跑同一条 advance）。
 ---
 
 # to-prd
@@ -22,7 +22,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | `extracting` | 逐字段提炼 Why / Goal / Scenarios / Out of Scope / Review, 并分配稳定 ID (`AC-n` / `S-n`) |
 | `writing` | 写出 PRD 到 `prd/{date}/{topic}.md` (无 `-processed` 后缀), 状态块写 `Draft` + 状态主体/时间/依据 |
 | `validating` | 跑 `bash scripts/ssdctl.sh criteria <artifact>` 判据校验并汇报退出码 |
-| `advancing` | 判据全绿时用 `bash scripts/ssdctl.sh advance <artifact> --to Ready` 推进; 有失败项先 `queue` 交人工裁决 |
+| `advancing` | 判据全绿时用 `bash scripts/ssdctl.sh advance <artifact> --to Ready` 推进; 有非阻断失败项先 `queue` 列清单, 由人在制品复审段点名该判据 id |
 
 ## When to Use
 
@@ -45,7 +45,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | Schema 模板 | `schema/prd.md` | PRD 结构定义（状态枚举 Draft / Ready / Implemented / Deprecated）|
 | 判据权威 | `schema/criteria.json` | 本层判据的唯一权威位置（`ssdctl criteria` 读它）|
 | AGENTS.md | `AGENTS.md` §1 | 注入多仓上下文（如 SSD-Template 关联 client + server）|
-| 判据与门禁入口 | `scripts/ssdctl.py` | **唯一入口**: `criteria` / `gate` / `advance` / `queue` / `scan` / `evidence` / `verify` |
+| 判据与门禁入口 | `scripts/ssdctl.py` | **唯一入口**: `criteria` / `gate` / `advance` / `queue` / `scan` / `verify` |
 | 原始素材 | `prd/{YYYY-MM-DD}/*.md` | Layer 0 只读输入 |
 
 ## Core Concept
@@ -89,11 +89,11 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | 起草 `## 复审 (Review)` 四行自评 | agent | `评审人` 写 `agent:<id>`, `评审方式` 写 `自动判据`; **agent 绝不可写 `human:` 前缀, 也不可代填人名** |
 | 把状态翻成 `Ready` | **agent**（判据全绿时）| `bash scripts/ssdctl.sh advance <artifact> --to Ready`; blocking 判据全绿且上游 `Ready` 即成立 |
 | 把状态翻成 `Implemented` | agent（凭外部事实）| 需 `external:` 依据（如外部代码仓 PR merged）; PRD / Tech Design / Plan 三件套必须同时回写 |
-| 把状态改成 `Deprecated` | agent（凭决定记录 / 外部事实）| 依据**不能**是 `criteria:`; 必须是 `decision:<path>#<anchor>` 或 `external:<ref>` |
-| 人工复核 / 驳回 / 挂起 | 人工（**可选**）| 落 `control/decisions/<date>-<topic>.md`（或跑 `ssdctl decide`), 再由 agent 用 `advance --decision <path>#<anchor>` 代写 |
+| 把状态改成 `Deprecated` | agent（凭外部事实）| 依据**不能**是 `criteria:`; 必须是 `external:<ref>`（用 `advance --external <ref>`, 或写在制品正文里）|
+| 人工复核 / 驳回 / 挂起 | 人工（**可选**）| 人在制品 `## 复审 (Review)` 段自己写署名; 或在仓内新增素材; 然后跑**同一条** `advance`, 机器原样保留该复审块 |
 
-- **状态块 4 行由 `ssdctl advance` 写**: agent 不手改状态行, 也不教人手改; 手改会被 `ssdctl verify` 判为状态块与证据链不自洽。
-- **人工复核不是必经环节**: 没有人工决定记录时, 判据全绿即可进 `Ready`; 反过来, 有 `blocking:false` 失败项时, 必须先有 `control/decisions/` 里的对应决定记录才能进 `Ready`。
+- **状态块 4 行由 `ssdctl advance` 写**: agent 不手改状态行, 也不教人手改; 手改会被 `ssdctl verify` 判为状态块与复审段不自洽。
+- **人工复核不是必经环节**: 没有人工署名时, 判据全绿即可进 `Ready`; 反过来, 有 `blocking:false` 失败项时, 必须在**制品复审段**点名该判据 id 才能进 `Ready`。
 - `## 复审 (Review)` 里的**周期性复审日期**行(`**复审日期**: YYYY-MM-DD`)不是评审签署行, 任何阶段都写真实日期。
 
 ## 禁止行为 (Agent 权限边界)
@@ -103,7 +103,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | 自行 `git commit` / `git push` / 切分支 / 改分支 | 只改工作区文件; **提交与分支管理一律由人决定** |
 | 手改状态行 / 状态块 4 行 | 用 `ssdctl advance` 推进; 要试先 `--dry-run` |
 | 在复审块写 `human:` 前缀或代填人名 | 写 `agent:<id>`; `human:` 前缀**只能由人自己填**, agent 不得代填 |
-| 把状态标成 `Ready` 却没跑判据 | 先 `ssdctl criteria` 看 `passed`; 不通过就 `ssdctl queue` 交人工裁决 |
+| 把状态标成 `Ready` 却没跑判据 | 先 `ssdctl criteria` 看 `passed`; 不通过就 `ssdctl queue` 列清单, 由人在复审段点名该判据 id |
 | 伪造 `Reviewed-by:` / SHA / 行号 / handle | 拿不准就不写; 无法核对时明确标注「未核对」 |
 | 改 `schema/**` 下的模板 | 模板是契约, 只读; 发现模板与实现不一致时报告, 不自行修改 |
 | 静默覆盖冲突 (两份素材对同一功能描述不一致) | 两份都保留, 登记冲突并报告人工裁决 |
@@ -156,7 +156,7 @@ bash scripts/ssdctl.sh criteria prd/{YYYY-MM-DD}/{topic}.md
 - 退出码: `0` 全过 / `1` 有 blocking 失败 / `2` 用法或内部错误（INV-7 全仓统一）。
 - 输出 `{passed, failures[], warnings[], claims[]}`; `claims[]` 每项含 `id` / `title` / `passed`。
 - 判据的**唯一权威**是 `schema/criteria.json`; 本层至少覆盖 5 个机器必填段齐全、状态枚举合法、`AC-n` / `S-n` 覆盖完整性、无占位符残留。
-- `warnings[]` 非空时逐条判断: `blocking:false` 的失败项必须先有 `control/decisions/` 里的决定记录才能进 `Ready`。
+- `warnings[]` 非空时逐条判断: `blocking:false` 的失败项必须先在**制品复审段**点名该判据 id 才能进 `Ready`。
 
 ### 5. Advancing Phase
 
@@ -166,14 +166,13 @@ bash scripts/ssdctl.sh criteria prd/{YYYY-MM-DD}/{topic}.md
 # 4.1 先干跑, 看它打算写什么（不写任何文件）
 bash scripts/ssdctl.sh advance prd/{YYYY-MM-DD}/{topic}.md --to Ready --dry-run
 
-# 4.2 确认后推进（写状态块 + 复审块, 并把转换追加进 control/evidence/**）
+# 4.2 确认后推进（写状态块 + 复审块; 留痕 = 状态块 + 复审段 + git 历史）
 bash scripts/ssdctl.sh advance prd/{YYYY-MM-DD}/{topic}.md --to Ready --actor agent:<id>
 ```
 
-- 有 `blocking:false` 失败项时: `bash scripts/ssdctl.sh queue prd/{YYYY-MM-DD}/{topic}.md` 列出待裁决项交人裁决; 人裁决后由 `ssdctl decide` 落决定记录, 再 `advance --decision control/decisions/<file>#<id>`。
-- 推进后回读证据链: `bash scripts/ssdctl.sh evidence --artifact prd/{YYYY-MM-DD}/{topic}.md`。
-- 自洽性复核: `bash scripts/ssdctl.sh verify prd/{YYYY-MM-DD}/{topic}.md`（状态块 / 复审块 / 证据链三者一致）。
-- **不要手改状态行**: 手改会被 `ssdctl verify` 判为与证据链不自洽。
+- 有 `blocking:false` 失败项时: `bash scripts/ssdctl.sh queue prd/{YYYY-MM-DD}/{topic}.md` 列出待裁决项; 人在制品的 `## 复审 (Review)` 段补一行 `> **已知问题**: <criterion-id> - <说明>` 点名该判据 id, 再跑**同一条** `advance`。
+- 自洽性复核: `bash scripts/ssdctl.sh verify prd/{YYYY-MM-DD}/{topic}.md`（状态块与复审段一致）。
+- **不要手改状态行**: 手改会被 `ssdctl verify` 判为与复审段不自洽。
 
 ## Anti-Patterns
 
@@ -279,8 +278,8 @@ Agent: ✅ 写入 prd/2026-07-03/login.md（状态块 Draft; 复审自评 agent:
 Agent: phase: validating
 Agent: 🟢 ssdctl criteria 返回 0（passed=true）
 Agent: phase: advancing
-Agent: 🟢 ssdctl advance --to Ready 返回 0（状态块 + 复审块由机器代写; 证据链已追加）
-Agent: ✅ 已推进到 Ready（人工复核可选: ssdctl queue → ssdctl decide → advance --decision）
+Agent: 🟢 ssdctl advance --to Ready 返回 0（状态块 + 复审块由机器代写）
+Agent: ✅ 已推进到 Ready（人工接入可选: ssdctl queue → 人在复审段点名判据 id → 同一条 advance）
 ```
 
 ### Complex (1:N 拆分)

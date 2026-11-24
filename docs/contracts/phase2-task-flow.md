@@ -113,6 +113,7 @@ Use when ... (Symphony SPEC §8.1: description 应写触发条件)
 **唯一强制规则**:
 > `state == "Done"` ⇒ 对应产物的 `> **状态**:` ∈ {`Ready`, `Implemented`} **且** `review.decision == "approve"`.
 > 反向**不强制**: 产物已 `Ready` 但工作项尚未 `Done` 是合法的 (评审完了, 还没归档).
+> **(F9 口径, 2026-11-24)**: 上面 `review.decision` 是 **Symphony 工作项**的评审字段 (`approve` / `changes-requested` / `reject`), **不是** SDD 的状态依据 —— SDD 的状态依据只有 `criteria:` 与 `external:` 两种. 人的评审落点是**制品的 `## 复审 (Review)` 段**, 工作项的 `review.decision` 由同一份制品评审驱动 (人与 agent 走同一条流水线).
 
 **状态集**:
 - `active_states` = [`Todo`, `In Progress`, `Rework`] → 可派发
@@ -133,8 +134,8 @@ Todo/Review ──人──▶ Cancelled
 
 | # | 形态 | 裁决 |
 |---|---|---|
-| L1 | **独立控制平面仓** `D:\project\symphony-control\` (**入 git**) | ✅ **推荐** —— spec 仓保持干净; 状态推进 = git commit, 天然是事务单元 + 审计轨迹 |
-| L2 | SSD-Template 内当可选层 (与 `material/` 同级) | ⚠️ 存活但代价大 —— spec 仓自己的 PR diff 会脏, `check-naming.sh` 的 LAYERS 列表要加一层 |
+| L1 | **独立控制平面仓** `D:\project\symphony-control\` (**入 git**) | ❌ **(历史 · 已被 F9 取代)** —— 原为 ✅ 推荐;F9 裁决**不设独立控制面**,状态 / 人工署名 / 留痕全部落在制品里 |
+| L2 | SSD-Template 内当可选层 (与 `material/` 同级) | ❌ **(历史 · 已被 F9 取代)** —— 原为 ⚠️ 存活;F9 裁决**不设独立控制面目录**,人工接入直接落在制品内 |
 | L3 | symphony-runner 仓内 | ❌ 引擎与控制面职责混; 业务数据淹没 runner 仓 |
 | L4 | 纯文件系统, **不入 git** | ❌ 丢掉审计轨迹 (原语 8) —— 恰是引入 issue 的理由之一 |
 | L5 | issue 入 git + PR 包不入 git | ❌ 过度设计 —— PR 包本就不该存在 (§3a) |

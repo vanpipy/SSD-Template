@@ -3,15 +3,15 @@
 > **状态**: Draft | Ready | Implemented | Deprecated
 > **状态主体**: agent:{id} | human:{handle}
 > **状态时间**: {YYYY-MM-DDTHH:MM:SS±HH:MM}
-> **状态依据**: criteria:{id}[,{id}…] | decision:{path}#{anchor} | external:{ref}
+> **状态依据**: criteria:{id}[,{id}…] | external:{ref}
 > **负责人**: {github-handle}
 > **创建日期**: {YYYY-MM-DD}
 > **最后更新**: {YYYY-MM-DD}
 
 > **状态取值**: 只能是 `Draft` / `Ready` / `Implemented` / `Deprecated` 四者之一, 不得自造状态名。
-> **主体口径**: `agent:<id>` = 机器写入, `human:<handle>` = 人工写入。**agent 不得填 `human:` 前缀、不得代填人名**(INV-3)。
-> **状态推进**: agent 按 `schema/criteria.json` 的判据推进 —— 判据全绿即可由机器代写 `Ready`;`Implemented` 需外部事实(`external:` 依据, 如外部代码仓 PR merged);人工可在 `control/decisions/` 落决定后由机器代写;上游转 `Deprecated` 时, 引用本 PRD 的 Tech Design / Plan / Test Case 一并 `Deprecated`。
-> **依据形式**: `criteria:<id>[,<id>…]` = 判据 id 列表, `decision:<path>#<anchor>` = 人工介入记录, `external:<ref>` = 外部事实。**状态块 4 行都要写** —— `Draft` 态写当次生成的 `状态主体` / `状态时间` / `状态依据`;升 `Ready` / `Implemented` 时后三行必填且非空。
+> **主体口径**: `agent:<id>` = 机器写入, `human:<handle>` = 人工写入。**agent 不得填 `human:` 前缀、不得代填人名**(INV-3);`--actor` 只接受 `agent:<id>`,**机器不代填人名**。**已知代价**:机器只能证明「人工署名写在本制品的 `## 复审 (Review)` 段内、形态合法、机器没有代填」,**无法证明**「确系本人所写」(实施契约 §5.2 / §6.3)。
+> **状态推进**: agent 按 `schema/criteria.json` 的判据推进 —— 判据全绿即可由机器代写 `Ready`;`Implemented` 需外部事实(`external:` 依据, 如外部代码仓 PR merged);**人可新增素材,或在本制品的 `## 复审 (Review)` 段写署名,然后跑同一条 `bash scripts/ssdctl.sh advance` 推进 —— 人与 agent 走同一条流水线**;上游转 `Deprecated` 时, 引用本 PRD 的 Tech Design / Plan / Test Case 一并 `Deprecated`。
+> **依据形式**: `criteria:<id>[,<id>…]` = 判据 id 列表, `external:<ref>` = 外部事实。人工介入的载体是本文 `## 复审 (Review)` 段的 `评审人` / `评审方式`,**不写进 `状态依据`**。**状态块 4 行都要写** —— `Draft` 态写当次生成的 `状态主体` / `状态时间` / `状态依据`;升 `Ready` / `Implemented` 时后三行必填且非空。
 > **必填段 (机器校验, 5 段)**: `## 为什么 (Why)` / `## 目标 (Goal)` / `## 场景 (Scenarios)` / `## 不在范围内 (Out of Scope)` / `## 复审 (Review)`。
 > **复审块 (4 行, 机器校验)**: `评审人` / `评审日期` / `评审结论` / `评审方式` 4 行都要写(`Draft` 态值可留空, 升 `Ready` 前 4 行必填非空)。取值: 评审人 = `agent:<id>` | 裸 handle(人工), 评审日期 = `YYYY-MM-DD`, 评审结论 = 通过 | 有条件通过 | 需返工, 评审方式 = 自动判据 | 人工介入 | 外部事实。`评审人` 为 `agent:*` 时 `评审方式` 不得为 `人工介入`。
 > **推荐段 (人工维护, 门禁不校验, 2 段)**: `## 链接 (Links)` / `## 变更记录 (Change Log)`。

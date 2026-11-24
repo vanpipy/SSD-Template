@@ -1,4 +1,4 @@
-"""8 个子命令的实现(契约 §5)。
+"""6 个子命令的实现(契约 §5)。
 
 退出码全仓统一(契约 INV-7):
     0 = 通过 / 成功
@@ -6,7 +6,13 @@
     2 = 用法错误 / 内部错误(如判据文件缺失)
 
 「半写」防护:`advance` 先做完全部校验,再一次性写目标文件;
-任何失败路径都不写目标文件,`--dry-run` 连控制平面都不碰。
+任何失败路径都不写目标文件,`--dry-run` 连目标文件都不碰。
+
+F9(单载体):仓内**没有控制平面**。状态与评审的唯一权威载体 = 制品本身;
+`advance` 对人与 agent 是**同一条命令**,差异只在署名来源:
+- agent:`--actor agent:<id>`(默认 `agent:ssdctl`)⇒ 机器写复审块;
+- 人:**先**在制品 `## 复审 (Review)` 段自己写好署名,再跑同一条 `advance`
+  ⇒ 机器**永不覆盖**已有复审块。
 """
 
 from __future__ import annotations
@@ -20,13 +26,15 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from . import control
+from . import util
 from .artifacts import (
     REVIEW_HEADING_KEY,
     Artifact,
     apply_review_block,
     apply_status_block,
     discover_artifacts,
+    known_issue_ids,
+    known_issue_shape_problems,
     parse_basis,
     parse_review,
     parse_status,
@@ -69,7 +77,6 @@ SOFT_FAIL_CODES = {"scripts/sync-prd.sh": 1, "scripts/sync-test-index.sh": 1}
 
 REVIEW_METHODS = ("自动判据", "人工介入", "外部事实")
 REVIEW_CONCLUSIONS = ("通过", "有条件通过", "需返工")
-AUTHORIZING_ACTIONS = ("approve", "override")
 
 # 三件套(WORKFLOW.md §5「三件套一致性规则」):
 # PRD / Tech Design / Plan 三个状态**必须同时**进入 Implemented —— 不允许单层先 Implemented。
@@ -78,6 +85,8 @@ TRIO_LAYERS = ("prd", "td", "plan")
 
 # 状态块取值格式(契约 §3.1)—— 与 scripts/check-md-schema.sh 的常量同口径
 _STATE_SUBJECT_RE = re.compile(r"^(agent|human):[A-Za-z0-9._-]+$")
+# F9:`--actor` 只允许 agent 署名 —— 人工署名写在制品的复审段里,机器不代填(INV-3)。
+_AGENT_ACTOR_RE = re.compile(r"^agent:[A-Za-z0-9._-]+$")
 _STATE_TIME_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)$"
 )
@@ -158,17 +167,55 @@ def _repo_documents(root: Path) -> list[RepoDocument]:
     return docs
 
 
-def _scoped_repo_documents(root: Path, topic: str) -> list[RepoDocument]:
+def _scoped_repo_documents(
+    root: Path,
+    topic: str,
+    simulated: tuple[Artifact, Document] | None = None,
+) -> list[RepoDocument]:
     """单制品视角的跨层求值上下文:只取同 topic 的制品。
 
     跨层覆盖是「同 topic 成对」的(目录约定 §3.2:同 topic 同日期前缀)。
     求值单个制品时若把别的 topic 也拉进来,一个 topic 的缺口会挡住
     另一个无关 topic 的推进 —— 那是误伤,不是不变式。
+
+    `simulated` = (目标制品, 模拟文本重建的 Document) ⇒ 跨层求值看到的是
+    「这次推进写完之后」的制品,而不是磁盘上的旧文本(F9 死锁修复用)。
     """
     docs = _repo_documents(root)
+    if simulated is not None:
+        target, simulated_doc = simulated
+        docs = [
+            RepoDocument(
+                item.layer,
+                item.topic,
+                simulated_doc if _is_artifact_document(item.doc, target) else item.doc,
+            )
+            for item in docs
+        ]
     if not topic:
         return docs
     return [item for item in docs if item.topic == topic]
+
+
+def _is_artifact_document(doc: Document, artifact: Artifact) -> bool:
+    """这个 `Document` 是不是某个具体制品的文档(按仓库相对路径认,不按文件名)。"""
+    return any(rel == artifact.rel for rel, _lines in doc.files)
+
+
+def _simulated_document(root: Path, artifact: Artifact, text: str) -> Document:
+    """用模拟文本替换制品正文后的 `Document`(只用于判据求值,不落盘)。"""
+    document = _artifact_document(root, artifact)
+    files: list[tuple[str, list[str]]] = []
+    replaced = False
+    for rel, lines in document.files:
+        if not replaced and rel == artifact.rel:
+            files.append((rel, text.split("\n")))
+            replaced = True
+        else:
+            files.append((rel, lines))
+    if not replaced:
+        files.append((artifact.rel, text.split("\n")))
+    return Document(rel=document.rel, files=files)
 
 
 def _repo_scope_layers(criteria: list[Criterion]) -> list[str]:
@@ -193,16 +240,81 @@ def _now() -> datetime:
 
 
 def build_state(root: Path, layer_filter: str | None = None) -> tuple[dict, list[Dispatch]]:
-    """算派生状态(契约 §5.3)。只读制品状态行,不写任何文件。"""
+    """算派生视图(契约 §5.3)。只读制品状态行,不写任何文件。
+
+    F9:派生视图**只打印**,不再落盘 —— 留痕 = 制品 + git 历史。
+    JSON 形状(`generated_at` + `artifacts[]`)保持不变,编排层依赖它。
+    """
     artifacts = discover_artifacts(root)
     if layer_filter:
         artifacts = [item for item in artifacts if item.layer == layer_filter]
     dispatches = [evaluate_dispatch(root, item, artifacts) for item in artifacts]
     payload = {
-        "generated_at": control.now_iso(),
+        "generated_at": util.now_iso(),
         "artifacts": [item.as_dict() for item in dispatches],
     }
     return payload, dispatches
+
+
+def _consistency_problems(root: Path) -> list[str]:
+    """跨制品一致性检查(F9 R-6)—— `scan --check` 的唯一判定口径。
+
+    (a) **上游闸门**:状态 ∈ {Ready, Implemented} 的制品,其上游必须也 ∈ {Ready, Implemented};
+    (b) **三件套原子性**:同 topic 的 PRD / Tech Design / Plan 中,任一为 Implemented 时,
+        其余**已存在**者必须也是 Implemented;
+    (c) **字段自洽**:状态块 + 复审块(复用 `_field_problems`)。
+
+    这一段补上了旧模型里「上游必须 Ready 才准写下游」的**只读**机器覆盖
+    (旧模型只靠 `WORKFLOW.md` 的文字义务,没有任何机器判据)。
+    """
+    problems: list[str] = []
+    artifacts = discover_artifacts(root)
+
+    # (a) 上游闸门
+    for artifact in artifacts:
+        state = parse_status(_entry_text(root, artifact), artifact.rel).state
+        if state not in ("Ready", "Implemented"):
+            continue
+        for upstream in resolve_upstream(root, artifact, artifacts):
+            if upstream.artifact is None:
+                problems.append(f"上游未解析: {artifact.rel} ← {upstream.reason}")
+                continue
+            upstream_state = parse_status(
+                _entry_text(root, upstream.artifact), upstream.artifact.rel
+            ).state
+            if upstream_state not in ("Ready", "Implemented"):
+                problems.append(
+                    f"上游未 Ready: {artifact.rel} ← {upstream.artifact.rel} "
+                    f"状态={upstream_state or '未声明'}"
+                )
+
+    # (b) 三件套原子性
+    topics: dict[str, list[Artifact]] = {}
+    for artifact in artifacts:
+        if artifact.layer in TRIO_LAYERS:
+            topics.setdefault(artifact.topic, []).append(artifact)
+    for topic in sorted(topics):
+        members = topics[topic]
+        states = {
+            member.rel: parse_status(_entry_text(root, member), member.rel).state
+            for member in members
+        }
+        if not any(value == "Implemented" for value in states.values()):
+            continue
+        for rel in sorted(states):
+            if states[rel] != "Implemented":
+                problems.append(
+                    f"三件套未同时就绪: {rel} 状态={states[rel] or '未声明'}"
+                    f"(同 topic「{topic}」的 PRD / Tech Design / Plan 必须同时 Implemented)"
+                )
+
+    # (c) 字段自洽
+    for artifact in artifacts:
+        text = _entry_text(root, artifact)
+        for problem in _field_problems(parse_status(text, artifact.rel), parse_review(text, artifact.rel)):
+            problems.append(f"{artifact.rel}: {problem}")
+
+    return problems
 
 
 def cmd_scan(root: Path, args) -> int:
@@ -216,27 +328,17 @@ def cmd_scan(root: Path, args) -> int:
         return EXIT_USAGE
 
     if getattr(args, "check", False):
-        stored = control.read_state(root)
-        if stored is None:
-            print(
-                "✗ 控制面未初始化: control/state.json 不存在或不可读 —— "
-                "派生状态缺失,拒绝放行;先跑 `ssdctl.py gate`(或 `ssdctl.py scan`)重建",
-                file=sys.stderr,
-            )
-            return EXIT_FAIL
-        expected = json.dumps(payload["artifacts"], ensure_ascii=False, sort_keys=True)
-        actual = json.dumps(stored.get("artifacts"), ensure_ascii=False, sort_keys=True)
-        if expected != actual:
-            print("✗ 派生状态与磁盘不一致 —— 跑 `ssdctl.py scan` 重建 control/state.json", file=sys.stderr)
-            for item in payload["artifacts"]:
-                print(f"  - {item['path']}", file=sys.stderr)
-            return EXIT_FAIL
-        print(f"✓ 派生状态与磁盘一致(制品 {len(payload['artifacts'])} 个)")
+        problems = _consistency_problems(root)
         if args.json:
             print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+        if problems:
+            print("✗ 跨制品一致性检查未通过:", file=sys.stderr)
+            for problem in problems:
+                print(f"    - {problem}", file=sys.stderr)
+            return EXIT_FAIL
+        print(f"✓ 跨制品一致性检查通过(制品 {len(dispatches)} 个)")
         return EXIT_OK
 
-    control.write_state(root, payload)
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
     else:
@@ -249,7 +351,7 @@ def cmd_scan(root: Path, args) -> int:
             if item.missing:
                 for reason in item.missing:
                     print(f"    缺: {reason}")
-        print(f"✓ 派生状态已写入 control/state.json(制品 {len(dispatches)} 个)")
+        print(f"✓ 扫描完成(制品 {len(dispatches)} 个;派生视图不落盘 —— 留痕 = 制品 + git 历史)")
     return EXIT_OK
 
 
@@ -467,9 +569,8 @@ def cmd_gate(root: Path, args) -> int:
         if problems:
             failures += 1
 
+    # F9:派生视图**不落盘** —— 留痕 = 制品 + git 历史(不再写 control/state.json)。
     payload, _dispatches = build_state(root)
-    control.write_state(root, payload)
-    print(f"✓ 派生状态已写入 control/state.json(制品 {len(payload['artifacts'])} 个)")
     if failures:
         print(f"✗ 门禁未通过: {failures} 项")
         return EXIT_FAIL
@@ -529,46 +630,107 @@ def cmd_advance(root: Path, args) -> int:
             criteria, document, artifact.layer, _scoped_repo_documents(root, artifact.topic)
         )
     except CriteriaError as exc:
-        # 判据参数非法(契约 §4.1.1)—— 显式失败,退出码 2,绝不静默放行。
         print(f"✗ {exc}", file=sys.stderr)
         return EXIT_USAGE
-    decision = None
-    if args.decision:
-        decision = control.find_decision(root, args.decision)
-        if decision is None:
-            print(f"✗ 找不到决定记录: {args.decision}", file=sys.stderr)
-            return EXIT_USAGE
 
-    actor = (args.actor or "agent:sddctl").strip()
+    actor = (args.actor or "agent:ssdctl").strip()
     problems: list[str] = []
 
-    # 复审块的「评审人」取值:人写的决定文件里的操作人 = 人类署名;否则用 actor。
-    # 契约 §5.2 规则 5:非 agent: 形态的署名必须来自决定记录 —— agent 不能靠
-    # `--actor alice` 冒充人工(INV-3),否则复审三问又变成 agent 自填。
-    reviewer = actor
-    if decision is not None and decision.actor:
-        reviewer = decision.actor
-    if not reviewer.startswith("agent:") and not (decision is not None and decision.actor):
+    # R-3 / INV-3:`--actor` 只接受 `agent:<id>` 形态 —— 人工署名写在制品的
+    # `## 复审 (Review)` 段内,机器既不代填、也不覆盖。人与 agent 跑的是同一条命令。
+    if not _AGENT_ACTOR_RE.match(actor):
         problems.append(
-            "人工署名必须来自 control/decisions/ 的决定记录"
-            f"(评审人={reviewer!r} 不是 agent:<id> 形态,且没有可引用的决定记录)"
+            f"`--actor` 只接受 `agent:<id>` 形态: {actor!r}"
+            " —— 人工署名请先写在制品的 `## 复审 (Review)` 段内,再跑同一条 advance"
         )
 
-    # §5.2 规则 1 + 2:blocking 判据必须全绿;blocking:false 的失败必须有决定记录
+    original_text = _entry_text(root, artifact)
+    existing_review = parse_review(original_text, artifact.rel)
+    waived_ids = known_issue_ids(existing_review)
+    has_review_section = section_span(original_text.split("\n"), REVIEW_HEADING_KEY) is not None
+    # 机器写复审块的条件:段在、但没有署名(人工写了署名 ⇒ 机器不覆盖)。
+    machine_writes_review = has_review_section and not existing_review.reviewer
+    if not has_review_section and not existing_review.reviewer:
+        problems.append(f"制品 {artifact.rel} 缺少 `## 复审 (Review)` 段 —— 无法写入复审块")
+
+    # Implemented / Deprecated 需要一条 `external:` 依据:
+    # 来自 `--external <ref>`,或制品正文里出现的 `external:<ref>` token(取第一个)。
+    shared_external: str | None = None
+    if target_state in ("Implemented", "Deprecated"):
+        refs: list[str] = []
+        flag = (getattr(args, "external", None) or "").strip()
+        if flag:
+            refs.append(flag if flag.startswith("external:") else f"external:{flag}")
+        refs.extend(util.external_refs(original_text))
+        if not refs:
+            problems.append(
+                f"进入 {target_state} 需要 `external:` 依据 —— "
+                "用 `--external <ref>` 或在制品正文写 `external:<ref>`"
+            )
+        else:
+            shared_external = refs[0]
+
+    # 复审块取值(F9):机器只在复审块**为空**时写 —— 已有署名(人工写的)原样保留。
+    reviewer = actor
+    method = "外部事实" if shared_external else "自动判据"
+    if method not in REVIEW_METHODS:
+        method = "自动判据"
+    conclusion = "通过"
+    review_date = _now().strftime("%Y-%m-%d")
+    timestamp = util.now_iso()
+    subject = actor  # INV-3:状态主体永远是 agent:<id>,机器不写 human:
+
+    # 判据求值分两遍(F9 死锁修复):
+    # 第 1 遍按**现状**求值 —— 用来算 `criteria:` 授权依据。
+    document = _artifact_document(root, artifact)
+    try:
+        result = evaluate_layer(
+            criteria, document, artifact.layer, _scoped_repo_documents(root, artifact.topic)
+        )
+    except CriteriaError as exc:
+        print(f"✗ {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    criteria_basis = _basis_from_criteria(criteria, artifact.layer, result)
+
+    # 第 2 遍按**机器写完之后**的模拟文本复算 —— 阻断/警告闸门以这一遍为准。
+    # 少了这一遍,「复审段只有标题、4 行都没有」时复审块那几条阻断判据会在
+    # 机器写复审块之前就失败 ⇒ 机器永远走不到写复审块那一步(死锁)。
+    # 复算只改内存里的文本,失败仍然是零文件改动。
+    if machine_writes_review:
+        simulated_text = apply_status_block(
+            original_text,
+            render_status_block(target_state, subject, timestamp, criteria_basis or ""),
+        )
+        simulated_text = apply_review_block(
+            simulated_text, render_review_block(reviewer, review_date, conclusion, method)
+        )
+        simulated_doc = _simulated_document(root, artifact, simulated_text)
+        try:
+            result = evaluate_layer(
+                criteria,
+                simulated_doc,
+                artifact.layer,
+                _scoped_repo_documents(
+                    root, artifact.topic, simulated=(artifact, simulated_doc)
+                ),
+            )
+        except CriteriaError as exc:
+            print(f"✗ {exc}", file=sys.stderr)
+            return EXIT_USAGE
+        criteria_basis = _basis_from_criteria(criteria, artifact.layer, result) or criteria_basis
+
+    # §5.2 规则 1 + 2:blocking 判据必须全绿;非阻断失败必须被复审段的「已知问题」行点名。
     if target_state in ("Ready", "Implemented"):
         for item in result.failures:
             problems.append(f"阻断判据未通过 {item.criterion_id} @ {item.locate()}: {item.message}")
         for item in result.warnings:
-            covered = (
-                decision is not None
-                and decision.action in AUTHORIZING_ACTIONS
-                and decision.covers(item.criterion_id)
+            if item.criterion_id in waived_ids:
+                continue
+            problems.append(
+                f"警告判据 {item.criterion_id} @ {item.locate()} 未被复审段点名 —— "
+                f"请在 `## 复审 (Review)` 段内写 "
+                f"`> **已知问题**: {item.criterion_id} — <说明>` 后重跑({item.message})"
             )
-            if not covered:
-                problems.append(
-                    f"警告判据 {item.criterion_id} @ {item.locate()} 没有人工决定记录 —— "
-                    f"需先 `ssdctl.py decide` 记录已知问题({item.message})"
-                )
 
     # §5.2 规则 3:跨层推进时上游必须 Ready
     artifacts = discover_artifacts(root)
@@ -578,7 +740,7 @@ def cmd_advance(root: Path, args) -> int:
             if item.artifact is None:
                 problems.append(f"上游未解析:{item.reason}")
                 continue
-            state = parse_status(item.artifact.entry.read_text(encoding="utf-8"), item.artifact.rel).state
+            state = parse_status(_entry_text(root, item.artifact), item.artifact.rel).state
             if state not in ("Ready", "Implemented"):
                 problems.append(
                     f"上游未 Ready:{item.artifact.rel} 状态={state or '未声明'}"
@@ -602,34 +764,17 @@ def cmd_advance(root: Path, args) -> int:
                     f"(PRD / Tech Design / Plan 必须同时进入 Implemented)"
                 )
 
-    # §5.2 规则 4:授权来源 = --decision 或判据全绿
-    criteria_basis = _basis_from_criteria(criteria, artifact.layer, result)
+    # §5.2 规则 4(F9):授权来源只剩两种 —— `criteria:`(判据全绿)与 `external:`(外部事实)。
     basis_items: list[str] = []
-    external_ref = None
-    if decision is not None:
-        basis_items.append(f"decision:{decision.rel}#{decision.id}")
-        if decision.external_ref:
-            external_ref = decision.external_ref
     if target_state in ("Ready", "Implemented") and criteria_basis:
         basis_items.append(criteria_basis)
 
-    # Implemented 额外要求 external: 依据(§5.2)
-    shared_external: str | None = None
-    if target_state == "Implemented":
-        chain_refs = control.external_refs(control.read_evidence(root, artifact.rel))
-        if external_ref:
-            chain_refs = list(chain_refs) + [f"external:{external_ref}"]
-        if not chain_refs:
-            problems.append("进入 Implemented 需要 `external:` 依据(证据链或决定记录里的外部事实)")
-        else:
-            shared_external = chain_refs[0]
-            basis_items.append(shared_external)
+    if shared_external:
+        basis_items.append(shared_external)
 
     # 兄弟制品的状态依据:同一份外部事实依据(一次外部实现、三层规格),
     # 不替兄弟编造 criteria 依据 —— 那是目标层自己的判据。
     sibling_basis: list[str] = []
-    if decision is not None:
-        sibling_basis.append(f"decision:{decision.rel}#{decision.id}")
     if shared_external:
         sibling_basis.append(shared_external)
     for sibling in trio_siblings:
@@ -638,13 +783,13 @@ def cmd_advance(root: Path, args) -> int:
         elif section_span(_entry_text(root, sibling).split("\n"), REVIEW_HEADING_KEY) is None:
             problems.append(f"兄弟制品 {sibling.rel} 缺少 `## 复审 (Review)` 段 —— 无法写入复审块")
 
-    # Deprecated 的状态依据必须是 decision: 或 external:(§5.2)
+    # Deprecated 的状态依据必须是 external:(F9 取代原 decision:)
     if target_state == "Deprecated":
-        if not any(item.startswith("decision:") or item.startswith("external:") for item in basis_items):
-            problems.append("进入 Deprecated 的状态依据必须是 `decision:` 或 `external:`,不能用 `criteria:`")
+        if not any(item.startswith("external:") for item in basis_items):
+            problems.append("进入 Deprecated 的状态依据必须是 `external:`,不能用 `criteria:`")
 
     if not basis_items:
-        problems.append("没有可用授权来源(既无 --decision,判据也没有可引用的授权)")
+        problems.append("没有可用授权来源(判据没有可引用的授权,也没有 external: 依据)")
 
     if problems:
         print(f"✗ 不允许推进 {artifact.rel} → {target_state}:", file=sys.stderr)
@@ -653,60 +798,34 @@ def cmd_advance(root: Path, args) -> int:
         print("  (目标文件未做任何修改)", file=sys.stderr)
         return EXIT_FAIL
 
-    # 复审块取值:reviewer 已在上面按 §5.2 规则 5 定好(决定记录的操作人优先)
-    method = "自动判据"
-    if decision is not None and decision.actor:
-        method = "人工介入"
-    if any(item.startswith("external:") for item in basis_items):
-        method = "外部事实"
-    if reviewer.startswith("agent:") and method == "人工介入":
-        method = "自动判据"
-    if reviewer.startswith("agent:") and method not in REVIEW_METHODS:
-        method = "自动判据"
-    conclusion = "有条件通过" if result.warnings else "通过"
-    review_date = _now().strftime("%Y-%m-%d")
-    timestamp = control.now_iso()
-    subject = "agent:sddctl"  # INV-3:agent 永不署名 human:
-
     # 本次转换要写的制品:目标 + 已在 Ready 的兄弟(三件套同时进入 Implemented)。
     # 每个制品各自算自己的正文与依据 —— 兄弟用同一份外部事实依据。
-    writes: list[tuple[Artifact, str, list[str]]] = [
-        (
-            artifact,
-            apply_review_block(
-                apply_status_block(
-                    _entry_text(root, artifact),
-                    render_status_block(target_state, subject, timestamp, ",".join(basis_items)),
-                ),
-                render_review_block(reviewer, review_date, conclusion, method),
-            ),
-            basis_items,
+    writes: list[tuple[Artifact, str, list[str], str]] = []
+    for art, basis in [(artifact, basis_items)] + [(sib, sibling_basis) for sib in trio_siblings]:
+        text = apply_status_block(
+            _entry_text(root, art),
+            render_status_block(target_state, subject, timestamp, ",".join(basis)),
         )
-    ]
-    for sibling in trio_siblings:
-        writes.append(
-            (
-                sibling,
-                apply_review_block(
-                    apply_status_block(
-                        _entry_text(root, sibling),
-                        render_status_block(target_state, subject, timestamp, ",".join(sibling_basis)),
-                    ),
-                    render_review_block(reviewer, review_date, conclusion, method),
-                ),
-                sibling_basis,
+        if parse_review(text, art.rel).reviewer:
+            review_note = "原样保留(复审块已有署名,机器不覆盖)"
+        else:
+            text = apply_review_block(
+                text, render_review_block(reviewer, review_date, conclusion, method)
             )
-        )
+            review_note = (
+                f"机器写入 评审人={reviewer} 日期={review_date} 结论={conclusion} 方式={method}"
+            )
+        writes.append((art, text, basis, review_note))
 
     plan: list[list[str]] = []
-    for art, _text, basis in writes:
+    for art, _text, basis, review_note in writes:
         plan.append(
             [
                 f"制品: {art.rel}",
                 f"目标状态: {target_state}",
                 f"状态主体: {subject}",
                 f"状态依据: {','.join(basis)}",
-                f"复审块: 评审人={reviewer} 日期={review_date} 结论={conclusion} 方式={method}",
+                f"复审块: {review_note}",
             ]
         )
     if args.dry_run:
@@ -716,49 +835,30 @@ def cmd_advance(root: Path, args) -> int:
                 print(f"  {line}")
         return EXIT_OK
 
-    # INV-4:先落证据再落制品;证据写失败 ⇒ 目标文件零改动。
-    # 逐个制品「证据 → 制品」成对落:某个制品的证据写不进去就停在那儿,
-    # 已写完的制品保持自洽(有证据、有状态),不会留下无证据的状态变更。
-    written: list[tuple[Artifact, Path]] = []
-    for art, new_text, basis in writes:
-        original = _entry_text(root, art)
-        record = {
-            "ts": timestamp,
-            "actor": actor,
-            "from": parse_status(original, art.rel).state or "未声明",
-            "to": target_state,
-            "artifact": art.rel,
-            "artifact_hash": control.sha256_text(original),
-            "criteria": (
-                [{"id": claim["id"], "passed": claim["passed"]} for claim in result.claims]
-                if art.rel == artifact.rel
-                else []
-            ),
-            "decisions": [f"decision:{decision.rel}#{decision.id}"] if decision else [],
-            "reason": f"推进到 {target_state}:{'; '.join(basis)}",
-        }
-        try:
-            evidence_file = control.append_evidence(root, record)
-        except OSError as exc:
-            print(f"✗ 证据链写入失败,目标文件未修改: {exc}", file=sys.stderr)
-            return EXIT_USAGE
-
+    # F9 留痕:状态块 + 复审块 + git 历史 —— 不再写 `control/evidence/**`。
+    # 半写防护:目标文件写失败 ⇒ 报出已写入的清单,请人工核对(不再有证据链兜底)。
+    written: list[Artifact] = []
+    for art, new_text, _basis, _note in writes:
         try:
             art.entry.write_text(new_text, encoding="utf-8", newline="\n")
         except OSError as exc:
             print(f"✗ 目标文件写入失败: {exc}", file=sys.stderr)
-            print(f"    证据已记录于 {evidence_file.relative_to(root).as_posix()}(请人工核对)", file=sys.stderr)
+            if written:
+                print(
+                    "    已写入: " + ", ".join(item.rel for item in written) + "(请人工核对)",
+                    file=sys.stderr,
+                )
+            else:
+                print("    (目标文件未做任何修改)", file=sys.stderr)
             return EXIT_USAGE
-        written.append((art, evidence_file))
+        written.append(art)
 
     print("— 已推进 —")
-    for block, (_art, evidence_file) in zip(plan, written):
+    for block in plan:
         for line in block:
             print(f"  {line}")
-        print(f"  证据: {evidence_file.relative_to(root).as_posix()}")
+    print("  留痕: 制品状态块 + 复审块 + git 历史")
     return EXIT_OK
-
-
 def _entry_text(root: Path, artifact: Artifact) -> str:
     try:
         return artifact.entry.read_text(encoding="utf-8")
@@ -808,60 +908,6 @@ def cmd_queue(root: Path, args) -> int:
     return EXIT_OK
 
 
-# ------------------------------------------------------------------- decide
-
-
-def cmd_decide(root: Path, args) -> int:
-    if args.action not in ("approve", "reject", "hold", "override"):
-        raise UsageError(f"--action 取值非法: {args.action}")
-    artifact = _resolve_artifact(root, args.artifact)
-    topic = artifact.topic
-    path, decision = control.write_decision(
-        root,
-        topic=topic,
-        action=args.action,
-        actor=args.actor,
-        reason=args.reason,
-        artifact=artifact.rel,
-        criterion=args.criterion,
-    )
-    print(f"✓ 决定已写入 {path.relative_to(root).as_posix()}({decision.id})")
-    print(f"  目标制品: {artifact.rel}")
-    print(f"  动作: {args.action}  范围: {decision.scope}")
-    print(f"  理由: {args.reason}")
-    return EXIT_OK
-
-
-# ------------------------------------------------------------------ evidence
-
-
-def cmd_evidence(root: Path, args) -> int:
-    # 绝对路径 / 带 ./ 的路径 / 仓内相对路径, 都要归一到同一个制品键,
-    # 否则「advance 写的是 rel, evidence 查的是绝对路径」会查空 —— 看起来
-    # 像「没有证据」, 其实是路径写法不同。
-    target = args.artifact
-    if target:
-        target = _resolve_artifact(root, target).rel
-    records = control.read_evidence(root, target)
-    if not records:
-        print("✗ 没有证据记录", file=sys.stderr)
-        return EXIT_FAIL
-    if args.json:
-        print(json.dumps(records, ensure_ascii=False, indent=2, sort_keys=True))
-    else:
-        print(f"证据链记录 {len(records)} 条")
-        for record in records:
-            print(
-                f"  {record.get('ts', '?')} {record.get('artifact', '?')} "
-                f"{record.get('from', '?')} → {record.get('to', '?')} "
-                f"by {record.get('actor', '?')}"
-            )
-            for decision in record.get("decisions") or []:
-                print(f"      依据: {decision}")
-            print(f"      哈希: {record.get('artifact_hash', '?')}")
-    return EXIT_OK
-
-
 # -------------------------------------------------------------------- verify
 
 
@@ -889,9 +935,9 @@ def _field_problems(status, review) -> list[str]:
     if status.basis:
         valid, invalid = parse_basis(status.basis)
         for item in invalid:
-            problems.append(f"`状态依据` 项 `{item}` 不在 criteria:/decision:/external: 之中")
+            problems.append(f"`状态依据` 项 `{item}` 不在 criteria:/external: 之中")
         if status.state == "Deprecated" and any(item.startswith("criteria:") for item in valid):
-            problems.append("`状态依据` 在 Deprecated 态只能是 decision: 或 external:,不能用 criteria:")
+            problems.append("`状态依据` 在 Deprecated 态只能是 external:,不能用 criteria:")
 
     if status.state in ("Ready", "Implemented"):
         for name, value in (
@@ -915,6 +961,8 @@ def _field_problems(status, review) -> list[str]:
             problems.append(f"`评审方式` 取值非法: {review.method}")
         if review.reviewer and review.reviewer.startswith("agent:") and review.method == "人工介入":
             problems.append("`评审人` 是 agent:* 时 `评审方式` 不能是 人工介入")
+    problems.extend(known_issue_shape_problems(review))
+
     return problems
 
 
@@ -925,16 +973,10 @@ def cmd_verify(root: Path, args) -> int:
     review = parse_review(text, artifact.rel)
     problems: list[str] = _field_problems(status, review)
 
-    records = control.read_evidence(root, artifact.rel)
-    if status.state in ("Ready", "Implemented", "Deprecated"):
-        matching = [item for item in records if item.get("to") == status.state]
-        if not matching:
-            problems.append(f"证据链里没有 `{status.state}` 的转换记录")
-
     if problems:
         print(f"✗ {artifact.rel} 不一致:", file=sys.stderr)
         for problem in problems:
             print(f"    - {problem}", file=sys.stderr)
         return EXIT_FAIL
-    print(f"✓ {artifact.rel} 一致(状态 {status.state},证据 {len(records)} 条)")
+    print(f"✓ {artifact.rel} 一致(状态 {status.state})")
     return EXIT_OK

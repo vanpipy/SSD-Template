@@ -3,7 +3,7 @@ name: to-tech-design
 description: >-
   PRD → Tech Design 转换流程 (v2.1)。默认 v4 四子文件 (README 综合描述 + ards 架构决策与方案对比 + apis 接口契约与时序 + data-model ER 图);
   v3 六子文件为存量格式, 需显式 opt-in 才产出。Use when 收到上游 PRD 已达 Ready, 需要产出 Tech Design (默认 v4, 4 子文件)。
-  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工可选复核并落决定记录。
+  agent 自主推进: 判据全绿即由 agent 起草复审自评并用 ssdctl advance 推到 Ready; 人工接入走同一条流水线（在制品复审段写署名, 再跑同一条 advance）。
 ---
 
 # to-tech-design
@@ -133,10 +133,10 @@ v4 的 `README.md` 含 `## 实现基线` 段, 固定 6 列（仓库 / 分支 / S
 | 写 Tech Design, 状态块写 `Draft` | agent | 产出文件本身的状态块 (`状态` / `状态主体` / `状态时间` / `状态依据` 4 行; Draft 态后三行允许缺省) |
 | 起草 `## 复审 (Review)` 的 `评审人` / `评审日期` / `评审结论` / `评审方式` 四行 | agent | agent 自评: `评审人` 写 `agent:<id>`, `评审方式` 写 `自动判据`; **agent 绝不写 `human:` 前缀, 也不代填人名** |
 | 把状态翻成 `Ready` | agent (判据驱动) | 该层 `blocking:true` 判据全绿 + 上游 `upstream_ready`, 由 `bash scripts/ssdctl.sh advance` 代写状态块与复审块 |
-| 把状态翻成 `Implemented` | agent (外部事实) | 需 `external:` 依据或 `--decision` 指定的外部事实介入记录; PRD / Tech Design / Plan 三件套必须同时推进 |
-| 把状态改成 `Deprecated` | agent 或人工 | 需 `decision:` 或 `external:` 依据 (不允许 `criteria:`); 上游 PRD 已 Deprecated 之后的机械级联由 agent 执行 |
+| 把状态翻成 `Implemented` | agent (外部事实) | 需 `external:` 依据（`advance --external <ref>`, 或制品正文里的 `external:` token）; PRD / Tech Design / Plan 三件套必须同时推进 |
+| 把状态改成 `Deprecated` | agent 或人工 | 需 `external:` 依据 (不允许 `criteria:`); 上游 PRD 已 Deprecated 之后的机械级联由 agent 执行 |
 
-- **判定权归判据, 写入权归 agent, 人工可手动介入**: 判据全绿就推进, 人工要改结果就落一条 `control/decisions/` 决定记录, 再用 `--decision` 传入。
+- **判定权归判据, 写入权归 agent, 人工走同一条流水线**: 判据全绿就推进; 人工要改结果就在仓内新增素材, 或自己在制品的 `## 复审 (Review)` 段写署名, 再跑**同一条** `advance`。
 - **状态块永远由 `ssdctl advance` 写**; skill 与 agent 都不手改状态行, 也不教人手改。
 - **agent 的状态上限是 `Ready`**; `Implemented` 仍需外部事实证据, 不靠 agent 自述。
 

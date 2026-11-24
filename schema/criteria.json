@@ -61,10 +61,10 @@
     {
       "id": "PRD-STATE-BASIS",
       "layer": "prd",
-      "title": "状态依据必须是 criteria: / decision: / external: 三选一",
+      "title": "状态依据必须是 criteria: / external: 二选一",
       "kind": "line_present",
       "params": {
-        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|decision:\\S+#\\S+|external:\\S+)$"
+        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|external:\\S+)$"
       },
       "blocking": false,
       "source": "schema/prd.md:6"
@@ -302,10 +302,10 @@
     {
       "id": "TD-STATE-BASIS",
       "layer": "td",
-      "title": "状态依据必须是 criteria: / decision: / external: 三选一",
+      "title": "状态依据必须是 criteria: / external: 二选一",
       "kind": "line_present",
       "params": {
-        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|decision:\\S+#\\S+|external:\\S+)$"
+        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|external:\\S+)$"
       },
       "blocking": false,
       "source": "schema/tech_design/README.md:6"
@@ -448,10 +448,10 @@
     {
       "id": "PLAN-STATE-BASIS",
       "layer": "plan",
-      "title": "状态依据必须是 criteria: / decision: / external: 三选一",
+      "title": "状态依据必须是 criteria: / external: 二选一",
       "kind": "line_present",
       "params": {
-        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|decision:\\S+#\\S+|external:\\S+)$"
+        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|external:\\S+)$"
       },
       "blocking": false,
       "source": "schema/plan.md:6"
@@ -713,10 +713,10 @@
     {
       "id": "TC-STATE-BASIS",
       "layer": "test-case",
-      "title": "状态依据必须是 criteria: / decision: / external: 三选一",
+      "title": "状态依据必须是 criteria: / external: 二选一",
       "kind": "line_present",
       "params": {
-        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|decision:\\S+#\\S+|external:\\S+)$"
+        "regex": "^> \\*\\*状态依据\\*\\*:\\s*(criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*|external:\\S+)$"
       },
       "blocking": false,
       "source": "schema/test_case.md:11"

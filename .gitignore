@@ -19,5 +19,5 @@ __pycache__/
 # ── 历史归档(已移出仓库,仅保留指针) ──────────────────────
 /docs/efficacy/
 
-# ── 派生索引(可再生成;含 generated_at,提交会引入无意义抖动) ──
-/control/state.json
+# ── F9(2026-11-24):仓内控制平面 `control/` 已整体删除 ────
+# 派生视图不再落盘(留痕 = 制品 + git 历史),故无 control/state.json。

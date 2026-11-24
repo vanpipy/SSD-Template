@@ -28,7 +28,7 @@ REQUIRED="
 docs/contracts/agent-first-implementation.md
 docs/contracts/agent-first-direction.md
 docs/contracts/phase2-task-flow.md
-control/decisions/2026-11-22-agent-primary.md
+docs/contracts/decisions/2026-11-22-agent-primary.md
 docs/evidence/a17-run2/example-feature.md
 docs/evidence/a17-run2/example-feature.migrated.md
 docs/evidence/a17-run2/run-evidence.json

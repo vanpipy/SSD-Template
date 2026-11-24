@@ -4,7 +4,7 @@
 
 SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规格架构 + 可选质量层,每层有独立 schema 模板、命名约定、状态机与机器可跑的校验脚本。所有执行流程以 skill 为执行单元,agent 按 skill 定义的流程驱动,不手写 schema。
 
-> **流程以 agent 为主**:agent 依仓内判据自动产出制品、跑门禁、推进状态并留痕;人类在需要决策时落一条决定记录即可,不必逐条盯流程(见「状态推进」一节)。
+> **流程以 agent 为主**:agent 依仓内判据自动产出制品、跑门禁、推进状态并留痕;人类需要介入时**新增素材**、或在制品的 `## 复审 (Review)` 段**写署名**,然后跑**同一条**推进命令即可,不必逐条盯流程(见「状态推进」一节)。
 > **契约唯一真源** = [WORKFLOW.md](WORKFLOW.md)(编排配置 + agent 工作契约)。
 > 仓内 README / AGENTS / schema 全部以 `WORKFLOW.md` 为准;冲突时以它为准并记录冲突,不自行调和。
 
@@ -35,7 +35,7 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 ```
 
 > **状态由 agent 推进**:skill 产出制品即 `Draft`;该层判据全绿后 agent 自动推进到 `Ready`。
-> 人类需要介入时,落一条决定记录 `control/decisions/<YYYY-MM-DD>-<topic>.md`(或跑 `bash scripts/ssdctl.sh decide`)—— **没有实时交互通道**。
+> 人类需要介入时,**新增素材**或在制品的 `## 复审 (Review)` 段写署名,然后跑**同一条** `bash scripts/ssdctl.sh advance <artifact> --to <状态>` —— **没有实时交互通道**。
 
 完整说明见 [WORKFLOW.md](WORKFLOW.md) §11 使用指南(状态机见 §5)。仓库操作契约见 [AGENTS.md](AGENTS.md)。编排配置与 agent 工作契约见 [WORKFLOW.md](WORKFLOW.md)。
 
@@ -57,15 +57,16 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 |------------|---------|--------|
 | — → Draft | 产物写完 + 该层门禁全绿 | **agent** |
 | Draft → Ready | 该层全部 `blocking:true` 判据通过 | **agent**(人类可介入) |
-| Ready → Implemented | 外部 PR merged 事实,或人工决定记录授权 | **agent**(依据外部事实);人类可介入 |
-| * → Deprecated | 需求废弃 / 复审决定废弃(必须有 `decision:` 或 `external:` 依据) | **agent**(执行);判定来自决定记录或外部事实 |
+| Ready → Implemented | 外部 PR merged 事实(`external:` 依据) | **agent**(依据外部事实);人类可介入 |
+| * → Deprecated | 需求废弃 / 复审决定废弃(必须有 `external:` 依据) | **agent**(执行);判定来自外部事实 |
 
 - **判据唯一权威** = `schema/criteria.json`;推进命令 = `bash scripts/ssdctl.sh advance <artifact> --to <状态>`。
-- **人类介入的唯一形式** = 落一条决定记录 `control/decisions/<YYYY-MM-DD>-<topic>.md`(或跑 `bash scripts/ssdctl.sh decide`)—— **没有实时交互通道**。
-- **署名区分**:`状态主体` / `评审人` 写 `agent:<id>` = agent 起草自评;写**裸人名 handle** = 人类复核;`human:` 前缀**只允许人工自己写**,agent 不得冒充人工、不得代填人名。
-- **每次转换留痕**:证据写入 `control/evidence/<YYYY-MM>/*.jsonl`,可回读;台账与 `control/state.json` 是派生数据,由机器再生成。
+- **人类接入的形态只有两种** = **新增素材**,或在制品的 `## 复审 (Review)` 段**写署名**;然后跑**同一条** `bash scripts/ssdctl.sh advance <artifact> --to <状态>` —— **没有实时交互通道**。
+- **署名区分**:`状态主体` 行写 `agent:<id>` = agent 起草自评、写 `human:<handle>` = 人工写入(该前缀**只允许人工自己写**,agent 不得冒充人工、不得代填人名);`评审人` 行只接受 `agent:<id>` 或**裸人名 handle**(= 人类复核),**不接受 `human:` 前缀**。
+- **每次转换留痕**:留痕 = **制品本身**(状态块 + 复审段)+ git 历史;台账状态列与 `scan` 打印的派生视图是派生数据,机器再生成。
 
-> 状态块与复审块的完整字段、转换触发表见 [WORKFLOW.md](WORKFLOW.md) §5 状态推进规则;`control/` 布局见 §11.9。
+> 状态块与复审块的完整字段、转换触发表见 [WORKFLOW.md](WORKFLOW.md) §5 状态推进规则。
+> **(历史)**:2026-11-24 之前仓内另有一个 `control/` 控制平面(决定记录 / 状态快照 / 证据链),F9 裁决已整体删除;历史事实见 git 历史。
 
 ## 规格统计
 
@@ -141,22 +142,22 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 | `scripts/check-repo-baseline.sh` | 实现基线表与实际仓状态一致性 | 有关联代码仓时 |
 | `scripts/sync-prd.sh` | PRD 台账机械登记 + 根 README 统计块再生成 | 启用了台账时 |
 | `scripts/sync-test-index.sh` | `test_cases/_index.md` 再生成 | 仅 Layer 4 |
-| `bash scripts/ssdctl.sh scan --check` | 状态块 / 复审块 / 派生数据一致性 | 每次都跑(CI) |
+| `bash scripts/ssdctl.sh scan --check` | 跨制品一致性(上游闸门 + 三件套原子性 + 字段自洽) | 每次都跑(CI) |
 | `bash scripts/ssdctl.sh gate` | 目标状态的判据集是否全部满足 | 每次都跑(CI) |
 
 > 一次性跑全部检查:用 `validate-spec` skill(交互式 agent),或按 `WORKFLOW.md` §6 的脚本表逐个跑(Symphony 编排下没有 slash 命令)。
-> **脚本只强制格式与追溯;状态推进由判据引擎负责**:`Ready` 由 `bash scripts/ssdctl.sh advance` 在判据全绿后写入,`Implemented` 需要外部事实(外部 PR merged)或人工决定记录,`Deprecated` 需要决定记录或外部事实(见 [WORKFLOW.md](WORKFLOW.md) §5 状态推进规则)。
+> **脚本只强制格式与追溯;状态推进由判据引擎负责**:`Ready` 由 `bash scripts/ssdctl.sh advance` 在判据全绿后写入,`Implemented` 需要外部事实(外部 PR merged,状态依据 `external:`),`Deprecated` 同样需要 `external:` 依据(见 [WORKFLOW.md](WORKFLOW.md) §5 状态推进规则)。
 
 ## 相关文件
 
 | 文件 | 用途 |
 |------|------|
-| [WORKFLOW.md](WORKFLOW.md) | 契约唯一真源:编排配置 + agent 工作契约(§1–§10)+ 使用指南(§11)+ 概念参考(§12) |
+| [WORKFLOW.md](WORKFLOW.md) | 契约唯一真源:编排配置 + agent 工作契约(§1–§10)+ 使用指南(§11)+ 概念参考(§12)+ 与编排层(DSH swarm)的协作分工(§13) |
 | [AGENTS.md](AGENTS.md) | 仓库操作契约(仓库清单 / 跨仓引用 / 多仓 Plan / 基线 / 证据锚点) |
 | [docs/agent-first-direction.md](docs/agent-first-direction.md) | agent 优先的实施方向与取舍依据 |
 | [docs/operation-flow.md](docs/operation-flow.md) | 端到端操作流程说明 |
 | [docs/process-analysis.md](docs/process-analysis.md) | 现状流程分析(哪些步骤由 agent 承担、哪些保留人工) |
 | 历史代际(不再留档) | `git log --all -- <path>` / `git show <commit>:<path>`(历史代际仅存于 git 历史) |
 | `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
-| `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `decide` / `evidence` / `verify`) |
-| `control/` | **控制面**:决定记录 / 状态快照 / 证据链(布局见 [WORKFLOW.md](WORKFLOW.md) §11.9 的 `control/` 一节) |
+| `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `verify`) |
+| **(历史)** `control/` 控制平面 | **(历史)** 决定记录 / 状态快照 / 证据链 —— 已于 2026-11-24 的 F9 裁决整体删除;现行载体是**制品本身**(状态块 + 复审段)+ git 历史 |

@@ -178,13 +178,24 @@ class FieldGateRulesTest(unittest.TestCase):
         )
         self.assertGate(text, 0)
 
-    def test_mixed_basis_prefixes_pass(self) -> None:
-        """criteria / decision / external 混排合法。"""
+    def test_mixed_criteria_and_external_pass(self) -> None:
+        """criteria / external 混排合法(F9:授权来源只剩这两种)。"""
+        text = READY_PRD.replace(
+            "criteria:PRD-READY-01",
+            "criteria:PRD-READY-01,external:pr-123",
+        )
+        self.assertGate(text, 0)
+
+    def test_decision_prefix_in_basis_fails(self) -> None:
+        """F9 R-9:`decision:` 不再是合法的状态依据前缀(决定通道已删除)。
+
+        判别点:F9 之前 `decision:` 合法 ⇒ 这条用例在 F9 之前是红的。
+        """
         text = READY_PRD.replace(
             "criteria:PRD-READY-01",
             "criteria:PRD-READY-01,decision:control/decisions/d1.md#D1",
         )
-        self.assertGate(text, 0)
+        self.assertGate(text, 1, "状态依据项非法")
 
     # --- 反证: 每条规则都要能失败 ---
 

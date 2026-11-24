@@ -27,12 +27,19 @@ REVIEW_HEADING_KEY = "复审"
 LINKS_HEADING_KEY = "链接"
 
 # 状态依据(实施契约 §3.1)的规范形态:
-#   criteria:<id>[,<id>…] | decision:<path>#<anchor> | external:<ref>
+#   criteria:<id>[,<id>…] | external:<ref>
 # `criteria:` 之后的逗号分隔项是**同前缀的延续**(省略前缀),所以 `criteria:A,B` 合法。
 # 这与 schema/criteria.json 的 `*-STATE-BASIS` 判据正则
 # `criteria:[A-Z0-9-]+(,[A-Z0-9-]+)*` 一致 —— 判据与门禁必须说同一件事。
-BASIS_PREFIXES = ("criteria", "decision", "external")
+# F9:`decision:` 前缀已删除(控制平面整体删除,不再有决定文件这种授权来源)。
+BASIS_PREFIXES = ("criteria", "external")
 BASIS_ID_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+
+# 复审段里的「已知问题」行(F9 新增,实施契约 §5.2 规则 2):
+#   > **已知问题**: <criterion-id> — <说明>
+# 机器只看「复审段内是否点名了该判据 id」;形状校验只管 id 形态,不管语义。
+KNOWN_ISSUE_KEY = "已知问题"
+KNOWN_ISSUE_ID_RE = re.compile(r"^[A-Z0-9-]+$")
 
 _QUOTE_FIELD_RE = re.compile(r"^\s*>\s*\*\*(?P<key>[^*]+)\*\*\s*[:：]\s*(?P<value>.*?)\s*$")
 _TABLE_FIELD_RE = re.compile(r"^\s*\|\s*\*\*(?P<key>[^*]+)\*\*\s*\|\s*(?P<value>[^|]*?)\s*\|")
@@ -83,12 +90,17 @@ class StatusBlock:
 
 @dataclass(frozen=True)
 class ReviewBlock:
-    """契约 §3.2 的复审块。"""
+    """契约 §3.2 的复审块。
+
+    `known_issues` 是复审段里全部 `> **已知问题**: …` 行的原始值 —— 人工接入
+    「在制品里写内容」的那一半:非阻断判据失败时,人把判据 id 点名在这里。
+    """
 
     reviewer: str | None = None
     review_date: str | None = None
     conclusion: str | None = None
     method: str | None = None
+    known_issues: tuple[str, ...] = ()
     rel: str = ""
     line: int = 0
 
@@ -243,7 +255,7 @@ def read_table_fields(lines: list[str], rel: str = "") -> dict[str, FieldHit]:
 def parse_basis(basis: str | None) -> tuple[list[str], list[str]]:
     """把状态依据拆成 (合法项, 非法项)。
 
-    合法项保留原样; 非法项是既没有 `criteria:`/`decision:`/`external:` 前缀、
+    合法项保留原样; 非法项是既没有 `criteria:`/`external:` 前缀、
     又不是 `criteria:` 组延续(省略前缀的裸 id)的片段。
 
     判定规则与 `scripts/check-md-schema.sh` 的 `check_status_meta` 一致 ——
@@ -312,9 +324,51 @@ def parse_review(text: str, rel: str = "") -> ReviewBlock:
         review_date=value("评审日期"),
         conclusion=value("评审结论"),
         method=value("评审方式"),
+        known_issues=_read_known_issues(body),
         rel=reviewer.rel if reviewer else rel,
         line=reviewer.line if reviewer else 0,
     )
+
+
+def _read_known_issues(body: list[str]) -> tuple[str, ...]:
+    """复审段内全部 `> **已知问题**: …` 行的值(多行都收)。"""
+    values: list[str] = []
+    for line in body:
+        match = _QUOTE_FIELD_RE.match(line)
+        if match and match.group("key").strip() == KNOWN_ISSUE_KEY:
+            values.append(match.group("value").strip())
+    return tuple(values)
+
+
+def known_issue_ids(review: ReviewBlock) -> list[str]:
+    """复审段内点名的判据 id(去重,保持出现顺序)。
+
+    只认形态合法的 id(大写字母 / 数字 / 连字符);形态非法的行由
+    `known_issue_shape_problems` 单独报出来,这里不静默吞掉。
+    """
+    ids: list[str] = []
+    for raw in review.known_issues:
+        parts = raw.split()
+        if not parts:
+            continue
+        token = parts[0]
+        if KNOWN_ISSUE_ID_RE.match(token) and token not in ids:
+            ids.append(token)
+    return ids
+
+
+def known_issue_shape_problems(review: ReviewBlock) -> list[str]:
+    """「已知问题」行的**形状**校验(不校验语义)。"""
+    problems: list[str] = []
+    for raw in review.known_issues:
+        parts = raw.split()
+        token = parts[0] if parts else ""
+        if not token or not KNOWN_ISSUE_ID_RE.match(token):
+            problems.append(
+                f"`已知问题` 行的判据 id 非法: '{raw}'"
+                "(应为形如 PRD-XXX-01 的大写字母/数字/连字符 id,后接说明)"
+            )
+    return problems
 
 
 # ------------------------------------------------------------------- 状态块写入

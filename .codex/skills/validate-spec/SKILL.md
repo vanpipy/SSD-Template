@@ -56,8 +56,8 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 |------|--------|----------|
 | `ssdctl.py criteria <artifact>` | 单制品逐条判据（必填段 / 状态块 / 复审块 / 稳定 ID / 引用闭环 / 无占位符）| 容忍旧格式文件 |
 | `ssdctl.py gate` | 全仓门禁: 既有门禁脚本 + 判据引擎 + 派生数据再生 | 逐条记录退出码 |
-| `ssdctl.py scan --check` | 调度一致性（状态块 ↔ 派生索引 ↔ 依赖许可）| 派生数据可再生成 |
-| `ssdctl.py verify <artifact>` | 状态块 / 复审块 / 证据链三者一致 | 只回读, 不写 |
+| `ssdctl.py scan --check` | 跨制品一致性检查（上游闸门 / 三件套原子性 / 字段自洽）| 只回读, 不落盘 |
+| `ssdctl.py verify <artifact>` | 状态块与复审段自洽 | 只回读, 不写 |
 | `skills-integrity.sh` | `.codex/skills/` 目录一致性（front matter 键集合 / 悬空引用 / 代际口径 / 占位符 / 旧表述 / ssdctl 子命令名）| 只查 skill 目录, 不查 spec 产物 |
 
 ### 可选层与条件启用

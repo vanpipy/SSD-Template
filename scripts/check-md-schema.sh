@@ -152,12 +152,12 @@ STATE_RE='^(Draft|Ready|Implemented|Deprecated)'
 #   Ready / Implemented: 后三行必填且非空(半写 = 违规)
 STATE_SUBJECT_RE='^(agent|human):[A-Za-z0-9._-]+$'
 STATE_TIME_RE='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([+-][0-9]{2}:[0-9]{2}|Z)$'
-STATE_BASIS_ITEM_RE='^(criteria|decision|external):[^[:space:],]+$'
+STATE_BASIS_ITEM_RE='^(criteria|external):[^[:space:],]+$'
 # criteria:<id>[,<id>…] 的延续项(省略前缀的裸 id)
 STATE_BASIS_ID_RE='^[A-Za-z0-9._-]+$'
-# Deprecated 态的状态依据只允许 decision: / external:(实施契约 §5.2 —— 不允许 criteria:)
+# Deprecated 态的状态依据只允许 external:(实施契约 §5.2 —— 不允许 criteria:)
 # 注意: 这个常量必须存在。未定义时 `grep -Eq ""` 匹配一切, 规则会静默变成 no-op。
-STATE_BASIS_DECISION_RE='^(decision|external):[^[:space:],]+$'
+STATE_BASIS_DECISION_RE='^external:[^[:space:],]+$'
 # 复审方式的取值(实施契约 §3.2)
 REVIEW_METHODS_RE='^(自动判据|人工介入|外部事实)$'
 # 复审结论的取值(实施契约 §3.2)
@@ -306,7 +306,7 @@ check_state_value() {
 #   Ready / Implemented → 三行**必填且非空**:
 #      状态主体 = agent:<id> | human:<handle>
 #      状态时间 = 带时区的 ISO-8601
-#      状态依据 = criteria:<id> / decision:<path>#<anchor> / external:<ref>(逗号分隔, 至少一项)
+#      状态依据 = criteria:<id> / external:<ref>(逗号分隔, 至少一项)
 check_status_meta() {
   local rel="$1" file="$2" stage="$3"
   local subject ts basis item
@@ -332,12 +332,12 @@ check_status_meta() {
       if printf '%s' "$item" | grep -Eq "$STATE_BASIS_ITEM_RE"; then
         prev_prefix=$(printf '%s' "$item" | sed 's/^\([a-z][a-z]*\):.*/\1/')
         if [ "$stage" = "Deprecated" ] && [ "$prev_prefix" = "criteria" ]; then
-          err "$rel — 状态为 Deprecated, 状态依据不允许 criteria: ('$item'), 只能用 decision:<path>#<anchor> 或 external:<ref>"
+          err "$rel — 状态为 Deprecated, 状态依据不允许 criteria: ('$item'), 只能用 external:<ref>"
         fi
       elif [ "$prev_prefix" = "criteria" ] && printf '%s' "$item" | grep -Eq "$STATE_BASIS_ID_RE"; then
         : # criteria:<id>[,<id>…] 的延续项 —— 前缀继承上一项(与判据正则一致)
       else
-        err "$rel — 状态依据项非法: '$item' (应为 criteria:<id>[,<id>…] / decision:<path>#<anchor> / external:<ref>)"
+        err "$rel — 状态依据项非法: '$item' (应为 criteria:<id>[,<id>…] / external:<ref>)"
       fi
     done
     IFS="$oldifs"
@@ -352,7 +352,7 @@ check_status_meta() {
         err "$rel — 状态为 $stage, 状态块缺少 \`> **状态时间**: <ISO-8601 带时区>\`"
       fi
       if [ -z "$basis" ]; then
-        err "$rel — 状态为 $stage, 状态块缺少 \`> **状态依据**: criteria:<id>[,decision:<path>#<anchor>,external:<ref>]\`"
+        err "$rel — 状态为 $stage, 状态块缺少 \`> **状态依据**: criteria:<id>[,external:<ref>]\`"
       fi
       ;;
   esac
@@ -405,6 +405,45 @@ apply_stage_override() {
   if [ "$canon" != "$declared" ]; then
     note "$rel — 按 --stage $STAGE_OVERRIDE 假定阶段校验(制品自身声明: ${declared:-未知})"
   fi
+  return 0
+}
+
+# 复审段「已知问题」行取值(全部行, 每行一个): `> **已知问题**: <criterion-id> — <说明>`
+# F9:非阻断判据失败时, 复审段必须点名该判据 id 才放行; 这里只校验**形状**, 不校验语义。
+review_known_issue_lines() {
+  printf '%s\n' "$1" | awk '
+    {
+      if (index($0, "**已知问题**") == 0) next
+      line = $0
+      if (sub(/^[^:：]*[:：][[:space:]]*/, "", line) == 0) next
+      gsub(/^[[:space:]]*[|*`]+/, "", line)
+      gsub(/[[:space:]]*[|*`]+$/, "", line)
+      if (index(line, "**已知问题**") > 0) next
+      print line
+    }
+  '
+}
+
+# 「已知问题」行形状校验: 首个 token 必须是形如 PRD-XXX-01 的判据 id
+check_known_issues() {
+  # $1 = rel, $2 = 复审段体
+  local rel="$1" body="$2" issues line tok
+  local oldifs="$IFS"
+  issues=$(review_known_issue_lines "$body")
+  [ -z "$issues" ] && return 0
+  IFS='
+'
+  for line in $issues; do
+    IFS="$oldifs"
+    [ -z "$line" ] && continue
+    tok=$(printf '%s' "$line" | awk '{print $1}')
+    if ! printf '%s' "$tok" | grep -Eq '^[A-Z0-9-]+$'; then
+      err "$rel — \`已知问题\` 行的判据 id 非法: '$line' (应为形如 PRD-XXX-01 的大写字母/数字/连字符 id, 后接说明)"
+    fi
+    IFS='
+'
+  done
+  IFS="$oldifs"
   return 0
 }
 
@@ -479,6 +518,7 @@ check_review_block() {
       fi
       ;;
   esac
+  check_known_issues "$rel" "$body"
   return 0
 }
 
