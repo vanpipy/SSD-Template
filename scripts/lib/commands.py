@@ -22,6 +22,7 @@ from pathlib import Path
 
 from . import control
 from .artifacts import (
+    REVIEW_HEADING_KEY,
     Artifact,
     apply_review_block,
     apply_status_block,
@@ -31,6 +32,7 @@ from .artifacts import (
     parse_status,
     render_review_block,
     render_status_block,
+    section_span,
 )
 from .criteria import (
     CriteriaError,
@@ -69,6 +71,11 @@ REVIEW_METHODS = ("自动判据", "人工介入", "外部事实")
 REVIEW_CONCLUSIONS = ("通过", "有条件通过", "需返工")
 AUTHORIZING_ACTIONS = ("approve", "override")
 
+# 三件套(WORKFLOW.md §5「三件套一致性规则」):
+# PRD / Tech Design / Plan 三个状态**必须同时**进入 Implemented —— 不允许单层先 Implemented。
+# test-case 独立于三件套生命周期(AGENTS.md §3.3),不参与这条规则。
+TRIO_LAYERS = ("prd", "td", "plan")
+
 # 状态块取值格式(契约 §3.1)—— 与 scripts/check-md-schema.sh 的常量同口径
 _STATE_SUBJECT_RE = re.compile(r"^(agent|human):[A-Za-z0-9._-]+$")
 _STATE_TIME_RE = re.compile(
@@ -90,7 +97,7 @@ def _infer_layer(rel: str, text: str) -> str:
     """从路径或内容推断一个制品的层。
 
     路径优先;路径不在层目录里时按内容特征推断 —— 反证样例
-    (`.swarm/evidence/**` 下的历史 PRD)就是这种情况。
+    (`docs/evidence/**` 下的历史 PRD)就是这种情况。
     """
     head = rel.split("/")[0]
     if head in _LAYER_BY_DIR:
@@ -486,6 +493,24 @@ def _basis_from_criteria(criteria: list[Criterion], layer: str, result: Criteria
     return "criteria:" + ",".join(ids)
 
 
+def _trio_siblings(artifacts: list[Artifact], target: Artifact) -> list[Artifact]:
+    """同 topic、不同层(prd / td / plan)的兄弟制品。
+
+    只认**已经存在**的兄弟:缺失的层不是阻塞项(一个仓库可能只有 PRD 一层)。
+    同 topic 的多个实例(不同日期的同名 topic)都算兄弟 —— 任一未就位即整组不就位。
+    排序固定 prd → td → plan,保证提示与证据顺序稳定。
+    """
+    order = {layer: index for index, layer in enumerate(TRIO_LAYERS)}
+    siblings = [
+        art
+        for art in artifacts
+        if art.topic == target.topic
+        and art.layer in TRIO_LAYERS
+        and art.layer != target.layer
+    ]
+    return sorted(siblings, key=lambda art: (order[art.layer], art.rel))
+
+
 def cmd_advance(root: Path, args) -> int:
     target_state = args.to
     if target_state not in ("Ready", "Implemented", "Deprecated"):
@@ -559,6 +584,24 @@ def cmd_advance(root: Path, args) -> int:
                     f"上游未 Ready:{item.artifact.rel} 状态={state or '未声明'}"
                 )
 
+    # §5.2 规则 5(WORKFLOW.md §5「三件套一致性规则」):
+    # PRD / Tech Design / Plan 必须**同时**进入 Implemented —— 不允许单层先 Implemented。
+    # 只对**已存在**的兄弟生效:缺失的层不是阻塞项(仓库可能只有 PRD 一层)。
+    # test-case 独立于三件套生命周期(AGENTS.md §3.3),不参与这条规则。
+    trio_siblings: list[Artifact] = []
+    if target_state == "Implemented" and artifact.layer in TRIO_LAYERS:
+        for sibling in _trio_siblings(artifacts, artifact):
+            sibling_state = parse_status(_entry_text(root, sibling), sibling.rel).state
+            if sibling_state == "Ready":
+                trio_siblings.append(sibling)
+            elif sibling_state == "Implemented":
+                continue  # 已经就位,不动它
+            else:
+                problems.append(
+                    f"三件套未同时就绪:兄弟制品 {sibling.rel} 状态={sibling_state or '未声明'}"
+                    f"(PRD / Tech Design / Plan 必须同时进入 Implemented)"
+                )
+
     # §5.2 规则 4:授权来源 = --decision 或判据全绿
     criteria_basis = _basis_from_criteria(criteria, artifact.layer, result)
     basis_items: list[str] = []
@@ -571,6 +614,7 @@ def cmd_advance(root: Path, args) -> int:
         basis_items.append(criteria_basis)
 
     # Implemented 额外要求 external: 依据(§5.2)
+    shared_external: str | None = None
     if target_state == "Implemented":
         chain_refs = control.external_refs(control.read_evidence(root, artifact.rel))
         if external_ref:
@@ -578,7 +622,21 @@ def cmd_advance(root: Path, args) -> int:
         if not chain_refs:
             problems.append("进入 Implemented 需要 `external:` 依据(证据链或决定记录里的外部事实)")
         else:
-            basis_items.append(chain_refs[0])
+            shared_external = chain_refs[0]
+            basis_items.append(shared_external)
+
+    # 兄弟制品的状态依据:同一份外部事实依据(一次外部实现、三层规格),
+    # 不替兄弟编造 criteria 依据 —— 那是目标层自己的判据。
+    sibling_basis: list[str] = []
+    if decision is not None:
+        sibling_basis.append(f"decision:{decision.rel}#{decision.id}")
+    if shared_external:
+        sibling_basis.append(shared_external)
+    for sibling in trio_siblings:
+        if not sibling_basis:
+            problems.append(f"兄弟制品 {sibling.rel} 没有可用的状态依据(缺 external: 依据)")
+        elif section_span(_entry_text(root, sibling).split("\n"), REVIEW_HEADING_KEY) is None:
+            problems.append(f"兄弟制品 {sibling.rel} 缺少 `## 复审 (Review)` 段 —— 无法写入复审块")
 
     # Deprecated 的状态依据必须是 decision: 或 external:(§5.2)
     if target_state == "Deprecated":
@@ -610,59 +668,94 @@ def cmd_advance(root: Path, args) -> int:
     timestamp = control.now_iso()
     subject = "agent:sddctl"  # INV-3:agent 永不署名 human:
 
-    new_text = apply_review_block(
-        apply_status_block(
-            _entry_text(root, artifact),
-            render_status_block(target_state, subject, timestamp, ",".join(basis_items)),
-        ),
-        render_review_block(reviewer, review_date, conclusion, method),
-    )
-
-    plan = [
-        f"制品: {artifact.rel}",
-        f"目标状态: {target_state}",
-        f"状态主体: {subject}",
-        f"状态依据: {','.join(basis_items)}",
-        f"复审块: 评审人={reviewer} 日期={review_date} 结论={conclusion} 方式={method}",
+    # 本次转换要写的制品:目标 + 已在 Ready 的兄弟(三件套同时进入 Implemented)。
+    # 每个制品各自算自己的正文与依据 —— 兄弟用同一份外部事实依据。
+    writes: list[tuple[Artifact, str, list[str]]] = [
+        (
+            artifact,
+            apply_review_block(
+                apply_status_block(
+                    _entry_text(root, artifact),
+                    render_status_block(target_state, subject, timestamp, ",".join(basis_items)),
+                ),
+                render_review_block(reviewer, review_date, conclusion, method),
+            ),
+            basis_items,
+        )
     ]
+    for sibling in trio_siblings:
+        writes.append(
+            (
+                sibling,
+                apply_review_block(
+                    apply_status_block(
+                        _entry_text(root, sibling),
+                        render_status_block(target_state, subject, timestamp, ",".join(sibling_basis)),
+                    ),
+                    render_review_block(reviewer, review_date, conclusion, method),
+                ),
+                sibling_basis,
+            )
+        )
+
+    plan: list[list[str]] = []
+    for art, _text, basis in writes:
+        plan.append(
+            [
+                f"制品: {art.rel}",
+                f"目标状态: {target_state}",
+                f"状态主体: {subject}",
+                f"状态依据: {','.join(basis)}",
+                f"复审块: 评审人={reviewer} 日期={review_date} 结论={conclusion} 方式={method}",
+            ]
+        )
     if args.dry_run:
         print("— 计划(未写任何文件) —")
-        for line in plan:
-            print(f"  {line}")
+        for block in plan:
+            for line in block:
+                print(f"  {line}")
         return EXIT_OK
 
-    # INV-4:先落证据再落制品;证据写失败 ⇒ 目标文件零改动
-    original = _entry_text(root, artifact)
-    record = {
-        "ts": timestamp,
-        "actor": actor,
-        "from": parse_status(original, artifact.rel).state or "未声明",
-        "to": target_state,
-        "artifact": artifact.rel,
-        "artifact_hash": control.sha256_text(original),
-        "criteria": [
-            {"id": claim["id"], "passed": claim["passed"]} for claim in result.claims
-        ],
-        "decisions": [f"decision:{decision.rel}#{decision.id}"] if decision else [],
-        "reason": f"推进到 {target_state}:{'; '.join(basis_items)}",
-    }
-    try:
-        evidence_file = control.append_evidence(root, record)
-    except OSError as exc:
-        print(f"✗ 证据链写入失败,目标文件未修改: {exc}", file=sys.stderr)
-        return EXIT_USAGE
+    # INV-4:先落证据再落制品;证据写失败 ⇒ 目标文件零改动。
+    # 逐个制品「证据 → 制品」成对落:某个制品的证据写不进去就停在那儿,
+    # 已写完的制品保持自洽(有证据、有状态),不会留下无证据的状态变更。
+    written: list[tuple[Artifact, Path]] = []
+    for art, new_text, basis in writes:
+        original = _entry_text(root, art)
+        record = {
+            "ts": timestamp,
+            "actor": actor,
+            "from": parse_status(original, art.rel).state or "未声明",
+            "to": target_state,
+            "artifact": art.rel,
+            "artifact_hash": control.sha256_text(original),
+            "criteria": (
+                [{"id": claim["id"], "passed": claim["passed"]} for claim in result.claims]
+                if art.rel == artifact.rel
+                else []
+            ),
+            "decisions": [f"decision:{decision.rel}#{decision.id}"] if decision else [],
+            "reason": f"推进到 {target_state}:{'; '.join(basis)}",
+        }
+        try:
+            evidence_file = control.append_evidence(root, record)
+        except OSError as exc:
+            print(f"✗ 证据链写入失败,目标文件未修改: {exc}", file=sys.stderr)
+            return EXIT_USAGE
 
-    try:
-        artifact.entry.write_text(new_text, encoding="utf-8", newline="\n")
-    except OSError as exc:
-        print(f"✗ 目标文件写入失败: {exc}", file=sys.stderr)
-        print(f"    证据已记录于 {evidence_file.relative_to(root).as_posix()}(请人工核对)", file=sys.stderr)
-        return EXIT_USAGE
+        try:
+            art.entry.write_text(new_text, encoding="utf-8", newline="\n")
+        except OSError as exc:
+            print(f"✗ 目标文件写入失败: {exc}", file=sys.stderr)
+            print(f"    证据已记录于 {evidence_file.relative_to(root).as_posix()}(请人工核对)", file=sys.stderr)
+            return EXIT_USAGE
+        written.append((art, evidence_file))
 
     print("— 已推进 —")
-    for line in plan:
-        print(f"  {line}")
-    print(f"  证据: {evidence_file.relative_to(root).as_posix()}")
+    for block, (_art, evidence_file) in zip(plan, written):
+        for line in block:
+            print(f"  {line}")
+        print(f"  证据: {evidence_file.relative_to(root).as_posix()}")
     return EXIT_OK
 
 
