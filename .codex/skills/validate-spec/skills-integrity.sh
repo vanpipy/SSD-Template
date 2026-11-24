@@ -120,7 +120,7 @@ head2 'Sweep D: <repo>/path 交叉引用目标必须存在'
 # 可选层: 目录不存在时该层的校验自动跳过, 因此交叉引用允许悬空
 is_optional_path() {
     case "$1" in
-        material/*|deep/*|test-business/*|docs/*|test_cases/_index.md) return 0 ;;
+        material/*|deep/*|test-business/*|test_cases/_index.md) return 0 ;;
     esac
     return 1
 }

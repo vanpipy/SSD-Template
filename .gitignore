@@ -16,8 +16,8 @@ __pycache__/
 /symphony-workspaces/
 /.symphony/
 
-# ── 历史归档(已移出仓库,仅保留指针) ──────────────────────
-/docs/efficacy/
+# ── 历史归档:2026-11-24 起 `docs/` 整体迁入编排目录(不入库) ──
+# 需要找回旧版本: git log --all -- docs/ ; git show <commit>:<path>
 
 # ── F9(2026-11-24):仓内控制平面 `control/` 已整体删除 ────
 # 派生视图不再落盘(留痕 = 制品 + git 历史),故无 control/state.json。

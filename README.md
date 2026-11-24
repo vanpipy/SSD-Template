@@ -154,9 +154,7 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 |------|------|
 | [WORKFLOW.md](WORKFLOW.md) | 契约唯一真源:编排配置 + agent 工作契约(§1–§10)+ 使用指南(§11)+ 概念参考(§12)+ 与编排层(DSH swarm)的协作分工(§13) |
 | [AGENTS.md](AGENTS.md) | 仓库操作契约(仓库清单 / 跨仓引用 / 多仓 Plan / 基线 / 证据锚点) |
-| [docs/agent-first-direction.md](docs/agent-first-direction.md) | agent 优先的实施方向与取舍依据 |
-| [docs/operation-flow.md](docs/operation-flow.md) | 端到端操作流程说明 |
-| [docs/process-analysis.md](docs/process-analysis.md) | 现状流程分析(哪些步骤由 agent 承担、哪些保留人工) |
+| 编排目录 `.swarm`(不入库) | 过程与契约补充文档(实施契约 / 需求集 / 决策记录 / 证据 / 报告)—— 2026-11-24 自 `docs/` 整体迁入;仓内不再留过程文档 |
 | 历史代际(不再留档) | `git log --all -- <path>` / `git show <commit>:<path>`(历史代际仅存于 git 历史) |
 | `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
 | `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `verify`) |

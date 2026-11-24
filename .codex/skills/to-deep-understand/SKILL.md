@@ -52,7 +52,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 |------|------|------|
 | 理解底座 | `deep/`（INDEX.md + topics/ + disambiguation.md + timeline.md + reports/）| 学习成果的持久载体 |
 | 台账扫描器 | `scripts/deep-scan.py` | 语料指纹扫描 + `deep/INDEX.md` 清单段更新 |
-| 规格语料 | `prd/` / `tech_design/` / `plan/` / `test_cases/` / `material/` / `docs/` / `schema/` | 深读的一手来源 |
+| 规格语料 | `prd/` / `tech_design/` / `plan/` / `test_cases/` / `material/` / `schema/` | 深读的一手来源 |
 | 仓库清单 | `AGENTS.md` §1.1 | 仓库标识 → 本地路径, 证据锚点与代码核对依据 |
 | 证据锚点约定 | `AGENTS.md` §1.7 | 代码引用格式 `{标识}@{短SHA}:{路径}#L{行号}` |
 

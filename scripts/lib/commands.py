@@ -106,7 +106,7 @@ def _infer_layer(rel: str, text: str) -> str:
     """从路径或内容推断一个制品的层。
 
     路径优先;路径不在层目录里时按内容特征推断 —— 反证样例
-    (`docs/evidence/**` 下的历史 PRD)就是这种情况。
+    (仓内反证夹具 `scripts/tests/fixtures/artifacts/uncovered-ac5-prd.md`)就是这种情况。
     """
     head = rel.split("/")[0]
     if head in _LAYER_BY_DIR:

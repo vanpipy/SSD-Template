@@ -5,7 +5,7 @@
 ## 为什么 (Why)
 
 样例 PRD:5 条 AC、4 个场景,AC-5(性能目标)没有任何场景覆盖 —— 与
-`docs/evidence/a17-run2/example-feature.migrated.md` 同等缺陷。
+「AC-5 无场景覆盖」这一类缺陷同等(反证样本)。
 用来证明「覆盖完整性」判据**能失败**。
 
 ## 目标 (Goal)

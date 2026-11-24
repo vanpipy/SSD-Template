@@ -1,7 +1,6 @@
-"""判据引擎:加载 `schema/criteria.json` 并实现契约 §4.1 的 **12 种 kind**。
+"""判据引擎:加载 `schema/criteria.json` 并实现 `schema/criteria.json` 的 **12 种 kind**。
 
-kind 词表是**封闭集合**。新增 kind 必须同时改实施契约 §4.1 与本模块,并补单元测试
-(契约 §4.1 末句)。加载失败(文件缺失/非法)一律抛 `CriteriaError`,由调用方转成退出码 2,
+kind 词表是**封闭集合**。新增 kind 必须同时改 `schema/criteria.json` 与本模块,并补单元测试。加载失败(文件缺失/非法)一律抛 `CriteriaError`,由调用方转成退出码 2,
 **绝不静默放行**。
 
 kind 速查:

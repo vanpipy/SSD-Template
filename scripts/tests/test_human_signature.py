@@ -1,6 +1,6 @@
 """F9 R-2/R-3:人工接入 = 直接在制品里写内容,然后跑**同一条** `advance`。
 
-规则来源:`docs/contracts/f9-single-carrier.md`
+规则来源:F9 裁决「人与 agent 同一条流水线」(2026-11-24;权威副本在 agent 编排目录,不入库)
   R-2 人工接入没有专属通道(没有决定文件 / `decide` 子命令);
   R-3 同一条命令、机器不代填人名:
        - 人**先**在制品的 `## 复审 (Review)` 段写好署名,再跑 `advance`;
@@ -10,12 +10,11 @@
 旧模型(决定文件 + `--decision` + 证据链)已被 F9 删除 —— 本文件把那些断言换掉,
 不是删掉断言:每条都换成一个**在旧模型下会红**的新断言。
 
-**署名形态说明**:复审块的 `评审人` 用**裸 handle**(如 `alice`),依据实施契约
-`docs/contracts/agent-first-implementation.md:64` / :290 / :397 与权威判据
+**署名形态说明**:复审块的 `评审人` 用**裸 handle**(如 `alice`),依据 `WORKFLOW.md` §5 与权威判据
 `schema/criteria.json:192-200`(`PRD-REVIEWER` 明写「禁止 human: 前缀」,blocking=true)。
-F9 需求集 R-3 的字面写法是 `评审人: human:<handle>` —— 与实施契约/判据不一致,
-已在 D3 报告里作为冲突上报给 Lead 裁决;本文件按**实施契约 + 权威判据**取裸 handle。
-`human:` 前缀合法的地方是**状态主体**行(实施契约 :47),不是复审块的评审人行。
+F9 需求集 R-3 的字面写法是 `评审人: human:<handle>` —— 与仓内口径/判据不一致,
+已在 D3 报告里作为冲突上报给 Lead 裁决;本文件按**仓内口径 + 权威判据**取裸 handle。
+`human:` 前缀合法的地方是**状态主体**行(见 `schema/prd.md` 的状态主体行),不是复审块的评审人行。
 
 **判别点**(旧模型下为什么会红):
 1. `--actor human:alice` 旧模型下是**允许**的(只是「操作者」,人工署名靠决定文件提供);
@@ -50,7 +49,7 @@ OPTIONAL_NOTE = {
     "kind": "section_exists",
     "params": {"sections": ["附加说明 (Notes)"]},
     "blocking": False,
-    "source": "docs/contracts/agent-first-implementation.md:240",
+    "source": "schema/prd.md:15",
 }
 
 # 权威判据 `schema/criteria.json:192-200` 的 `PRD-REVIEWER` **复制件**。
@@ -122,8 +121,7 @@ class HumanSignatureTests(unittest.TestCase):
         判别点:旧模型的 advance 会按 `--actor` / 决定文件重写复审块
         ⇒ 人工写的 `alice` / `人工介入` 会被改掉。
 
-        **关于署名形态**:复审块的 `评审人` 用**裸 handle**(实施契约
-        `docs/contracts/agent-first-implementation.md:64` / :290 / :397,
+        **关于署名形态**:复审块的 `评审人` 用**裸 handle**(见 `WORKFLOW.md` §5 与
         权威判据 `schema/criteria.json:192-200` `PRD-REVIEWER` 明写「禁止 human: 前缀」)。
         F9 需求集 R-3 的字面写法是 `human:<handle>` —— 两处不一致,已在 D3 报告里上报给 Lead 裁决。
         """

@@ -1,6 +1,6 @@
 """F9(单载体):授权来源、控制平面、CLI 表面、跨制品一致性 —— 机器层的反证测试。
 
-需求来源:`docs/contracts/f9-single-carrier.md`(权威)
+需求来源:F9 裁决「人与 agent 同一条流水线」(2026-11-24;权威副本在 agent 编排目录,不入库)
   R-4 授权来源只剩 `criteria:` / `external:`(`decision:` 删除)
   R-5 派生视图只打印、不落盘
   R-6 `scan --check` 改为跨制品一致性检查
@@ -47,7 +47,7 @@ OPTIONAL_NOTE = {
     "kind": "section_exists",
     "params": {"sections": ["附加说明 (Notes)"]},
     "blocking": False,
-    "source": "docs/contracts/agent-first-implementation.md:240",
+    "source": "schema/prd.md:15",
 }
 
 

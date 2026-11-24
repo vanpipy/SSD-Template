@@ -139,16 +139,16 @@ def a3_unit_tests(cwd: Path) -> None:
 
 # ---------------------------------------------------------------- A-4 反证
 def a4_counterexample(cwd: Path) -> None:
-    fixture = cwd / "docs/evidence/a17-run2/example-feature.migrated.md"
+    fixture = cwd / "scripts/tests/fixtures/artifacts/uncovered-ac5-prd.md"
     if not fixture.exists():
-        record("A-4", False, "迁移件 example-feature.migrated.md 不存在")
+        record("A-4", False, "反证夹具 uncovered-ac5-prd.md 不存在")
         return
     rc, out = py_run(["scripts/ssdctl.py", "criteria", str(fixture)], cwd)
     hit = "AC-5" in out
     if rc == 1 and hit:
-        record("A-4", True, "迁移件被判失败并点名 AC-5(rc=1)")
+        record("A-4", True, "反证夹具被判失败并点名 AC-5(rc=1)")
     else:
-        record("A-4", False, f"迁移件未按预期报错(rc={rc}, 含AC-5={hit}): {out.strip()[:300]}")
+        record("A-4", False, f"反证夹具未按预期报错(rc={rc}, 含AC-5={hit}): {out.strip()[:300]}")
 
 
 # ---------------------------------------------------------------- 临时副本上的写路径测试
@@ -164,9 +164,9 @@ def copy_repo(dst: Path) -> Path:
 def a5_negative(cwd: Path) -> None:
     """负用例:判据不全绿 ⇒ advance 退出 1 且目标文件零改动。"""
     target = cwd / "prd/2026-11-22/zz-negative-case.md"
-    src = cwd / "docs/evidence/a17-run2/example-feature.migrated.md"
+    src = cwd / "scripts/tests/fixtures/artifacts/uncovered-ac5-prd.md"
     if not src.exists():
-        record("A-5", False, "缺迁移件,无法构造负用例")
+        record("A-5", False, "缺反证夹具,无法构造负用例")
         return
     shutil.copyfile(src, target)
     before = sha(target)

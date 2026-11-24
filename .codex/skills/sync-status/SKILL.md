@@ -238,5 +238,5 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 - <repo>/AGENTS.md §1.1（仓库清单）
 - `schema/criteria.json`（判据唯一权威）
 - <repo>/scripts/ssdctl.py（判据与门禁的唯一入口）
-- <repo>/docs/contracts/agent-first-implementation.md（单载体契约: 状态唯一权威 = 制品状态块 + 复审段 + git 历史）
+- <repo>/WORKFLOW.md §5（单载体契约: 状态唯一权威 = 制品状态块 + 复审段 + git 历史）
 - <repo>/WORKFLOW.md（完整工作流）

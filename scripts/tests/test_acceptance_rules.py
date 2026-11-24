@@ -81,7 +81,7 @@ class LegacyCommandRuleTests(unittest.TestCase):
     def test_multiline_prose_explanation_is_exempted(self) -> None:
         """契约文档里那类说明常**跨行** —— 按段落判定才不误报。
 
-        这是实测踩到的形态:`docs/contracts/agent-first-implementation.md:200-201`
+        这是实测踩到的形态:`WORKFLOW.md` §11.8 里的跨行说明
         把「写 X 会让 agent 在本机第一步就失败」拆成两行,只按单行看会误报。
         """
         text = (

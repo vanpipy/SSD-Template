@@ -60,8 +60,8 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
   - §12     = 概念参考(为什么长成这样; 不定义任何可执行规则)。
   - §13     = 与编排层(DSH swarm)的协作分工(谁派谁、谁能写什么、决定怎么分流; 规范冲突时以 §1–§10 为准)。
 
-「实施契约」= `docs/contracts/agent-first-implementation.md`(§3 元数据 / §5 CLI / §7 调度谓词);**现行规范真源**。
-历史决策记录 = `docs/contracts/decisions/2026-11-22-agent-primary.md`(D-01…D-20)**(历史)** —— D-02 / D-10 / D-11 已被 2026-11-24 的 F9 裁决取代。
+「实施契约」= 编排目录 `.swarm/requirements/agent-first-implementation.md`(§3 元数据 / §5 CLI / §7 调度谓词)**(不入库)**;仓内规范真源 = 本文件 §1–§13 + `schema/**`,仓内引用「实施契约 §X」= 指该编排目录文件内的同章节。
+历史决策记录 = 编排目录 `.swarm/decisions/2026-11-22-agent-primary.md`(D-01…D-20)**(不入库 · 历史)** —— D-02 / D-10 / D-11 已被 2026-11-24 的 F9 裁决取代;F9 裁决见编排目录 `.swarm/decisions/2026-11-24-f9-single-carrier.md`。
 -->
 
 # SSD-Template 规格流水线 · Agent 工作契约
@@ -891,13 +891,7 @@ flowchart TB
 | [WORKFLOW.md](WORKFLOW.md) | **契约唯一真源**:编排配置 + agent 工作契约(§1–§10)+ 使用指南(§11)+ 概念参考(§12)+ 编排层协作分工(§13) |
 | [README.md](README.md) | 仓库入口(总览 + 规格统计 + PRD 关联矩阵) |
 | [AGENTS.md](AGENTS.md) | 仓库操作契约(仓库清单 / 跨仓引用 / 多仓 Plan / 基线 / 证据锚点) |
-| [docs/agent-first-direction.md](docs/agent-first-direction.md) | agent 优先的实施方向与取舍依据 |
-| [docs/operation-flow.md](docs/operation-flow.md) | 端到端操作流程说明 |
-| [docs/process-analysis.md](docs/process-analysis.md) | 现状流程分析(哪些步骤由 agent 承担、哪些保留人工) |
-| [docs/contracts/agent-first-implementation.md](docs/contracts/agent-first-implementation.md) | **实施契约**:agent 流水线的元数据 / CLI / 调度谓词 |
-| [docs/contracts/agent-first-direction.md](docs/contracts/agent-first-direction.md) | agent 优先的需求真源(R1–R8) |
-| [docs/contracts/phase2-task-flow.md](docs/contracts/phase2-task-flow.md) | 阶段任务流契约(阶段划分 / 门禁 / 回写) |
-| `docs/contracts/decisions/2026-11-22-agent-primary.md` | **(历史)** 历史决策记录:D-01…D-20(其中 D-02 / D-10 / D-11 已被 2026-11-24 的 F9 裁决取代) |
+| 编排目录 `.swarm`(不入库) | **实施契约 / 需求集 / 决策记录 / 证据 / 报告** —— 2026-11-24 自 `docs/` 整体迁入;仓内不再留过程文档(仓内真源 = 本文件 + `schema/**`) |
 | [schema/prd.md](schema/prd.md) | PRD 模板 |
 | [schema/tech_design/](schema/tech_design/) | Tech Design 模板 (v4 默认 4 子文件,v3 存量 7 子文件) |
 | [schema/plan.md](schema/plan.md) | Plan 模板 |

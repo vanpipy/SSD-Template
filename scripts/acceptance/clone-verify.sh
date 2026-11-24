@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
 # clone-verify.sh — 对已提交的 HEAD 做一次干净克隆验证
 #
-# 断言 A(F1):克隆内**受版本控制的文件不得引用未跟踪的编排目录路径**
-#   (编排目录 = 仓根下的 `.swarm`,被 .gitignore 排除;下文的正则写作 `\.swarm[/]`
-#    —— 斜杠放进字符组,而不是直接跟在后面 —— 是为了让本文件自身不含「点+swarm+斜杠」
-#    那个字面串,否则本脚本会被自己的断言判为违规。两种写法匹配等价。)
+# 断言 A1(脚本自足):克隆内的**脚本**(py/sh/yml)不得引用编排目录内容,也不得引用已迁出的文档目录
+#   - 编排目录 = 仓根下的 `.swarm`(被 .gitignore 排除,不入库)
+#   - 2026-11-24 起仓内不再保留过程文档目录;过程与契约补充文档在编排目录里
+#   正则写作 `\.swarm[/]` 与 `docs[/]`(斜杠放进字符组)—— 是为了让本文件自身不含
+#   「点+swarm+斜杠」「docs+斜杠」那两个字面串,否则本脚本会被自己的断言判为违规。
+#   两种写法匹配等价。本文件自身再用 pathspec 排除(`:!scripts/acceptance/clone-verify.sh`)。
 #   白名单(2 条,均为「跳过编排目录」的实现细节,不是对文件的引用):
 #     scripts/check-doc-links.py  —— walk_md() 的 skip_dirs
 #     scripts/lib/commands.py    —— REPO_TEXT_SKIP_PARTS 的 skip parts
 #   判定按**文件路径**做(不是按命中条数):白名单文件里命中多少行都放行;
-#   白名单之外的任何受控文件出现编排目录路径即失败,并打印全部越界行。
+#   白名单之外的任何受控脚本出现这两类路径即失败,并打印全部越界行。
 #
-# 断言 B(F1):「实施契约」「决策真源」「判据反证用例」「验收工具链」必须都在克隆内
-#   —— 新克隆的仓不缺零件。
+# 断言 A2(指针可读):仓内 **md** 若提到编排目录,同一行必须带「编排目录」或「不入库」标注
+#   —— 读者必须一眼看出那是仓外指针,不是仓内文件。
+#
+# 断言 B(零件齐全):仓内规范真源与验收工具链必须都在克隆内 —— 新克隆的仓不缺零件。
+#
+# 断言 C(旧目录已清):克隆内不得再出现已迁出的文档目录。
 #
 # 用法: bash scripts/acceptance/clone-verify.sh [clone_src_url] [dest_dir]
 #   clone_src_url 默认 file:///D:/project/SSD-Template(即当前仓的已提交 HEAD)
@@ -25,19 +31,16 @@ DEST="${2:-/d/project/_verify-merge2}"
 WHITELIST="scripts/check-doc-links.py scripts/lib/commands.py"
 
 REQUIRED="
-docs/contracts/agent-first-implementation.md
-docs/contracts/agent-first-direction.md
-docs/contracts/phase2-task-flow.md
-docs/contracts/decisions/2026-11-22-agent-primary.md
-docs/evidence/a17-run2/example-feature.md
-docs/evidence/a17-run2/example-feature.migrated.md
-docs/evidence/a17-run2/run-evidence.json
-docs/reports/agent-first-direction-lane-a.md
+WORKFLOW.md
+AGENTS.md
+README.md
+schema/criteria.json
 scripts/acceptance/a17-e2e.sh
 scripts/acceptance/agent-first-acceptance.py
 scripts/acceptance/clone-verify.sh
 scripts/acceptance/recheck.sh
 scripts/acceptance/run-all-gates.sh
+scripts/tests/fixtures/artifacts/uncovered-ac5-prd.md
 "
 
 rm -rf "$DEST"
@@ -47,8 +50,8 @@ echo "HEAD: $(git log --oneline -1)"
 echo "root md: $(ls *.md | tr '\n' ' ')"
 fail=0
 
-# ------------------------------------------------------------ 断言 A
-hits=$(git grep -n '\.swarm[/]' -- '*.md' '*.py' '*.sh' '*.yml' 2>/dev/null)
+# ------------------------------------------------------------ 断言 A1
+hits=$(git grep -n -e '\.swarm[/]' -e 'docs[/]' -- '*.py' '*.sh' '*.yml' ':!scripts/acceptance/clone-verify.sh' 2>/dev/null)
 hit_files=$(printf '%s\n' "$hits" | awk -F: 'NF>=3 {print $1}' | sort -u)
 offenders=""
 for f in $hit_files; do
@@ -58,7 +61,7 @@ for f in $hit_files; do
   esac
 done
 if [ -n "$offenders" ]; then
-  echo "✗ 断言A 失败: 受控文件引用了未跟踪的编排目录路径:"
+  echo "✗ 断言A1 失败: 受控脚本引用了编排目录路径或已迁出的文档目录:"
   printf '%s\n' "$hits" | awk -F: -v ofs=" $offenders " 'index(ofs, " " $1 " ") {print "    " $0}'
   fail=1
 else
@@ -69,7 +72,24 @@ else
     c=$(printf '%s\n' "$hits" | awk -F: -v t="$f" 'NF>=3 && $1 == t' | wc -l)
     n_lines=$((n_lines + c))
   done
-  echo "✓ 断言A 通过: 白名单外 0 处编排目录引用(白名单内命中文件数=$n_hit, 命中行数=$n_lines)"
+  echo "✓ 断言A1 通过: 白名单外 0 处越界引用(白名单内命中文件数=$n_hit, 命中行数=$n_lines)"
+fi
+
+# ------------------------------------------------------------ 断言 A2
+md_hits=$(git grep -n '\.swarm[/]' -- '*.md' 2>/dev/null)
+if [ -n "$md_hits" ]; then
+  unlabeled=$(printf '%s\n' "$md_hits" | grep -v -e '编排目录' -e '不入库')
+else
+  unlabeled=""
+fi
+if [ -n "$unlabeled" ]; then
+  echo "✗ 断言A2 失败: 仓内 md 提到编排目录但同句没有「编排目录」/「不入库」标注:"
+  printf '%s\n' "$unlabeled" | sed 's/^/    /'
+  fail=1
+else
+  n_md=0
+  [ -n "$md_hits" ] && n_md=$(printf '%s\n' "$md_hits" | wc -l)
+  echo "✓ 断言A2 通过: 编排目录指针 $n_md 行,全部带标注"
 fi
 
 # ------------------------------------------------------------ 断言 B
@@ -85,6 +105,14 @@ else
   n_req=0
   for p in $REQUIRED; do n_req=$((n_req + 1)); done
   echo "✓ 断言B 通过: $n_req 个受控文件全部存在于克隆内"
+fi
+
+# ------------------------------------------------------------ 断言 C
+if [ -d docs ]; then
+  echo "✗ 断言C 失败: 克隆内仍存在已迁出的文档目录"
+  fail=1
+else
+  echo "✓ 断言C 通过: 克隆内无已迁出的文档目录"
 fi
 
 # ------------------------------------------------------------ 既有门禁

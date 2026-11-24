@@ -4,7 +4,7 @@
 
 扫描本仓的规格层语料, 更新 deep/INDEX.md 的「文档清单 × 状态」段。
 
-职责边界 (契约 docs/mechanism-contract.md I-6):
+职责边界 (只做三件事, 如下):
   只做三件事: 扫描语料 → 计算指纹 → 更新 deep/INDEX.md 清单段。
   **不**生成 deep/topics/ 正文 (需 agent 归纳), **不**改动 deep/ 以外的任何文件。
 
@@ -24,7 +24,7 @@
   - 语料中已消失的文档 → 移出清单 (stdout 报告, 由学习流程记录)
 
 语料范围 (通用, 与业务无关):
-  - 目录: material/ prd/ tech_design/ plan/ test_cases/ docs/ schema/ (存在才收录, 递归 *.md)
+  - 目录: material/ prd/ tech_design/ plan/ test_cases/ schema/ (存在才收录, 递归 *.md)
   - 根级: 全部 *.md (README.md / AGENTS.md / WORKFLOW.md 等入口文档)
   - 不收录: deep/ (本层自身), skills/ scripts/ (流程资产), legacy/ (历史归档)
 
@@ -59,7 +59,7 @@ BEGIN_RE = re.compile(r"^[ \t]*<!--[ \t]*inventory-begin[ \t]*-->[ \t]*$", re.M)
 END_RE = re.compile(r"^[ \t]*<!--[ \t]*inventory-end[ \t]*-->[ \t]*$", re.M)
 
 # 语料目录: 与业务无关的规格层目录, 存在才收录
-CORPUS_DIRS = ("material", "prd", "tech_design", "plan", "test_cases", "docs", "schema")
+CORPUS_DIRS = ("material", "prd", "tech_design", "plan", "test_cases", "schema")
 
 MD_SUFFIX = ".md"
 
@@ -70,7 +70,6 @@ DOC_TYPE_BY_DIR = {
     "tech_design": "TD",
     "plan": "Plan",
     "test_cases": "用例",
-    "docs": "文档",
     "schema": "Schema",
 }
 DOC_TYPE_ROOT = "入口"

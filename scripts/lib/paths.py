@@ -1,6 +1,6 @@
 """仓库根、判据文件路径解析。
 
-契约来源:`docs/contracts/agent-first-implementation.md` §4(判据文件)。
+契约来源:`WORKFLOW.md` §6 与 `schema/criteria.json`(判据文件)。
 F9:仓内**不再有控制平面**(`control/` 目录已整体删除)—— 状态与评审的唯一
 权威载体是制品本身,所以这里不再解析任何控制面路径。
 本模块不读任何环境变量以外的配置;唯一的例外是 `SSDCTL_CRITERIA`(测试与临时判据用)。
