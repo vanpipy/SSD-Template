@@ -1,6 +1,6 @@
 """F9 R-2/R-3:人工接入 = 直接在制品里写内容,然后跑**同一条** `advance`。
 
-规则来源:`.swarm/requirements/f9-single-carrier.md`
+规则来源:`docs/contracts/f9-single-carrier.md`
   R-2 人工接入没有专属通道(没有决定文件 / `decide` 子命令);
   R-3 同一条命令、机器不代填人名:
        - 人**先**在制品的 `## 复审 (Review)` 段写好署名,再跑 `advance`;

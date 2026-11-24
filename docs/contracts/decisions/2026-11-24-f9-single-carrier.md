@@ -1,7 +1,7 @@
 # 决策记录 · 2026-11-24 · F9 单载体流水线(删除仓内控制平面)
 
 > 用户指令 (m04558, verbatim):「./control 也是不需要的 人工接入 会以新增素材的方式 ，所以其实流程对人类开发者还是agent 其实都是一致的」
-> 本文件是 **F9 裁决真源**;需求条目见 `.swarm/requirements/f9-single-carrier.md`(R-1..R-13),实施细节见
+> 本文件是 **F9 裁决真源**;需求条目(R-1..R-13)见 `docs/contracts/f9-single-carrier.md`,实施细节见
 > `docs/contracts/agent-first-implementation.md` §5 / §6。
 > 上一份决策记录:`docs/contracts/decisions/2026-11-22-agent-primary.md`(历史,部分条款被本文件取代)。
 

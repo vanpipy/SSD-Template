@@ -1,6 +1,6 @@
 """F9(单载体):授权来源、控制平面、CLI 表面、跨制品一致性 —— 机器层的反证测试。
 
-需求来源:`.swarm/requirements/f9-single-carrier.md`(权威)
+需求来源:`docs/contracts/f9-single-carrier.md`(权威)
   R-4 授权来源只剩 `criteria:` / `external:`(`decision:` 删除)
   R-5 派生视图只打印、不落盘
   R-6 `scan --check` 改为跨制品一致性检查
