@@ -305,29 +305,33 @@ bash scripts/ssdctl.sh advance <artifact> --to Ready          # 与 agent 完全
 
 门禁是裁判,不是建议。**退出码:0 = 通过,1 = 存在违规,2 = 调用 / 环境错误**。
 
-调用约定:`.sh` 用 `bash scripts/<name>.sh`、`.py` 用 `python3 scripts/<name>.py`(都**不要**用 `./` 前缀;
-脚本从自身位置推导仓根,任何 cwd 都可以):
+调用约定:`.sh` 用 `bash scripts/<name>.sh`;`.py` 用 **唯一解释器入口**解析出的解释器 ——
+`PY="$(bash scripts/ssdctl.sh --python)"; "$PY" scripts/<name>.py`
+(Windows 上 `python` 可能是 Microsoft Store 占位符、`python3` 只在 POSIX 机器上有,所以不写死形态;
+都**不要**用 `./` 前缀;脚本从自身位置推导仓根,任何 cwd 都可以):
 
 > **与 `AGENTS.md` §3.4 / §3.5 的关系**:那两条讲的是「用 `validate-spec` skill、不要手拼 scripts 命令」,
 > 是对**交互式 agent**(有 slash 命令的环境)的入口约定。在本仓的自主流水线里**本文件就是执行入口**,没有 slash 命令可用,
 > 所以直接跑下面这张表里的脚本就是本契约规定的动作 —— 两者指向同一批脚本、同一套退出码判定,不冲突。
 
-| 脚本 | 什么时候跑 | 查什么 |
-|------|------------|--------|
-| `scripts/check-naming.sh` | **每次都跑** | 目录 / 文件命名与层结构形状 |
-| `scripts/check-md-schema.sh` | **每次都跑** | 必填段、状态枚举、阶段感知(草稿 / 评审 / 终态) |
-| `scripts/check-traceability.sh` | **每次都跑** | 跨层引用闭环(KD / V / FR / SYS / MOD) |
-| `scripts/check-doc-links.py` | **每次都跑** | 仓内受版本控制的 Markdown 相对链接死链 |
-| `scripts/check-line-endings.sh` | **每次都跑** | 受版本控制的文本文件不得含 CR(行尾统一 LF) |
-| `scripts/check-repo-baseline.sh` | 仅 Layer 2(且仓内登记了关联代码仓时) | Tech Design `## 实现基线` 的 6 列快照 |
-| `scripts/sync-prd.sh` | **每次都跑**(写模式, 幂等) | 机械登记 PRD 台账(可选层)+ 重生成根 README 统计块 |
-| `scripts/sync-prd.sh --check` | 只读复查 | 统计块 / 台账与实际制品一致 |
-| `scripts/sync-test-index.sh` | 启用 Layer 4 时跑(写模式, 幂等) | 重生成 `test_cases/_index.md` |
-| `scripts/sync-test-index.sh --check` | 只读复查 | 用例索引与用例元信息一致 |
-| `scripts/deep-scan.py` | 仅当仓内启用 `deep/` 底座时 | 理解底座台账 |
-| `bash scripts/ssdctl.sh gate` | **每次都跑** | 全仓门禁(既有 8 个)+ 判据引擎(实施契约 §8) |
-| `bash scripts/ssdctl.sh scan --check` | **每次都跑** | **跨制品一致性**:上游闸门 + 三件套原子性 + 字段自洽(实施契约 R-6);**只读**,不比对任何快照文件 |
+| 脚本 | 什么时候跑 |
+|------|------------|
+| `scripts/check-naming.sh` | **每次都跑** |
+| `scripts/check-md-schema.sh` | **每次都跑** |
+| `scripts/check-traceability.sh` | **每次都跑** |
+| `scripts/check-doc-links.py` | **每次都跑** |
+| `scripts/check-line-endings.sh` | **每次都跑** |
+| `scripts/check-repo-baseline.sh` | 仅 Layer 2(且仓内登记了关联代码仓时) |
+| `scripts/sync-prd.sh` | **每次都跑**(写模式, 幂等) |
+| `scripts/sync-prd.sh --check` | 只读复查 |
+| `scripts/sync-test-index.sh` | 启用 Layer 4 时跑(写模式, 幂等) |
+| `scripts/sync-test-index.sh --check` | 只读复查 |
+| `scripts/deep-scan.py` | 仅当仓内启用 `deep/` 底座时 |
+| `bash scripts/ssdctl.sh gate` | **每次都跑** |
+| `bash scripts/ssdctl.sh scan --check` | **每次都跑** |
 
+每个脚本的**职责 / 调用形态 / 退出码 / 谁调用它 / 改了要同步改哪里**只在 `scripts/README.md` 写一份(仓内脚本清单唯一真源);
+本表只回答「**什么时候跑**」,不要在这里复制明细。
 执行规则:
 
 - **退出码 1 = 你的产物有问题** → **修产物**,然后重跑。**禁止绕过**:不改门禁、不改 `scripts/**`、不删检查项、

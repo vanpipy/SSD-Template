@@ -132,19 +132,13 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 
 退出码约定:`0` = 通过,`1` = 存在违规,`2` = 调用 / 环境错误。
 
-| 脚本 | 检查 | 什么时候跑 |
+| 命令 | 作用 | 什么时候跑 |
 |------|------|------------|
-| `scripts/check-naming.sh` | 目录 / 文件命名规范与层结构形状 | 每次都跑 |
-| `scripts/check-md-schema.sh` | PRD / TD / Plan / Test Case 必填字段、状态枚举、阶段感知 | 每次都跑 |
-| `scripts/check-traceability.sh` | KD / V 闭环、跨层级联一致性 | 每次都跑 |
-| `scripts/check-doc-links.py` | 仓内 Markdown 相对链接死链 | 每次都跑 |
-| `scripts/check-line-endings.sh` | 文本文件行尾统一 LF(不含 CR) | 每次都跑 |
-| `scripts/check-repo-baseline.sh` | 实现基线表与实际仓状态一致性 | 有关联代码仓时 |
-| `scripts/sync-prd.sh` | PRD 台账机械登记 + 根 README 统计块再生成 | 启用了台账时 |
-| `scripts/sync-test-index.sh` | `test_cases/_index.md` 再生成 | 仅 Layer 4 |
+| `bash scripts/ssdctl.sh gate` | 全仓门禁(既有 8 个)+ 判据引擎 | 每次都跑(CI) |
 | `bash scripts/ssdctl.sh scan --check` | 跨制品一致性(上游闸门 + 三件套原子性 + 字段自洽) | 每次都跑(CI) |
-| `bash scripts/ssdctl.sh gate` | 目标状态的判据集是否全部满足 | 每次都跑(CI) |
+| `bash scripts/ssdctl.sh advance <artifact> --to Ready --actor agent:<id>` | 状态推进(唯一写入路径;`--to` 不含 `Draft`) | 判据全绿后 |
 
+> 完整脚本清单(每个脚本的职责 / 调用形态 / 退出码 / 谁调用它)见 `scripts/README.md`;每个脚本**什么时候跑**见 `WORKFLOW.md` §6 门禁执行。
 > 一次性跑全部检查:用 `validate-spec` skill(交互式 agent),或按 `WORKFLOW.md` §6 的脚本表逐个跑(Symphony 编排下没有 slash 命令)。
 > **脚本只强制格式与追溯;状态推进由判据引擎负责**:`Ready` 由 `bash scripts/ssdctl.sh advance` 在判据全绿后写入,`Implemented` 需要外部事实(外部 PR merged,状态依据 `external:`),`Deprecated` 同样需要 `external:` 依据(见 [WORKFLOW.md](WORKFLOW.md) §5 状态推进规则)。
 
@@ -158,4 +152,5 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 | 历史代际(不再留档) | `git log --all -- <path>` / `git show <commit>:<path>`(历史代际仅存于 git 历史) |
 | `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
 | `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `verify`) |
+| `scripts/README.md` | **仓内脚本清单唯一真源**:每个脚本的职责 / 调用形态 / 退出码 / 谁调用它 |
 | **(历史)** `control/` 控制平面 | **(历史)** 决定记录 / 状态快照 / 证据链 —— 已于 2026-11-24 的 F9 裁决整体删除;现行载体是**制品本身**(状态块 + 复审段)+ git 历史 |

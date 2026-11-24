@@ -450,9 +450,11 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 | PRD 台账同步(可选) | `scripts/sync-prd.sh` |
 | 用例索引再生 | `scripts/sync-test-index.sh` |
 | 文档死链校验 | `scripts/check-doc-links.py` |
+| 仓内脚本清单与职责(全部脚本 / 调用形态 / 退出码) | `scripts/README.md` ★ |
 | 历史代际 | `git log --all -- <path>`(仓内不再保留归档目录) |
 | 概念参考 | `WORKFLOW.md` §12 概念参考 |
 
+> 脚本的**职责 / 调用形态 / 退出码**只在 `scripts/README.md` 写一份;本表只做「症状 → 文件」导航。
 ---
 
 ## 4. 附录 (Appendices)
