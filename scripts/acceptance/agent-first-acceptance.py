@@ -92,16 +92,34 @@ def sha(path: Path) -> str:
 
 
 # ---------------------------------------------------------------- A-1 既有门禁
-GATES = [
-    ("check-line-endings.sh", "bash scripts/check-line-endings.sh"),
-    ("check-naming.sh", "bash scripts/check-naming.sh"),
-    ("check-md-schema.sh", "bash scripts/check-md-schema.sh"),
-    ("check-traceability.sh", "bash scripts/check-traceability.sh"),
-    ("check-repo-baseline.sh", "bash scripts/check-repo-baseline.sh"),
-    ("check-doc-links.py", f'"{PY}" scripts/check-doc-links.py'),
-    ("sync-prd.sh --check", "bash scripts/sync-prd.sh --check"),
-    ("sync-test-index.sh --check", "bash scripts/sync-test-index.sh --check"),
-]
+# 门禁清单**从真源派生**(`scripts/lib/commands.py` 的 `GATE_SCRIPTS`)——
+# 仓内只有一份清单,验收脚本不再自带一份副本。
+if str(ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(ROOT / "scripts"))
+
+from lib import commands as _commands  # noqa: E402  (必须在 sys.path 调整之后)
+
+
+def _gate_commands() -> list[tuple[str, str]]:
+    """从 `GATE_SCRIPTS` 派生 (显示名, 命令) 列表。
+
+    .sh 用 bash 跑,.py 用当前解释器跑(脚本自己把 `scripts/` 加进 sys.path)。
+    """
+    derived: list[tuple[str, str]] = []
+    for script, gate_args in _commands.GATE_SCRIPTS:
+        if script.endswith(".py"):
+            command = f'"{PY}" {script}'
+        else:
+            command = f"bash {script}"
+        name = Path(script).name
+        if gate_args:
+            command += " " + " ".join(gate_args)
+            name += " " + " ".join(gate_args)
+        derived.append((name, command))
+    return derived
+
+
+GATES = _gate_commands()
 
 
 def a1_gates(cwd: Path) -> None:

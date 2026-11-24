@@ -7,7 +7,7 @@
 1. 索引覆盖磁盘实况:每个非夹具脚本文件都在索引里出现(按**磁盘实况**遍历,不信 git);
 2. 索引里提到的每个 `scripts/...` 路径都真实存在(索引不得留「已不存在的脚本路径」);
 3. 三份入口文档里提到的每个 `scripts/...` 路径都真实存在,**且**都被索引覆盖;
-4. 索引至少包含关键入口(顶层 2 + 门禁 8 + `scripts/acceptance/run-all-gates.sh`)。
+4. 索引至少包含关键入口(顶层 2 + 门禁 7 + `scripts/acceptance/run-all-gates.sh`)。
 
 红灯证明:把索引复制到临时文件、删掉其中一行(设置环境变量 `SSDCTL_INDEX_PATH`
 指向该副本),本模块的断言 1 与断言 3 必然转红 —— 证明这些断言不是恒真的。
@@ -19,11 +19,17 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = REPO_ROOT / "scripts"
+
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from lib import commands  # noqa: E402  (必须在 sys.path 调整之后)
 
 #: 索引路径。默认取仓内 `scripts/README.md`;红灯证明时用 `SSDCTL_INDEX_PATH` 指向临时副本。
 INDEX_PATH = Path(
@@ -43,20 +49,18 @@ PENDING_END = "<!-- pending-scripts:end -->"
 #: 夹具目录:按一组登记,不逐个文件断言存在性。
 FIXTURE_PREFIX = "scripts/tests/fixtures"
 
-#: 关键入口(断言 4)。
+#: 关键入口(断言 4)。门禁部分**从真源派生**(`lib/commands.py` 的 `GATE_SCRIPTS`)——
+#: 本文件不再自带一份硬编码清单,否则「清单只有一份」这件事本身就破了自己的规矩。
 KEY_ENTRIES = (
     "scripts/ssdctl.sh",
     "scripts/ssdctl.py",
-    "scripts/check-line-endings.sh",
-    "scripts/check-md-schema.sh",
-    "scripts/check-naming.sh",
-    "scripts/check-repo-baseline.sh",
-    "scripts/check-traceability.sh",
-    "scripts/check-doc-links.py",
-    "scripts/sync-prd.sh",
-    "scripts/sync-test-index.sh",
     "scripts/acceptance/run-all-gates.sh",
-)
+) + tuple(script for script, _args in commands.GATE_SCRIPTS)
+
+#: 工具数上限(需求集 R-4)。计数口径:`scripts/` 下的 `.sh` / `.py`,
+#: **排除** `scripts/tests/**`(单测不是工具)、`scripts/README.md`、`__pycache__`。
+#: 提高这个上限 = 工具面扩张 —— 必须在需求集里登记理由。
+TOOL_COUNT_CAP = 22
 
 
 def read_text(path: Path) -> str:
@@ -100,6 +104,23 @@ def disk_script_files() -> list[str]:
             if posix.startswith(FIXTURE_PREFIX):
                 continue
             result.append(posix)
+    return sorted(result)
+
+
+def tool_files() -> list[str]:
+    """工具文件清单(仓库相对路径,正斜杠)—— R-4 的计数口径。
+
+    与 `disk_script_files()` 的区别:这里**排除 `scripts/tests/**`** ——
+    单测是「守卫工具的工具」,不算工具面的一部分;那条断言要的是「每个文件都在索引里」。
+    """
+    result: list[str] = []
+    for dirpath, dirnames, filenames in os.walk(SCRIPTS_DIR):
+        dirnames[:] = [d for d in dirnames if d not in {"__pycache__", "tests"}]
+        for name in filenames:
+            if Path(name).suffix not in {".sh", ".py"}:
+                continue
+            rel = (Path(dirpath) / name).resolve().relative_to(REPO_ROOT)
+            result.append(rel.as_posix())
     return sorted(result)
 
 
@@ -161,6 +182,31 @@ class ScriptsIndexTest(unittest.TestCase):
             [],
             missing,
             "索引缺少关键入口:\n  " + "\n  ".join(missing),
+        )
+
+    # --- 断言 5:工具数封顶(R-4) ----------------------------------------------
+    def test_tool_count_is_capped(self) -> None:
+        """工具数封顶 —— 提高上限 = 工具面扩张,必须在需求集里登记理由。"""
+        tools = tool_files()
+        breakdown: dict[str, int] = {}
+        for path in tools:
+            parts = path.split("/")
+            if len(parts) == 2:
+                bucket = "scripts/"
+            elif parts[1] == "lib":
+                bucket = "scripts/lib/"
+            else:
+                bucket = f"scripts/{parts[1]}/"
+            breakdown[bucket] = breakdown.get(bucket, 0) + 1
+        self.assertEqual(
+            TOOL_COUNT_CAP,
+            len(tools),
+            "工具数超过上限(提高上限必须在需求集里登记理由):\n  " + "\n  ".join(tools),
+        )
+        self.assertEqual(
+            {"scripts/": 10, "scripts/lib/": 7, "scripts/acceptance/": 5},
+            breakdown,
+            "工具数分层基线变了 —— 请同步需求集里的基线数字",
         )
 
 

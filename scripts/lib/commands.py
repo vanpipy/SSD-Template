@@ -60,9 +60,9 @@ EXIT_OK = 0
 EXIT_FAIL = 1
 EXIT_USAGE = 2
 
-# 仓内既有门禁(契约 §8:8 个门禁全部保留,`ssdctl gate` 把它们一起跑)
+# 仓内既有门禁(契约 §8:7 个门禁全部保留,`ssdctl gate` 把它们一起跑)
+# 门禁清单的**唯一真源** —— 验收脚本、测试、文档都从这里派生,不再各抄一份。
 GATE_SCRIPTS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("scripts/check-line-endings.sh", ()),
     ("scripts/check-naming.sh", ()),
     ("scripts/check-md-schema.sh", ()),
     ("scripts/check-traceability.sh", ()),
@@ -359,7 +359,13 @@ def cmd_scan(root: Path, args) -> int:
 
 
 def cmd_criteria(root: Path, args) -> int:
-    artifact = _resolve_artifact(root, args.artifact)
+    repo_mode = bool(getattr(args, "repo", False))
+    artifact_arg = getattr(args, "artifact", None)
+    if repo_mode and artifact_arg:
+        raise UsageError("`--repo` 与制品参数互斥:二选一(只跑仓库层判据 / 跑单个制品)")
+    if not repo_mode and not artifact_arg:
+        raise UsageError("需要一个制品参数,或用 `--repo` 只跑仓库层判据")
+
     criteria_path_ = criteria_path(root)
     try:
         criteria = load_criteria(criteria_path_)
@@ -367,6 +373,10 @@ def cmd_criteria(root: Path, args) -> int:
         print(f"✗ {exc}", file=sys.stderr)
         return EXIT_USAGE
 
+    if repo_mode:
+        return _cmd_criteria_repo(root, criteria, args)
+
+    artifact = _resolve_artifact(root, artifact_arg)
     document = _artifact_document(root, artifact)
     try:
         result = evaluate_layer(
@@ -388,6 +398,48 @@ def cmd_criteria(root: Path, args) -> int:
             print(f"  ! 警告 {item.criterion_id} @ {item.locate()}: {item.message}")
         print("结论: " + ("通过" if result.passed else "不通过"))
     return EXIT_OK if result.passed else EXIT_FAIL
+
+
+def _cmd_criteria_repo(root: Path, criteria: list[Criterion], args) -> int:
+    """只跑仓库层判据 —— 与 `gate` 的仓库层同源(同一批判据、同一份受检集合)。
+
+    退出码(与被删掉的行尾检查脚本一致):0=无违规 / 1=有仓库层违规 /
+    2=判据缺失、判据非法,或判据里根本没有仓库层判据(那种情况**不放行**)。
+    """
+    try:
+        files = _repo_text_files(root)
+        row, lines, count = _repo_criteria_row(root, criteria, files)
+    except CriteriaError as exc:
+        # 判据参数非法(契约 §4.1.1)—— 显式失败,退出码 2,绝不静默放行。
+        print(f"✗ {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    if row is None:
+        print("✗ 判据文件里没有仓库层判据(layer=repo)—— 无法执行仓库层检查", file=sys.stderr)
+        return EXIT_USAGE
+    passed = bool(row["passed"])
+    if getattr(args, "json", False):
+        print(
+            json.dumps(
+                {
+                    "ok": passed,
+                    "scope": "repo",
+                    "target": "repo",
+                    "passed": passed,
+                    "failures": row["failures"],
+                    "warnings": row["warnings"],
+                    "files": count,
+                },
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+        )
+    else:
+        for line in lines:
+            print(line)
+        print(f"受检文件: {count}")
+        print("结论: " + ("通过" if passed else "不通过"))
+    return EXIT_OK if passed else EXIT_FAIL
 
 
 # --------------------------------------------------------------------- gate
@@ -443,17 +495,42 @@ def _run_gate(root: Path, script: str, args: tuple[str, ...]) -> tuple[int, str,
 
 
 
-REPO_TEXT_SUFFIXES = (".md", ".sh", ".py", ".json", ".yml", ".yaml", ".txt", ".cfg", ".ini")
-# 仓库级判据不扫这些目录:版本控制内部目录、测试夹具(它们**故意**含缺陷样本)、运行缓存
-REPO_TEXT_SKIP_PARTS = {".git", ".swarm", "__pycache__", "tests", "node_modules", "workspace"}
+# 仓库级判据不扫这些目录:版本控制内部目录、编排目录、运行缓存。
+#
+# 这里**不含 "tests"** —— 受检集合必须与被删掉的行尾检查脚本逐项对齐:
+# 全部受版本控制的文件都进集合(含 `.gitattributes`、`.gitignore`、`scripts/tests/**`),
+# 只按 NUL 字节嗅探跳过二进制。常量名保持不变 —— `scripts/acceptance/clone-verify.sh`
+# 的白名单按这个名字引用。
+REPO_TEXT_SKIP_PARTS = {".git", ".swarm", "__pycache__", "node_modules", "workspace"}
+
+
+def _contains_nul(path: Path) -> bool:
+    """文件里有没有 NUL 字节 —— 二进制嗅探,与被删的行尾脚本同口径。
+
+    读不动(权限/IO 错误)的文件按二进制处理:跳过,不当作文本去套规则。
+    """
+    try:
+        with path.open("rb") as handle:
+            while True:
+                chunk = handle.read(65536)
+                if not chunk:
+                    return False
+                if b"\x00" in chunk:
+                    return True
+    except OSError:
+        return True
 
 
 def _repo_text_files(root: Path) -> list[Path]:
-    """仓库级判据的输入文件清单。
+    """仓库层判据的输入文件清单。
 
     优先 `git ls-files`(与 CI 一致,只看受版本控制的文件);
-    不在 git 工作树里时退化为目录遍历。测试夹具被排除 ——
-    夹具里**故意**留着缺陷样本(占位符、非法状态),不该算成仓库缺陷。
+    不在 git 工作树里时退化为目录遍历。
+
+    覆盖面与被删掉的行尾检查脚本逐项对齐:
+    **全部**受版本控制的文件都进集合(含 `.gitattributes`、`.gitignore`、
+    `scripts/tests/**`),只按 NUL 字节嗅探跳过二进制 —— 不按后缀白名单,
+    也不排除测试目录(那会漏掉 31 个受版本控制的文件)。
     """
     listed: list[str] = []
     try:
@@ -477,17 +554,57 @@ def _repo_text_files(root: Path) -> list[Path]:
 
     files: list[Path] = []
     for path in candidates:
-        if path.suffix.lower() not in REPO_TEXT_SUFFIXES:
-            continue
         try:
             parts = path.resolve().relative_to(root.resolve()).parts
         except ValueError:
             parts = path.parts
         if any(part in REPO_TEXT_SKIP_PARTS for part in parts[:-1]):
             continue
-        if path.is_file():
-            files.append(path)
+        if not path.is_file():
+            continue
+        if _contains_nul(path):
+            continue
+        files.append(path)
     return files
+
+
+def _repo_criteria_row(
+    root: Path, criteria: list[Criterion], files: list[Path] | None = None
+) -> tuple[dict | None, list[str], int]:
+    """仓库层判据(layer=repo)求值 —— `gate` 与 `criteria --repo` 共用这一段。
+
+    返回 (载荷行, 文本行, 受检文件数)。判据里没有仓库层判据时载荷行为 None,
+    调用方据此跳过 —— 不产生多余输出,也不把「没有这条规则」当成通过。
+    载荷行形状与 `gate --json` 的 criteria 行完全一致:
+    {"scope": "repo", "target": "repo", "passed": bool, "failures": [...], "warnings": [...]}
+    """
+    if not any(item.layer == "repo" for item in criteria):
+        return None, [], 0
+    if files is None:
+        files = _repo_text_files(root)
+    document = Document.from_repo(root, files)
+    result = evaluate(criteria, document, "repo")
+    failures: list[str] = []
+    warnings: list[str] = []
+    lines: list[str] = []
+    for item in result.failures:
+        text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
+        failures.append(text)
+        lines.append(f"    ✗ {text}")
+    for item in result.warnings:
+        text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
+        warnings.append(text)
+        lines.append(f"    ! {text}")
+    state = "✓" if result.passed else "✗"
+    summary = f"{state} <repo>: {len(result.failures)} 阻断失败 / {len(result.warnings)} 警告"
+    row = {
+        "scope": "repo",
+        "target": "repo",
+        "passed": result.passed,
+        "failures": failures,
+        "warnings": warnings,
+    }
+    return row, [summary] + lines, len(files)
 
 
 def _gate_payload(
@@ -616,35 +733,14 @@ def _collect_gate_report(root: Path) -> tuple[dict, list[str], list[str]]:
                 }
             )
 
-        # 仓库层判据(layer=repo)对整个仓求值,不对单个制品求值
-        if any(item.layer == "repo" for item in criteria):
-            document = Document.from_repo(root, _repo_text_files(root))
-            result = evaluate(criteria, document, "repo")
-            state = "✓" if result.passed else "✗"
-            lines.append(
-                f"{state} <repo>: {len(result.failures)} 阻断失败 / {len(result.warnings)} 警告"
-            )
-            row_failures = []
-            for item in result.failures:
-                text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
-                lines.append(f"    ✗ {text}")
-                row_failures.append(text)
-            row_warnings = []
-            for item in result.warnings:
-                text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
-                lines.append(f"    ! {text}")
-                row_warnings.append(text)
-            if not result.passed:
+        # 仓库层判据(layer=repo)对整个仓求值,不对单个制品求值。
+        # 与 `criteria --repo` 共用 `_repo_criteria_row` —— 同一批判据、同一份受检集合。
+        repo_row, repo_lines, _repo_count = _repo_criteria_row(root, criteria)
+        if repo_row is not None:
+            lines.extend(repo_lines)
+            if not repo_row["passed"]:
                 failures += 1
-            criteria_rows.append(
-                {
-                    "scope": "repo",
-                    "target": "repo",
-                    "passed": result.passed,
-                    "failures": row_failures,
-                    "warnings": row_warnings,
-                }
-            )
+            criteria_rows.append(repo_row)
     except CriteriaError as exc:
         # 判据参数非法(契约 §4.1.1)—— 显式失败,退出码 2,绝不静默放行。
         fatal = [f"✗ {exc}", "✗ 判据参数非法 —— 门禁 fail-closed(不放行)"]

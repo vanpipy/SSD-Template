@@ -369,7 +369,7 @@
       "kind": "line_absent",
       "params": { "regex": "\r" },
       "blocking": true,
-      "source": "scripts/check-line-endings.sh:1"
+      "source": "schema/criteria.json:804"
     }
   ]
 }

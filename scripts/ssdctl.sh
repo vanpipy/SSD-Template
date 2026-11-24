@@ -25,6 +25,7 @@
 # 由 scripts/tests/test_scripts_hygiene.py 机器断言:多写或少写一个子命令都会让它转红):
 #   bash scripts/ssdctl.sh scan [--json] [--layer L] [--check]
 #   bash scripts/ssdctl.sh criteria <artifact> [--json]
+#   bash scripts/ssdctl.sh criteria --repo [--json]
 #   bash scripts/ssdctl.sh gate [--json]
 #   bash scripts/ssdctl.sh advance <artifact> --to <Ready|Implemented|Deprecated> [--actor agent:<id>] [--external <ref>] [--dry-run]
 #   bash scripts/ssdctl.sh queue <artifact> [--json]

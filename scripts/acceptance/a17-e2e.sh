@@ -70,15 +70,10 @@ for ws in "$ws_root"/*/; do
   ls -1 "$ws" | head -20
   echo "--- 制品:"
   find "$ws" -path '*/.git' -prune -o -name '*.md' -path '*prd*' -print 2>/dev/null | head -10
-  echo "--- 门禁:"
-  for s in check-line-endings check-naming check-md-schema check-traceability check-repo-baseline; do
-    out="$(cd "$ws" && bash "scripts/$s.sh" 2>&1)"; r=$?
-    printf '    %-26s exit=%s\n' "$s" "$r"
-    [ "$r" -ne 0 ] && printf '%s\n' "$out" | sed 's/^/        | /' | head -20
-  done
-  out="$(cd "$ws" && "$PY" scripts/check-doc-links.py 2>&1)"; r=$?
-  printf '    %-26s exit=%s\n' "check-doc-links.py" "$r"
-  [ "$r" -ne 0 ] && printf '%s\n' "$out" | sed 's/^/        | /' | head -10
+  echo "--- 门禁(统一入口;清单由 scripts/lib/commands.py 的 GATE_SCRIPTS 决定):"
+  out="$(cd "$ws" && "$PY" scripts/ssdctl.py gate 2>&1)"; r=$?
+  printf '    %-26s exit=%s\n' "ssdctl.py gate" "$r"
+  [ "$r" -ne 0 ] && printf '%s\n' "$out" | sed 's/^/        | /' | head -20
 done
 
 echo

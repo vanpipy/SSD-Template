@@ -46,8 +46,11 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--layer", default=None, help="只处理某一层(prd/td/plan/test-case)")
     scan.add_argument("--check", action="store_true", help="跨制品一致性检查(上游闸门/三件套原子性/字段自洽),不通过退 1")
 
-    criteria = sub.add_parser("criteria", help="对单个制品跑判据")
-    criteria.add_argument("artifact", help="制品路径(仓库相对)")
+    criteria = sub.add_parser("criteria", help="对单个制品跑判据(或用 --repo 只跑仓库层判据)")
+    criteria.add_argument("artifact", nargs="?", help="制品路径(仓库相对);与 --repo 互斥")
+    criteria.add_argument(
+        "--repo", action="store_true", help="只跑仓库层判据(与 gate 的仓库层同源)"
+    )
     criteria.add_argument("--json", action="store_true", help="输出 JSON")
 
     gate = sub.add_parser("gate", help="跑全部仓内门禁 + 判据 + 制品自洽性")

@@ -20,7 +20,7 @@
 「门禁是哪几个、什么顺序、带什么参数、文本分成哪几段、末行怎么下结论」,
 这些全在骨架里;整份文本的逐字节比对在改动当场用仓外 golden 做(见交付报告)。
 
-性能:一次 gate 要跑 8 个门禁脚本(本机约 30 秒),所以这里把 gate 调用
+性能:一次 gate 要跑 7 个门禁脚本(本机约 30 秒),所以这里把 gate 调用
 做成**模块级缓存** —— 否则 11 个用例会跑 20 多次 gate,单测套件会被拖爆。
 """
 
@@ -41,7 +41,6 @@ TEXT_HEADERS = ("— 仓内门禁 —", "— 判据 —", "— 制品自洽性 �
 
 # golden:文本模式的稳定骨架(小标题 + 门禁清单 + 末行结论)
 GOLDEN_SKELETON = """— 仓内门禁 —
-scripts/check-line-endings.sh
 scripts/check-naming.sh
 scripts/check-md-schema.sh
 scripts/check-traceability.sh

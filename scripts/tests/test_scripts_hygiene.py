@@ -4,7 +4,7 @@
 - 门禁清单只能有一份(代码里的 `GATE_SCRIPTS`),脚本不得再自带一份;
 - 解释器解析只能有一个入口(`bash scripts/ssdctl.sh --python`);
 - scripts/ 下不得出现机器相关的绝对路径(用户目录 / 本机工程目录 / file:// 盘符 URL);
-- 与阶段无关的 4 个门禁收到 `--stage` 必须 exit 2 并说明原因。
+- 与阶段无关的 3 个门禁收到 `--stage` 必须 exit 2 并说明原因。
 
 说明:本文件自身在 `scripts/tests/` 下,扫描时**排除** `scripts/tests/` ——
 否则这些断言里的模式字面量会把自己判为违规。
@@ -16,11 +16,13 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
 from _support import REPO_ROOT, SCRIPTS_DIR
 from lib import commands
+from lib.criteria import Document, evaluate, load_criteria
 
 SCRIPTS_ROOT = SCRIPTS_DIR
 
@@ -40,11 +42,17 @@ GATE_SCRIPT_NAMES = [Path(script).name for script, _args in commands.GATE_SCRIPT
 
 # 与阶段无关的门禁(阶段相关必填项由 check-md-schema.sh 判定)
 STAGE_IRRELEVANT = [
-    "check-line-endings.sh",
     "check-naming.sh",
     "check-traceability.sh",
     "check-repo-baseline.sh",
 ]
+
+# 允许出现「全部门禁名」的两处:真源,以及输出快照(golden)。
+# 其余任何文件都不得逐个列出门禁名 —— 那就是第二份清单。
+GATE_LIST_ALLOWED = {
+    Path("scripts/lib/commands.py"),
+    Path("scripts/tests/test_gate_json.py"),
+}
 
 # 解释器探测的典型写法:只允许出现在 scripts/ssdctl.sh 里
 INTERPRETER_PROBE_PATTERNS = [
@@ -176,6 +184,109 @@ class ScriptsHygiene(unittest.TestCase):
                     )
                     self.assertIn("本门禁与阶段无关", proc.stderr)
                     self.assertIn("--stage", proc.stderr)
+
+    def test_gate_list_has_single_source(self):
+        """门禁清单只能有一份:真源是 `lib/commands.py` 的 `GATE_SCRIPTS`。
+
+        允许的第二份是 `tests/test_gate_json.py` 的 **输出快照**(golden)——
+        它记的是「gate --json 曾经输出过什么」,不是清单;真源之外的任何文件
+        逐个列出门禁名,都是清单副本。
+        """
+        offenders = []
+        for path in sorted(SCRIPTS_ROOT.rglob("*")):
+            if path.suffix not in {".sh", ".py"}:
+                continue
+            rel = path.relative_to(REPO_ROOT)
+            if rel in GATE_LIST_ALLOWED:
+                continue
+            text = _read(path)
+            found = [name for name in GATE_SCRIPT_NAMES if name in text]
+            if len(found) == len(GATE_SCRIPT_NAMES):
+                offenders.append(f"{rel}: 逐个列出了全部 {len(GATE_SCRIPT_NAMES)} 个门禁名")
+        self.assertEqual(
+            offenders,
+            [],
+            "门禁清单只能有一份(真源 lib/commands.py 的 GATE_SCRIPTS):\n  "
+            + "\n  ".join(offenders),
+        )
+
+    def test_gate_count_matches_contract(self):
+        """门禁个数是契约的一部分 —— 增删门禁必须同时改契约与快照。"""
+        self.assertEqual(
+            7,
+            len(GATE_SCRIPT_NAMES),
+            "仓内门禁应为 7 个(真源 lib/commands.py 的 GATE_SCRIPTS)",
+        )
+
+    def test_repo_text_files_cover_tracked_files(self):
+        """仓库层受检集合 = 全部受版本控制的文件(减去含 NUL 的二进制)。
+
+        覆盖面必须与被删掉的行尾脚本逐项对齐 —— 少收 `scripts/tests/**`、
+        `.gitattributes`、`.gitignore` 就等于把规则改窄了。
+        """
+        proc = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "-c", "core.quotePath=false", "ls-files"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if proc.returncode != 0:
+            self.skipTest("git 不可用 —— 取不到受版本控制的文件清单")
+        tracked = [line for line in proc.stdout.splitlines() if line.strip()]
+        self.assertTrue(tracked, "git ls-files 没有输出 —— 本条断言无法执行")
+        expected = set()
+        for rel in tracked:
+            path = REPO_ROOT / rel
+            if not path.is_file():
+                continue
+            if commands._contains_nul(path):
+                continue
+            expected.add(path.resolve())
+        actual = {path.resolve() for path in commands._repo_text_files(REPO_ROOT)}
+        self.assertEqual(
+            expected,
+            actual,
+            "仓库层受检集合必须等于「全部受版本控制的文件 − 含 NUL 的二进制」",
+        )
+        rels = {path.relative_to(REPO_ROOT).as_posix() for path in commands._repo_text_files(REPO_ROOT)}
+        for must in (".gitattributes", ".gitignore"):
+            self.assertIn(must, rels, f"受检集合漏掉了 {must}")
+        self.assertTrue(
+            any(rel.startswith("scripts/tests/") for rel in rels),
+            "受检集合漏掉了 scripts/tests/** —— 测试文件也是受版本控制的文件",
+        )
+
+    def test_repo_criteria_flag_cr_injection(self):
+        """注入 CR 字节 ⇒ 仓库层判据变红并指出文件与行号;撤销 ⇒ 变绿。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            (repo / "schema").mkdir(parents=True)
+            (repo / "scripts").mkdir()
+            shutil.copyfile(
+                REPO_ROOT / "schema" / "criteria.json", repo / "schema" / "criteria.json"
+            )
+            target = repo / "crlf.txt"
+            target.write_bytes(b"alpha\r\nbeta\r\n")
+            binary = repo / "blob.bin"
+            binary.write_bytes(b"head\x00tail")
+
+            files = commands._repo_text_files(repo)
+            names = {path.name for path in files}
+            self.assertIn("crlf.txt", names, "受检集合必须收 CRLF 文本文件")
+            self.assertNotIn("blob.bin", names, "含 NUL 字节的文件必须按二进制跳过")
+
+            criteria = load_criteria(repo / "schema" / "criteria.json")
+            result = evaluate(criteria, Document.from_repo(repo, files), "repo")
+            self.assertFalse(result.passed, "注入 CR 后仓库层判据必须不通过")
+            ids = [item.criterion_id for item in result.failures]
+            self.assertIn("REPO-NO-CR", ids, "CR 违规必须由 REPO-NO-CR 报出")
+            located = " ".join(item.locate() for item in result.failures)
+            self.assertIn("crlf.txt:1", located, "必须指出文件与行号")
+
+            target.write_bytes(b"alpha\nbeta\n")
+            result = evaluate(criteria, Document.from_repo(repo, files), "repo")
+            self.assertTrue(result.passed, "撤销 CR 后仓库层判据必须通过")
 
     def test_only_one_interpreter_probe(self):
         """解释器解析只有一个入口:scripts/ssdctl.sh。"""
