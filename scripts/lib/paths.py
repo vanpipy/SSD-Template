@@ -1,6 +1,6 @@
 """仓库根、判据文件、控制平面路径解析。
 
-契约来源:`.swarm/requirements/agent-first-implementation.md` §4(判据文件)与 §6(控制平面)。
+契约来源:`docs/contracts/agent-first-implementation.md` §4(判据文件)与 §6(控制平面)。
 本模块不读任何环境变量以外的配置;唯一的例外是 `SSDCTL_CRITERIA`(测试与临时判据用)。
 """
 

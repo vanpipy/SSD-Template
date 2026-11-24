@@ -5,7 +5,7 @@
 > 每次开始工作前,先读本文件 + 读对应 skill 的 `SKILL.md`(skill 内部已封装 schema 读取 + scripts 校验流程)。
 >
 > **契约真源**:`WORKFLOW.md`(状态推进、调度依据、硬禁止以它为准)。
-> **状态与调度的唯一入口**:`scripts/ssdctl.py`(实施契约 `.swarm/requirements/agent-first-implementation.md` §5);
+> **状态与调度的唯一入口**:`scripts/ssdctl.py`(实施契约 `docs/contracts/agent-first-implementation.md` §5);
 > 调度依据 = **仓内 `ssdctl scan`**,不是外部编排器(实施契约 §7、§11)。
 > **推进主体**:agent 自主推进,人类**可**手动介入(决策记录 `control/decisions/`)。
 

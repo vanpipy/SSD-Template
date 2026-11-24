@@ -9,7 +9,7 @@
 - `dispatch` : 调度谓词(§7):上游解析 + 5 合取
 - `commands` : 8 个子命令的实现(§5.1)
 
-契约来源:`.swarm/requirements/agent-first-implementation.md`。
+契约来源:`docs/contracts/agent-first-implementation.md`。
 """
 
 __all__ = ["artifacts", "commands", "control", "criteria", "dispatch", "paths"]

@@ -1,10 +1,10 @@
 # SDD 流程方向调整:从「人驱动的文档流水线」到「agent 驱动的自动化系统」
 
-> **文档状态**:本文是 agent-first 改造的**分析依据与决策留痕**(2026-11-22)。文中引用的「agent 权限天花板 = `Draft`」等均为**改前基线**,改造后已由 `ssdctl advance` + `schema/criteria.json` 取代;最终落地形态见 [WORKFLOW.md](../WORKFLOW.md) 与实施契约 `.swarm/requirements/agent-first-implementation.md`。
+> **文档状态**:本文是 agent-first 改造的**分析依据与决策留痕**(2026-11-22)。文中引用的「agent 权限天花板 = `Draft`」等均为**改前基线**,改造后已由 `ssdctl advance` + `schema/criteria.json` 取代;最终落地形态见 [WORKFLOW.md](../WORKFLOW.md) 与实施契约 `docs/contracts/agent-first-implementation.md`。
 
 > **本文性质**:方向调整分析。**本轮不改流程代码、契约或脚本**;只产出结论、目标架构与分期路线。
 > **行号基线说明**:本文中的 `WORKFLOW.md:NNN` 与 `HOW_TO_USE.md:NNN` 行号引用指向 **2026-11-22 agent-first 改造前**的基线文件(commit `6fe6c4c`):agent-first 改造重写了 `WORKFLOW.md`,2026-11-23 又把 `HOW_TO_USE.md` 并入 [WORKFLOW.md](../WORKFLOW.md) §11(使用指南)/ §12(概念参考) —— **行号不再对应现文件位置**,保留原文仅作取证。
-> **需求真源**:`.swarm/requirements/agent-first-direction.md`(R1–R8)。
+> **需求真源**:`docs/contracts/agent-first-direction.md`(R1–R8)。
 > **与既有文档的关系**:
 > - [`docs/process-analysis.md`](process-analysis.md) = **结构分析**(流程长什么样、哪里断) —— [既有]
 > - [`docs/operation-flow.md`](operation-flow.md) = **作业流程汇总**(五步怎么走、门禁清单) —— [既有]
@@ -20,7 +20,7 @@
 ### 1.1 一句话诊断
 
 **当前 SDD 不是「以 agent 为主、人类为辅的自动化系统」,而是「一条由人驱动节拍、agent 在层内代写文档的流水线」。**
-agent 今天能独立完成 Layer 1 整轮(定位→读上游→写 `Draft`→跑门禁→分支提交→如实汇报),这是**真实运行证明过的**(`.swarm/evidence/a17-run2/run-evidence.json:78` `status: "completed"`);但 agent **跨不过层、跨不过轮**,也**判不了自己写的东西对不对**。
+agent 今天能独立完成 Layer 1 整轮(定位→读上游→写 `Draft`→跑门禁→分支提交→如实汇报),这是**真实运行证明过的**(`docs/evidence/a17-run2/run-evidence.json:78` `status: "completed"`);但 agent **跨不过层、跨不过轮**,也**判不了自己写的东西对不对**。
 
 残缺不在「agent 不够强」,而在**四处结构性缺口**:
 
@@ -50,7 +50,7 @@ agent 今天能独立完成 Layer 1 整轮(定位→读上游→写 `Draft`→�
 
 ### 1.3 最强反证:一次真实运行里,6 个门禁全绿却放过了三件事
 
-`.swarm/evidence/a17-run2/` 是仓内**唯一一次真实运行**(`run-evidence.json:78` `status: "completed"`)。同一次运行:
+`docs/evidence/a17-run2/` 是仓内**唯一一次真实运行**(`run-evidence.json:78` `status: "completed"`)。同一次运行:
 
 | 事实 | 位置 | 意味着 |
 |---|---|---|
@@ -108,7 +108,7 @@ agent 今天能独立完成 Layer 1 整轮(定位→读上游→写 `Draft`→�
 | **决策点** | 人判断一件**已成品**,不挡下一层 | 「这个内容对不对?」 | **13** |
 
 > 计数口径来自调查线 A 的全量盘点(28 个点,逐点带 `file:line`)[转引]。
-> 完整 28 行明细在 `.swarm/reports/agent-first-direction-lane-a.md`(141 行),本文只保留结论与主干路径。
+> 完整 28 行明细在 `docs/reports/agent-first-direction-lane-a.md`(141 行),本文只保留结论与主干路径。
 
 **按族的四个必答项**(R2 要求:触发时机 / 信息载荷 / 是否阻塞下游):
 
@@ -374,7 +374,7 @@ R3 要求把根因分成三类且**各自独立验收**。以下给出分离依�
 | **B-9** 台账完整性单向 | [既有] | L1 | M1:PRD 集 ⊆ 台账 ID 集(可选层) | +1 条断言 |
 | **G-7** 文档链接只查已跟踪文件 | [既有] | 执行 | `scripts/check-doc-links.py:45` 用 `git ls-files` ⇒ 未跟踪 .md(21 个)不被检查 | 链接覆盖 49 → 70 |
 | **G-9** 对账段只查存在 | [既有] | L1 | M2 ③ | 见 B-3 |
-| **S-10** workpad 跨轮即丢 | [转引]Lane D | L6 | 状态落 `.swarm/state/` 或 tracker,不依赖 clone | M5 否 → 是 |
+| **S-10** workpad 跨轮即丢 | [转引]Lane D | L6 | 状态落编排侧工作区或 tracker,不依赖 clone | M5 否 → 是 |
 | **S-11** 沙箱内门禁跑不起来 | [转引]Lane D | 执行 | 门禁执行位置分流:runner 代跑(已可行)vs agent 自跑(需可执行环境) | M6 0/6 → 6/6 |
 | **S-15** 必填字段无取值来源 | [转引]Lane D | L0 | 给出「业务产品/目标平台」的取值来源(仓内配置或 tracker 字段) | 0 → 1 来源 |
 | **S-16** 素材与制品同目录 | [转引]Lane D | L0 | 素材区与成品区物理分离(`material/` 已存在但空) | 素材可机器区分 |
@@ -422,7 +422,7 @@ R3 要求把根因分成三类且**各自独立验收**。以下给出分离依�
 |---|---|
 | **改动面** | `schema/prd.md:27-28`(AC 加 ID)+ `:37`(`### 场景: S-1`)+ `:39-42`(**`**覆盖**: AC-n`**);`schema/tech_design/README.md:91-95`(映射表首列填 ID);`schema/plan.md:103-111`(对账表加「覆盖的 Change/V」列)+ `:113-115`(规则可判定式)+ `:123-139`(`### V-n` 加 `**场景**: S-1`);`schema/test_case.md:88`(关联行填 ID);`.codex/skills/to-prd/SKILL.md`(1 行说明) |
 | **依赖** | B |
-| **验收命令** | 口径 B **66.1% → 82.1%**;**关键反证用例**:对 `.swarm/evidence/a17-run2/example-feature.md` 跑新判据,**必须**报出「第 5 条性能目标无场景覆盖」[实测该缺陷存在于 `example-feature.md:14-18`];机器能生成待裁决行清单,条数落在 **15–25** |
+| **验收命令** | 口径 B **66.1% → 82.1%**;**关键反证用例**:对 `docs/evidence/a17-run2/example-feature.md` 跑新判据,**必须**报出「第 5 条性能目标无场景覆盖」[实测该缺陷存在于 `example-feature.md:14-18`];机器能生成待裁决行清单,条数落在 **15–25** |
 | **可回退性** | **中**(模板变更需迁移既有制品;**仓内只有 1 个真实制品** ⇒ 迁移成本近乎 0) |
 | **量化影响** | M2 `66.1% → 82.1%`;M3 `3–4 次整文档批准 → 15–25 个行级决策` |
 | **⚠ 前置** | M2 ① 与 ② 须**同期**做(否则出现「有 AC ID、无场景 ID」的半套状态)[转引 Lane B Part 4] |
@@ -474,7 +474,7 @@ R3 要求把根因分成三类且**各自独立验收**。以下给出分离依�
 ## 8. 待决项(R6)· **已于 2026-11-22 全部收敛**
 
 > 用户指令 (m02160):「都调整为以agent为主,仓内数据都有agent处理,人可以手动介入」。
-> 决策真源 = `.swarm/decisions/2026-11-22-agent-primary.md`(D-01..D-20);实施规范 = `.swarm/requirements/agent-first-implementation.md`。
+> 决策真源 = `control/decisions/2026-11-22-agent-primary.md`(D-01..D-20);实施规范 = `docs/contracts/agent-first-implementation.md`。
 > 下表逐项给出**当时的默认推荐 → 最终决定 → 实施落点**;其后各小节保留原始分析与「另一分支后果」作为决策留痕。
 
 | 原待决 | 最终决定 | 对应决策 | 实施落点 |
@@ -533,14 +533,14 @@ R3 要求把根因分成三类且**各自独立验收**。以下给出分离依�
 |---|---|
 | **默认推荐** | **仓内文件,入库,可 `git diff`**(机器生成的「待裁决行清单」+ 人填的勾选与理由) |
 | **理由** | 可版本化、可回读、可 review;与 §5.3 的 `decision_queue` + 证据链天然一致 |
-| **另一分支后果** | 放 tracker issue 评论 ⇒ 载荷离仓,**与 workpad 跨轮即丢是同一类问题**(`.gitignore:17`),且无法离线审计 |
+| **另一分支后果** | 放 tracker issue 评论 ⇒ 载荷离仓,**与 workpad 跨轮即丢是同一类问题**(`.gitignore:12`),且无法离线审计 |
 
 ### 8.6 Q-6 · 三份 `docs/` 是否入 git?
 
 | | |
 |---|---|
 | **默认推荐** | **全部提交**,并挂进 `README.md` / `WORKFLOW.md` §11.9 的「相关文件」表(**不进 `WORKFLOW.md` 的可信度排序**) |
-| **理由** | 三份文档是本轮唯一的可交付结论;不入 git ⇒ 下一个 session 找不到,`.swarm/` 同类问题 |
+| **理由** | 三份文档是本轮唯一的可交付结论;不入 git ⇒ 下一个 session 找不到,与编排目录 `.swarm` 同类问题 |
 | **另一分支后果** | 不入 git ⇒ 结论只活在对话里,方向调整无法沉淀成可审计的基线 |
 
 ### 8.7 Q-7 · issue 控制平面(tracker)放哪里?
@@ -549,7 +549,7 @@ R3 要求把根因分成三类且**各自独立验收**。以下给出分离依�
 |---|---|
 | **默认推荐** | **L1 独立仓 `D:\project\symphony-control\`**,入 git,一 issue 一 `.md` + front matter |
 | **理由** | 控制平面必须独立于被它编排的规格仓;放在规格仓内会与 `.gitignore` / clone 语义冲突 |
-| **另一分支后果** | 放规格仓 `.swarm/` ⇒ 与 `.gitignore:17` 同类问题,且规格仓会被编排器 clone 时带入陈旧状态 |
+| **另一分支后果** | 放规格仓编排目录 `.swarm` ⇒ 与 `.gitignore:12` 同类问题,且规格仓会被编排器 clone 时带入陈旧状态 |
 
 ### 8.8 Q-8 · 阈值类约定的权威位置?
 

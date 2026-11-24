@@ -194,7 +194,7 @@ Step 0 原始素材 ──▶ Step 1 PRD ──▶ Step 2 Tech Design ──▶ 
 - **唯一真实产物**:`prd/2026-11-22/layer-checklist.md`(72 行,状态 `Draft`,复审三行留空)—— 即 Layer 1 自检清单本身。
 - `tech_design/` `plan/` `test_cases/` 只有 `README.md` / `_index.md`,**无制品**;无 `material/`、无 `deep/`。
 - **只读门禁实测**(本次运行,仓根):`check-naming.sh` / `check-md-schema.sh` / `check-traceability.sh` / `check-line-endings.sh` / `sync-prd.sh --check` / `sync-test-index.sh --check` / `check-doc-links.py`(49 文件 / 162 链接)—— **全部 exit 0**。
-- 端到端:DSH 真跑一轮产出 PRD → 6 个门禁全 0 → 进程 exit 0(证据 `.swarm/evidence/a17-run2/`)。
+- 端到端:DSH 真跑一轮产出 PRD → 6 个门禁全 0 → 进程 exit 0(证据 `docs/evidence/a17-run2/`)。
 
 ---
 
@@ -211,7 +211,7 @@ Step 0 原始素材 ──▶ Step 1 PRD ──▶ Step 2 Tech Design ──▶ 
 | G-4 | **`linear` tracker 未实现**(无凭据) | — | `--tracker linear` 早失败,不会静默退化 |
 | G-5 | `schema/tech_design/v3/` 代际分支未实测;`schema/**` 与 `scripts/**` 的「推荐 vs 必填」多靠反推 | — | 低风险遗漏 |
 
-> G-1 / G-2 的修复设计见 `.swarm/requirements/phase2-task-flow.md` §2 / §6(**代码未动**)。
+> G-1 / G-2 的修复设计见 `docs/contracts/phase2-task-flow.md` §2 / §6(**代码未动**)。
 
 ---
 

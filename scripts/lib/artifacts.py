@@ -1,6 +1,6 @@
 """制品发现 + 状态块(§3.1)/复审块(§3.2)读写 + 稳定 ID(§3.3)识别。
 
-契约来源:`.swarm/requirements/agent-first-implementation.md` §3.1、§3.2、§3.3、§7.2。
+契约来源:`docs/contracts/agent-first-implementation.md` §3.1、§3.2、§3.3、§7.2。
 
 设计要点:
 - 制品 = 一个「入口文件」(PRD/Plan/TestCase 单文件;Tech Design 目录以 README.md 为入口)。

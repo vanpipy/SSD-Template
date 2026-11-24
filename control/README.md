@@ -3,7 +3,7 @@
 > 本目录是 SSD-Template 的**控制平面**:调度事实、人类介入记录、状态转换证据全部落在这里,随仓库一起版本化。
 > 它替代「人工在对话里点头」这一环 —— 凡是发生过的事,仓里都查得到。
 
-规范真源:`.swarm/requirements/agent-first-implementation.md`(实施契约 §5/§6/§7)与 `.swarm/decisions/2026-11-22-agent-primary.md`(决策 D-01..D-20)。
+规范真源:`docs/contracts/agent-first-implementation.md`(实施契约 §5/§6/§7)与 `control/decisions/2026-11-22-agent-primary.md`(决策 D-01..D-20)。
 
 ---
 
