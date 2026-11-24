@@ -54,13 +54,14 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
   - 正文里只有 `issue.*` 与 `attempt` 两个模板变量是合法的 (见 §10 的分支)。
 
 本文件取代从未入库的旧机制契约文档; 仓内 README / AGENTS / schema 全部以本文件为准。
-**本文件是仓根唯一的契约文档**, 内容分为三部分:
+**本文件是仓根唯一的契约文档**, 内容分为四部分:
   - §1–§10 = agent 工作契约(规范, 可执行; 自主流水线的执行入口)。
   - §11     = 使用指南(怎么用; 面向人与交互式 agent; 规范冲突时以 §1–§10 为准)。
   - §12     = 概念参考(为什么长成这样; 不定义任何可执行规则)。
+  - §13     = 与编排层(DSH swarm)的协作分工(谁派谁、谁能写什么、决定怎么分流; 规范冲突时以 §1–§10 为准)。
 
-「实施契约」= `.swarm/requirements/agent-first-implementation.md`(§3 元数据 / §5 CLI / §7 调度谓词);
-决策真源 = `.swarm/decisions/2026-11-22-agent-primary.md`(D-01 / D-03 / D-05 / D-07)。
+「实施契约」= `docs/contracts/agent-first-implementation.md`(§3 元数据 / §5 CLI / §7 调度谓词);
+决策真源 = `control/decisions/2026-11-22-agent-primary.md`(D-01 / D-03 / D-05 / D-07)。
 -->
 
 # SSD-Template 规格流水线 · Agent 工作契约
@@ -872,12 +873,16 @@ flowchart TB
 
 | 文件 | 用途 |
 |------|------|
-| [WORKFLOW.md](WORKFLOW.md) | **契约唯一真源**:编排配置 + agent 工作契约(§1–§10)+ 使用指南(§11)+ 概念参考(§12) |
+| [WORKFLOW.md](WORKFLOW.md) | **契约唯一真源**:编排配置 + agent 工作契约(§1–§10)+ 使用指南(§11)+ 概念参考(§12)+ 编排层协作分工(§13) |
 | [README.md](README.md) | 仓库入口(总览 + 规格统计 + PRD 关联矩阵) |
 | [AGENTS.md](AGENTS.md) | 仓库操作契约(仓库清单 / 跨仓引用 / 多仓 Plan / 基线 / 证据锚点) |
 | [docs/agent-first-direction.md](docs/agent-first-direction.md) | agent 优先的实施方向与取舍依据 |
 | [docs/operation-flow.md](docs/operation-flow.md) | 端到端操作流程说明 |
 | [docs/process-analysis.md](docs/process-analysis.md) | 现状流程分析(哪些步骤由 agent 承担、哪些保留人工) |
+| [docs/contracts/agent-first-implementation.md](docs/contracts/agent-first-implementation.md) | **实施契约**:agent 流水线的元数据 / CLI / 调度谓词 |
+| [docs/contracts/agent-first-direction.md](docs/contracts/agent-first-direction.md) | agent 优先的需求真源(R1–R8) |
+| [docs/contracts/phase2-task-flow.md](docs/contracts/phase2-task-flow.md) | 阶段任务流契约(阶段划分 / 门禁 / 回写) |
+| [control/decisions/2026-11-22-agent-primary.md](control/decisions/2026-11-22-agent-primary.md) | **决策真源**:D-01…D-20(人工决定载体) |
 | [schema/prd.md](schema/prd.md) | PRD 模板 |
 | [schema/tech_design/](schema/tech_design/) | Tech Design 模板 (v4 默认 4 子文件,v3 存量 7 子文件) |
 | [schema/plan.md](schema/plan.md) | Plan 模板 |
@@ -906,7 +911,7 @@ flowchart TB
 ## 12. 概念参考 (New Factors)
 
 > **概念参考**。本节解释这套 harness「为什么长成这样」,**不定义任何可执行规则**。
-> 可执行规则以本文件 §1–§10 与 `schema/**` 模板为准;状态值只有
+> 可执行规则以本文件 §1–§10、§13 与 `schema/**` 模板为准;状态值只有
 > `Draft` / `Ready` / `Implemented` / `Deprecated` 四个,全层统一。
 
 ### 12.1 为什么要有这条流程
@@ -1095,3 +1100,101 @@ Agent gets early feedback and works through it to reach the goal.
 6. Criteria -- 让「能不能进 Ready」变成机器可判的问题(`schema/criteria.json`)
 
 > May the SPEC be with you
+
+---
+
+## 13. 与编排层(DSH swarm)的协作分工
+
+> **本节面向与本仓协作的编排层**(DSH swarm 的 Lead / Coordinator)与被派发的执行 lane。
+> 它回答四个问题:**谁有资格被派工**、**谁能写状态**、**决定与证据放哪**、**brief 必须写什么**。
+> **违反其中任意一条即视为协作失效** —— 不是风格偏好,是契约边界。
+
+### 13.1 九条分工规则(R-1..R-9)
+
+规则原文出自 2026-11-24 的《SDD × DSH swarm 协作审计》§7.1(审计稿**未入库**,故本文件不引用其路径);下表是**仓内可执行的版本**:
+每条给出「谁做什么」与「怎么核对」。**这 9 条是协作的充分条件** —— 违反任意一条,协作即退回冲突态。
+
+| 规则 | 内容 | 执行要求(谁做什么) | 核对方式(机器或人可验) |
+|---|---|---|---|
+| **R-1 身份唯一** | 权威身份 = **SDD 制品路径**;板任务 `description` 必含 `artifact: <path>`;板 id 永不是制品状态的权威 | Lead 建板任务时在 `description` 写 `artifact: prd/2026-11-22/layer-checklist.md` 这类**制品路径**;板 id 只当会话标识 | `bash scripts/ssdctl.sh scan --json` 的 `artifacts[].path` 与板任务里的 `artifact:` 路径一致;任何状态断言都引制品路径(§5),不引板 id |
+| **R-2 派发必查** | Lead 派发前必须跑 `bash scripts/ssdctl.sh scan --json`,**只取 `dispatchable=true`**;swarm 板不是资格源 | Lead 在派工前先跑一次 scan,把 `dispatchable=false` 的制品**排除**在派工集合外;不派「板上看似 ready」的制品 | 派工前的那次 scan 有执行记录;被派工制品在 scan 输出里 `dispatchable=true`;板字段 `ready` / `blockedBy` **不出现在**判定依据里(§13.2) |
+| **R-3 状态只走机器** | lane 只写**内容**;状态块 / 复审块**只能**由 `ssdctl advance` 写。lane 可达 `Ready`(判据驱动),**不可达 `Implemented`**(需 `external:` 或决定记录) | lane 写完产物内容后跑 `bash scripts/ssdctl.sh advance <artifact> --to Ready`;手改状态行 = 违规(§3 第 2 条) | 状态块 4 行的「状态主体」是 `agent:<id>`;`bash scripts/ssdctl.sh verify <artifact>` 回读 `control/evidence/**` 与状态块一致(§5) |
+| **R-4 决定分流** | **人类**决定 → `control/decisions/<date>-<topic>.md#D1`(本仓,受版本控制);**编排**决定 → 编排层自己的工作区(其决定目录**不在本仓**,锚点形态不可被 `--decision` 消费) | `advance --decision` 只接受 `control/decisions/` 下、锚点形态为 `D<n>` 的记录;编排决定留在编排层,**仅作参考** | `advance --decision <编排层决定路径>#D-01 --dry-run` → **exit 2**(实测:`✗ 找不到决定记录: …`);指向 `control/decisions/` 的同形路径才 exit 0 |
+| **R-5 证据分流** | 转换证据唯一权威 = `control/evidence/**`;编排层的**叙事报告**(编排层工作区的 reports 目录)不作为验收证据 | lane 的叙事报告写编排层工作区;**验收只看** `control/evidence/**` | `bash scripts/ssdctl.sh evidence --artifact <path> --json` 能查到该次转换;任何门禁都不读编排层的报告目录 |
+| **R-6 交互分层** | Lead(Coordinator)可对话;**执行 lane 静默**,只对 Lead 说话(`send_message` 给 Lead),不直接 `ask_user_question` | lane 需要澄清时把问题写进 workpad 并 `send_message` 给 Lead,由 Lead 决定是否问人 | lane 侧不出现对用户的提问;§1「你不与用户对话」约束的是**产制品那一轮**,不约束 Lead |
+| **R-7 提交归人** | 交互式会话里 lane **不 commit**;提交 / 推送由人做。**swarm 侧对 git 写权限零规则 ⇒ brief 是唯一保险** | brief 必须写明「本轮不 commit / 不 push」;需要提交时把改动留在工作区,在汇报里列出路径 | 工作区改动**未提交**(§8「交互式会话里提交由人自己做」);§3 第 15 条的 git 边界不被越过 |
+| **R-8 skill 双轨** | SDD 9 skill 管**怎么做制品**(§4 通用步骤第 2 步优先);swarm `swarm-craft-*` 管**怎么干活**;冲突时以 `WORKFLOW.md` 为准 | 做制品读 `.codex/skills/<name>/SKILL.md`;干活方法读 swarm 侧技能;两者冲突以本文件为准 | 产物形状按 §4 / §7 核对,不按通用模板核对;§1「参考资料可信度排序」以本文件最高 |
+| **R-9 写集隔离** | 并行 lane **不得**写:`README.md` 统计块、`test_cases/_index.md` 索引块、`control/**`;`write_scopes` advisory,须由 Lead 在 brief 里点名排除 | brief 里点名三项禁写路径;lane 发现需要改这三处 → **报告**,不改(§3 第 12 条) | 工作区改动清单里不出现这三类路径(§13.4 第 2 项) |
+
+### 13.2 派发前置:唯一机器资格源 = 仓内 `ssdctl scan`
+
+**编排层只负责并发与派工;资格判定只有一份实现** —— `scripts/lib/dispatch.py:262` 的 5 合取谓词:
+`state_ok and not_deprecated and labels_ok and upstream_ready and layer_resolved`。
+编排层**不得另造谓词**:另造谓词 = 第二个权威源(同一事实两个判据,必然分叉)。
+
+> **Ready 闸门 = 编排层消费 `ssdctl scan` 的 dispatchable,不自造谓词。**
+> 裁决 A-03(用户 m04017 已采纳;审计与裁决全文留在编排层,**不入本仓**):
+> 编排层的门禁职责**只有一条** —— 把 `dispatchable=true` 的制品派出去;
+> 「能不能进 `Ready`」由仓内 `advance` 按判据判定(§5),编排层**不参与判定**。
+> 宿主侧不存在可复用的谓词实现(插件无进程执行能力),因此**编排层在结构上也无法**自行算出同等判据 ——
+> 这不是设计缺陷,是「唯一权威源」的必然结果:**资格只看仓内 scan 的输出**。
+
+**派发前必跑的命令**:
+
+```bash
+bash scripts/ssdctl.sh scan --json
+```
+
+**只取 `dispatchable=true` 的条目**,字段用法:
+
+| `scan --json` 输出字段 | 含义 | 编排层怎么用 |
+|---|---|---|
+| `artifacts[].path` | 制品路径 = 权威身份(R-1) | 作为板任务 `artifact:` 的值 |
+| `artifacts[].dispatchable` | **唯一入队条件**(`true` 才派) | `true` 才进派工集合;`false` 一律不派 |
+| `artifacts[].layer` / `state` / `topic` | 层 / 当前状态 / topic | 写进 brief,让 lane 直接定位目标层与 topic(§2) |
+| `artifacts[].upstream` / `missing` / `reason` | 上游、缺失项、不可派原因 | `dispatchable=false` 时把 `reason` 写进 brief,让 lane 知道先做什么 |
+| `artifacts[].dependency_permission` | `blocked` / `draftable` / `committable` | 决定 lane 是「只起草」还是「可推进」(§7 的依赖许可轴) |
+
+- **swarm 板不是资格源**:板上的 `ready` / `blockedBy` 是宿主字段透传,与 `upstream_ready` 无关(恒为真),**不得**作为入队条件。
+- 上游层若要**机器强制**依赖登记,依赖点在宿主(板任务 `blockedBy`),**当前未证实**宿主按它算 ready ⇒ 本节只采信「可引用、不可强制」:资格一律以 scan 的结果为准。
+
+### 13.3 板状态 ≠ 制品状态(降级映射)
+
+板上的状态词、swarm 验收词表、SDD 制品状态**三套词表两两不相交**,不得互相翻译:
+
+| 来源 | 词表 | 能否作为制品状态 |
+|---|---|---|
+| 板任务 `status` | 宿主字段,**无枚举** | ❌ 不能 |
+| swarm 验收词表 | `met` / `not met` / `not demonstrated` / `not in scope` | ❌ 不能 |
+| SDD 制品状态块 | `Draft` / `Ready` / `Implemented` / `Deprecated` | ✅ **唯一权威**(§5) |
+
+**降级映射**(板信号 → 最多能触发的动作):
+
+| 板上的信号 | 最多能触发 | 前置条件 |
+|---|---|---|
+| `completed` | `bash scripts/ssdctl.sh advance <artifact> --to Ready` | 判据全绿(`blocking:true` 全过);不绿就停在 `Draft` |
+| `implemented` / `done` | **无** | `Implemented` 只能由 `bash scripts/ssdctl.sh advance <artifact> --to Implemented` 触发,且须带 `external:` 依据,或 `--decision control/decisions/<date>-<topic>.md#D1` |
+| `deprecated` | `advance <artifact> --to Deprecated` | 状态依据必须是 `decision:` 或 `external:`;**不允许** `criteria:`(§3 第 3 条) |
+| `ready` / `blockedBy` | **不参与** | 宿主字段,与 `upstream_ready` 无关;资格只看 scan |
+
+### 13.4 brief 必含项(Lead 派工时必须点名)
+
+**`write_scopes` 是 advisory、不是锁** ⇒ **brief 是唯一保险**。下面 5 项缺一不可:
+
+| # | brief 必含 | 写法(可直接抄) | 不写会怎样 |
+|---|---|---|---|
+| 1 | **权威身份 = 制品路径** | `artifact: prd/2026-11-22/layer-checklist.md`(板任务 `description` 同步写上) | lane 不知道改哪个 topic,可能改到别人的制品(§3 第 6 条) |
+| 2 | **禁写清单(三项)** | 根 `README.md` 的 `<!-- prd-stats:begin -->` … `<!-- prd-stats:end -->` 统计块、`test_cases/_index.md` 的 `<!-- test-index:begin -->` … `<!-- test-index:end -->` 索引块、`control/**` | 并行 lane 抢写机器写点 → 派生数据互相覆盖(§3 第 12 条) |
+| 3 | **禁用 `swarm_worktree`** | 「本仓**不得**调用 `swarm_worktree`」 | worktree = 新分支 + 干净检出:算出的 `dispatchable` 基于另一快照,`advance` 写的状态块落在**不会合并**的分支上;且违反 §3 第 15 条(禁 `git checkout`) |
+| 4 | **git 写权限** | 「本轮**不 commit、不 push**;提交由人做」 | lane 自造 `Reviewed-by:` 署名痕迹,或直接改主分支(§8、§3 第 7 / 15 条) |
+| 5 | **决定载体分流** | 人类决定 → `control/decisions/<date>-<topic>.md#D1`;编排决定 → 编排层自己的工作区(仅参考,`--decision` 不消费) | `advance --decision` 指向编排层决定路径 → exit 2,推进失败(R-4) |
+
+> 第 2 项的三个路径**逐字点名**,不要只写「别改自动生成块」—— 并行时 lane 只认得路径。
+> 第 4 项与 §8「交互式会话里提交由人自己做」是同一条规则的两个说法:**交互式会话**里提交由人做;
+> **本仓自主流水线**的工作区里,commit / push 只发生在 §3 第 15 条允许的专用分支上。两处都不得越界。
+
+### 13.5 已知缺口(不掩饰)
+
+- `dispatchable=false` 的制品**仍可被手写产出**:`dispatch.py` 是**谓词函数**,不是写拦截器。本节消掉的是「派发」这一半旁路;「写入」这一半需要仓内加写拦截,不在本节范围。
+- 本节目前是**可引用、不可强制**:swarm 侧对 git 写权限与写集**零机器强制**;能被机器核对的只有仓内门禁(`bash scripts/ssdctl.sh gate`)、状态块与证据链。把上游层登记为板任务依赖能否机器强制,取决于宿主,**当前未证实** ⇒ brief 是唯一保险。
+- 板任务 `status` 无枚举、宿主板实现不可读 ⇒ 降级映射(§13.3)按**最保守**取:任何板信号都**不直接**改制品状态,只允许**触发一次 advance 尝试**。
