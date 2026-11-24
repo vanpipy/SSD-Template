@@ -477,4 +477,4 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 - <repo>/schema/tech_design/v3/（v3 存量 TD 模板目录）
 - <repo>/scripts/ssdctl.py（判据与门禁唯一入口：scan / criteria / gate / advance / queue / decide / evidence / verify）
 - <repo>/schema/criteria.json（判据机器权威）
-- <repo>/HOW_TO_USE.md（完整工作流）
+- <repo>/WORKFLOW.md（完整工作流）

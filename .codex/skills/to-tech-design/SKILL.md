@@ -440,5 +440,5 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 - <repo>/schema/tech_design/README.md（v4 模板）
 - <repo>/schema/tech_design/v3/（v3 存量模板目录）
 - <repo>/scripts/ssdctl.py（判据与门禁唯一入口）
-- <repo>/HOW_TO_USE.md（完整工作流）
+- <repo>/WORKFLOW.md（完整工作流）
 

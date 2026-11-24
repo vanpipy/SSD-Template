@@ -386,4 +386,4 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 - <repo>/scripts/check-repo-baseline.sh（TD 实现基线段核对；由仓内门禁统一触发，skill 不单独手拼）
 - <repo>/.codex/skills/validate-spec/skills-integrity.sh（skill 目录自检）
 - <repo>/AGENTS.md §3.4（门禁清单）
-- <repo>/HOW_TO_USE.md（脚本使用方式）
+- <repo>/WORKFLOW.md（脚本使用方式）

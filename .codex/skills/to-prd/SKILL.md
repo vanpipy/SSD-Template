@@ -320,4 +320,4 @@ bash <repo>/.codex/skills/install.sh
 - <repo>/schema/criteria.json（判据唯一权威）
 - <repo>/scripts/ssdctl.py（判据与门禁的唯一入口）
 - `schema/criteria.json`（判据唯一权威）
-- <repo>/HOW_TO_USE.md（完整工作流）
+- <repo>/WORKFLOW.md（完整工作流）
