@@ -134,13 +134,15 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 
 | 命令 | 作用 | 什么时候跑 |
 |------|------|------------|
-| `bash scripts/ssdctl.sh gate` | 全仓门禁(既有 8 个)+ 判据引擎 | 每次都跑(CI) |
+| `bash scripts/ssdctl.sh gate` | 全仓门禁(既有 7 个)+ 判据引擎 | 每次都跑(CI) |
 | `bash scripts/ssdctl.sh scan --check` | 跨制品一致性(上游闸门 + 三件套原子性 + 字段自洽) | 每次都跑(CI) |
 | `bash scripts/ssdctl.sh advance <artifact> --to Ready --actor agent:<id>` | 状态推进(唯一写入路径;`--to` 不含 `Draft`) | 判据全绿后 |
+| `bash scripts/ssdctl.sh criteria --repo` | 仓库层判据单项(行尾 CR / 冲突标记等) | 只查仓库层时单独跑(随 `gate` 执行时不必单独跑) |
 
 > 完整脚本清单(每个脚本的职责 / 调用形态 / 退出码 / 谁调用它)见 `scripts/README.md`;每个脚本**什么时候跑**见 `WORKFLOW.md` §6 门禁执行。
 > 一次性跑全部检查:用 `validate-spec` skill(交互式 agent),或按 `WORKFLOW.md` §6 的脚本表逐个跑(Symphony 编排下没有 slash 命令)。
 > **脚本只强制格式与追溯;状态推进由判据引擎负责**:`Ready` 由 `bash scripts/ssdctl.sh advance` 在判据全绿后写入,`Implemented` 需要外部事实(外部 PR merged,状态依据 `external:`),`Deprecated` 同样需要 `external:` 依据(见 [WORKFLOW.md](WORKFLOW.md) §5 状态推进规则)。
+> **仓内文本规则(行尾 CR / 冲突标记)由判据引擎仓库层判定,没有独立脚本** —— 规则只留一份实现(`schema/criteria.json` 的仓库层判据 `REPO-NO-CR` / `REPO-NO-PLACEHOLDER`),随 `bash scripts/ssdctl.sh gate` 执行;只查仓库层用 `bash scripts/ssdctl.sh criteria --repo`。
 
 ## 相关文件
 
@@ -151,6 +153,6 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 | 编排目录 `.swarm`(不入库) | 过程与契约补充文档(实施契约 / 需求集 / 决策记录 / 证据 / 报告)—— 2026-11-24 自 `docs/` 整体迁入;仓内不再留过程文档 |
 | 历史代际(不再留档) | `git log --all -- <path>` / `git show <commit>:<path>`(历史代际仅存于 git 历史) |
 | `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
-| `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `verify`) |
+| `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `criteria --repo` / `gate` / `advance` / `queue` / `verify`) |
 | `scripts/README.md` | **仓内脚本清单唯一真源**:每个脚本的职责 / 调用形态 / 退出码 / 谁调用它 |
 | **(历史)** `control/` 控制平面 | **(历史)** 决定记录 / 状态快照 / 证据链 —— 已于 2026-11-24 的 F9 裁决整体删除;现行载体是**制品本身**(状态块 + 复审段)+ git 历史 |

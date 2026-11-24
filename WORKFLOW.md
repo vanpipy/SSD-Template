@@ -320,7 +320,6 @@ bash scripts/ssdctl.sh advance <artifact> --to Ready          # 与 agent 完全
 | `scripts/check-md-schema.sh` | **每次都跑** |
 | `scripts/check-traceability.sh` | **每次都跑** |
 | `scripts/check-doc-links.py` | **每次都跑** |
-| `scripts/check-line-endings.sh` | **每次都跑** |
 | `scripts/check-repo-baseline.sh` | 仅 Layer 2(且仓内登记了关联代码仓时) |
 | `scripts/sync-prd.sh` | **每次都跑**(写模式, 幂等) |
 | `scripts/sync-prd.sh --check` | 只读复查 |
@@ -329,6 +328,11 @@ bash scripts/ssdctl.sh advance <artifact> --to Ready          # 与 agent 完全
 | `scripts/deep-scan.py` | 仅当仓内启用 `deep/` 底座时 |
 | `bash scripts/ssdctl.sh gate` | **每次都跑** |
 | `bash scripts/ssdctl.sh scan --check` | **每次都跑** |
+| `bash scripts/ssdctl.sh criteria --repo` | 只跑仓库层判据(随 `gate` 执行时不必单独跑) |
+
+> **行尾 / 冲突标记由判据引擎仓库层判定**:「受版本控制的文件不得含 CR 字节」「不得残留冲突占位标记」这两条规则**没有独立脚本** ——
+> 它们是 `schema/criteria.json` 里的仓库层判据(`REPO-NO-CR` / `REPO-NO-PLACEHOLDER`),随 `bash scripts/ssdctl.sh gate` 执行,判定口径与 `gate` 同源。
+> 仓内文本规则因此只有**一份实现**(判据引擎),不再有第二个脚本重复判同一件事。
 
 每个脚本的**职责 / 调用形态 / 退出码 / 谁调用它 / 改了要同步改哪里**只在 `scripts/README.md` 写一份(仓内脚本清单唯一真源);
 本表只回答「**什么时候跑**」,不要在这里复制明细。

@@ -321,8 +321,10 @@ git -C <仓库本地路径> rev-parse --short HEAD
 | Test Cases(可选) | `schema/test_case.md` 全文 | `validate-spec`(目录存在时才校验) |
 | 实现基线(可选) | Tech Design `## 实现基线` 段 | `scripts/check-repo-baseline.sh`(有关联代码仓时才校验) |
 | PRD 台账 / 关联矩阵(可选) | `schema/prd-ledger.md` / `schema/prd-matrix.md` | `scripts/sync-prd.sh` / `scripts/check-traceability.sh`(层存在时才校验) |
+| 仓库层(全仓) | `schema/criteria.json` 的仓库层判据(`REPO-NO-CR` 行尾 CR / `REPO-NO-PLACEHOLDER` 冲突标记) | `bash scripts/ssdctl.sh criteria --repo`(随 `bash scripts/ssdctl.sh gate` 执行) |
 
 **调用方式**:用 `validate-spec` skill(它按层跑全部校验脚本),不要手拼脚本命令。脚本退出码是唯一判定依据:全部 `✓` 只说明**格式与追溯**合规;**能否进 `Ready` 由 `schema/criteria.json` 的判据决定**,由 `bash scripts/ssdctl.sh advance` 代写状态块与复审块(见 §3.3),既不由「✓ 的数量」决定,也不是人工敲状态行。
+仓内文本规则(行尾 CR / 冲突标记)同属**判据引擎仓库层**,**没有独立脚本** —— 同一规则只留一份实现,清单见 `scripts/README.md` §2.2。
 
 ### 3.5 禁止行为
 
@@ -373,6 +375,9 @@ bash scripts/ssdctl.sh scan [--json] [--layer L] [--check]
 
 # 判据:单制品逐条评估
 bash scripts/ssdctl.sh criteria <artifact> [--json]
+
+# 仓库层判据单项(行尾 CR / 冲突标记等;只跑仓库层,不跑门禁脚本)
+bash scripts/ssdctl.sh criteria --repo [--json]
 
 # 全仓门禁(既有门禁 + 判据引擎)
 bash scripts/ssdctl.sh gate [--json]
