@@ -1,14 +1,17 @@
 # spec-check.yml — 规格门禁 CI(契约 M8)
 #
-# 门禁顺序(契约 M8 固定):
-#   git config core.autocrlf false
-#   → check-line-endings.sh → check-naming.sh → check-md-schema.sh → check-traceability.sh
-#   → check-repo-baseline.sh → check-doc-links.py → sync-prd.sh → sync-test-index.sh --check
+# **门禁清单只有一份**:真源 = `scripts/lib/commands.py` 的 `GATE_SCRIPTS`。
+#   本文件**不逐个列出门禁名,也不硬编码门禁个数** —— 那会构成第二份清单,必然与真源漂移。
+#   全部门禁 + 判据引擎 + 制品自洽性统一由 `scripts/acceptance/run-all-gates.sh` 跑,
+#   它消费 `bash scripts/ssdctl.sh gate --json`(JSON 载荷里的 gates[] 就是真源里的那份清单)。
+#   门禁的执行顺序(契约 M8 固定)同样由真源给出,本文件不复述。
+#   本地与 CI 跑同一条命令 ⇒ 清单不可能在两边漂移,判定与退出码也不可能分叉。
 #
 # 三条硬规则:
 #   1. 门禁**永不全量跳过**: 即使本次 diff 没碰任何制品目录, 也照常跑完(只打 notice)。
 #   2. 「本仓没有任何 PRD 制品」= 失败(不允许空洞绿灯)。
-#   3. 每个门禁步骤都断言「退出码为 0 且 stdout 非空」—— 防止脚本静默空转被当成绿灯。
+#   3. 每个门禁都断言「退出码为 0 且输出非空」—— 防止脚本静默空转被当成绿灯。
+#      (run-all-gates.sh 把「exit 0 且 stdout/stderr 全空」标成 WARN;本步骤把该 WARN 升级为错误。)
 #
 # 关于 sync-prd.sh:
 #   台账里存在「待分析 / 待抓取 / 孤儿」行时, sync-prd.sh 的退出码是 1, 那是**工作状态**
@@ -16,6 +19,7 @@
 #   因此本步骤采用「写模式(幂等) + 漂移比对」: 只对「统计块/台账与实际制品不一致」判红。
 #   `git status --porcelain` 同时覆盖已跟踪文件的改动**与**新建的未跟踪台账文件
 #   (单用 `git diff` 看不到未跟踪文件)。
+#   这一步排在门禁之前:门禁看到的必须是**写模式之后**的工作区(与判据引擎看到的状态一致)。
 
 name: spec-check
 
@@ -71,60 +75,6 @@ jobs:
             echo "::notice::本次 diff 未触及任何制品目录(prd/ tech_design/ plan/ test_cases/ material/) — 门禁仍全量执行(契约 M8: 门禁不得跳过)。"
           fi
 
-      - name: 行尾检查(禁止 CR)
-        run: |
-          set -uo pipefail
-          rc=0
-          out="$(bash scripts/check-line-endings.sh 2>&1)" || rc=$?
-          printf '%s\n' "$out"
-          [ "$rc" -eq 0 ] || exit "$rc"
-          [ -n "$out" ] || { echo "::error::check-line-endings.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
-
-      - name: 命名与层结构检查
-        run: |
-          set -uo pipefail
-          rc=0
-          out="$(bash scripts/check-naming.sh 2>&1)" || rc=$?
-          printf '%s\n' "$out"
-          [ "$rc" -eq 0 ] || exit "$rc"
-          [ -n "$out" ] || { echo "::error::check-naming.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
-
-      - name: 字段与状态机检查
-        run: |
-          set -uo pipefail
-          rc=0
-          out="$(bash scripts/check-md-schema.sh 2>&1)" || rc=$?
-          printf '%s\n' "$out"
-          [ "$rc" -eq 0 ] || exit "$rc"
-          [ -n "$out" ] || { echo "::error::check-md-schema.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
-
-      - name: 追溯检查
-        run: |
-          set -uo pipefail
-          rc=0
-          out="$(bash scripts/check-traceability.sh 2>&1)" || rc=$?
-          printf '%s\n' "$out"
-          [ "$rc" -eq 0 ] || exit "$rc"
-          [ -n "$out" ] || { echo "::error::check-traceability.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
-
-      - name: 实现基线检查
-        run: |
-          set -uo pipefail
-          rc=0
-          out="$(bash scripts/check-repo-baseline.sh 2>&1)" || rc=$?
-          printf '%s\n' "$out"
-          [ "$rc" -eq 0 ] || exit "$rc"
-          [ -n "$out" ] || { echo "::error::check-repo-baseline.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
-
-      - name: 文档链接检查
-        run: |
-          set -uo pipefail
-          rc=0
-          out="$(python3 scripts/check-doc-links.py 2>&1)" || rc=$?
-          printf '%s\n' "$out"
-          [ "$rc" -eq 0 ] || exit "$rc"
-          [ -n "$out" ] || { echo "::error::check-doc-links.py 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
-
       - name: PRD 台账登记 + 统计块核对(写模式幂等 + 漂移比对)
         run: |
           set -uo pipefail
@@ -141,14 +91,31 @@ jobs:
             exit 1
           fi
 
-      - name: 用例索引核对(只读)
+      # 契约 §8:真源清单里的全部门禁 + 判据引擎 + 制品自洽性, 一次跑完。
+      # 清单不在本文件里写死 —— 真源是 scripts/lib/commands.py 的 GATE_SCRIPTS,
+      # 由 run-all-gates.sh 消费 `ssdctl gate --json` 渲染成表(退出码 + 输出字节 + 失败输出)。
+      # 命令形态:统一走 `scripts/ssdctl.sh` 包装器 —— 它自己解析解释器
+      # (SSDCTL_PYTHON → python3 → python → py -3 → DSH runtime 自带解释器),
+      # 每个候选都自检,全不行则 exit 2 并列出候选。
+      # CI 也走包装器 ⇒ 包装器持续被验证,不会只在某台机器上可用。
+      - name: 门禁(GATE_SCRIPTS 全量 + 判据引擎 + 制品自洽性)
         run: |
           set -uo pipefail
           rc=0
-          out="$(bash scripts/sync-test-index.sh --check 2>&1)" || rc=$?
+          out="$(bash scripts/acceptance/run-all-gates.sh 2>&1)" || rc=$?
           printf '%s\n' "$out"
           [ "$rc" -eq 0 ] || exit "$rc"
-          [ -n "$out" ] || { echo "::error::sync-test-index.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+          # 防空转断言(硬规则 3):门禁必须真的跑过,并给出结论。
+          [ -n "$out" ] || { echo "::error::run-all-gates.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+          if ! printf '%s\n' "$out" | grep -q 'RESULT: PASS'; then
+            echo "::error::run-all-gates.sh 没有输出 RESULT: PASS — 防空转断言失败"
+            exit 1
+          fi
+          # 某个门禁「exit 0 但 stdout/stderr 全空」= 可能静默空转 → 升级为错误。
+          if printf '%s\n' "$out" | grep -q 'WARN: exit 0 with empty stdout'; then
+            echo "::error::有门禁退出码为 0 但输出全空 — 防空转断言失败"
+            exit 1
+          fi
 
       - name: "断言: 本仓至少存在 1 个 PRD 制品(禁止空洞绿灯)"
         run: |
@@ -164,21 +131,6 @@ jobs:
             exit 1
           fi
           echo "✓ PRD 制品数: $count"
-
-      # 契约 §8:既有 8 个门禁之后,按固定顺序追加这两步。
-      # 两步都必须有非空 stdout(与既有门禁步骤同一条防空转断言)。
-      # 命令形态:统一走 `scripts/ssdctl.sh` 包装器 —— 它自己解析解释器
-      # (SSDCTL_PYTHON → python3 → python → py -3 → DSH runtime 自带解释器),
-      # 每个候选都自检,全不行则 exit 2 并列出候选。
-      # CI 也走包装器 ⇒ 包装器持续被验证,不会只在某台机器上可用。
-      - name: SDD criteria + derived data
-        run: |
-          set -uo pipefail
-          rc=0
-          out="$(bash scripts/ssdctl.sh gate 2>&1)" || rc=$?
-          printf '%s\n' "$out"
-          [ "$rc" -eq 0 ] || exit "$rc"
-          [ -n "$out" ] || { echo "::error::ssdctl.sh gate 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
 
       - name: Derived state freshness
         run: |
@@ -205,4 +157,3 @@ jobs:
             echo "::error::单元测试没有发现任何用例 — 防空转断言失败"
             exit 1
           }
-

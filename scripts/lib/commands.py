@@ -418,11 +418,15 @@ def _to_posix(path: Path) -> str:
     return text.replace("\\", "/")
 
 
-def _run_gate(root: Path, script: str, args: tuple[str, ...]) -> tuple[int, str]:
-    """跑一个仓内门禁,返回 (退出码, 合并输出)。"""
+def _run_gate(root: Path, script: str, args: tuple[str, ...]) -> tuple[int, str, str]:
+    """跑一个仓内门禁,返回 (退出码, stdout, stderr)。
+
+    stdout 与 stderr **分开**返回:JSON 契约里的 `stdout_bytes` 要的是 stdout 自己的字节数。
+    文本报告仍把两股合起来看(与历史输出一致),但那只是报告口径。
+    """
     target = root / script
     if not target.is_file():
-        return EXIT_USAGE, f"门禁脚本缺失: {script}"
+        return EXIT_USAGE, "", f"门禁脚本缺失: {script}"
     if script.endswith(".py"):
         command = [sys.executable, str(target), *args]
     else:
@@ -435,8 +439,8 @@ def _run_gate(root: Path, script: str, args: tuple[str, ...]) -> tuple[int, str]
         encoding="utf-8",
         errors="replace",
     )
-    output = (completed.stdout or "") + (completed.stderr or "")
-    return completed.returncode, output.strip()
+    return completed.returncode, (completed.stdout or ""), (completed.stderr or "")
+
 
 
 REPO_TEXT_SUFFIXES = (".md", ".sh", ".py", ".json", ".yml", ".yaml", ".txt", ".cfg", ".ini")
@@ -486,28 +490,70 @@ def _repo_text_files(root: Path) -> list[Path]:
     return files
 
 
-def cmd_gate(root: Path, args) -> int:
-    failures = 0
-    print("— 仓内门禁 —")
-    for script, gate_args in GATE_SCRIPTS:
-        code, output = _run_gate(root, script, gate_args)
-        soft = SOFT_FAIL_CODES.get(script)
-        label = "✓" if code == 0 else ("!" if soft is not None and code == soft else "✗")
-        print(f"{label} {script} {' '.join(gate_args)} → exit {code}")
-        if output:
-            for line in output.splitlines():
-                print(f"    {line}")
-        if code != 0 and not (soft is not None and code == soft):
-            failures += 1
+def _gate_payload(
+    gates: list[dict],
+    criteria_rows: list[dict],
+    artifact_rows: list[dict],
+    failures: int,
+    fatal: bool,
+) -> dict:
+    """`gate --json` 的载荷 —— 顶层只有这 5 个键(契约 §8)。"""
+    return {
+        "ok": not fatal and failures == 0,
+        "failures": failures,
+        "gates": gates,
+        "criteria": criteria_rows,
+        "artifacts": artifact_rows,
+    }
 
-    print("— 判据 —")
+
+def _collect_gate_report(root: Path) -> tuple[dict, list[str], list[str]]:
+    """跑完全部门禁 + 判据 + 制品自洽性。
+
+    返回 (JSON 载荷, 文本输出行, 致命错误行)。**收集与打印分离**:
+    `gate` 打印文本行,`gate --json` 打印同一个载荷 —— 两种呈现来自同一次运行,
+    所以判定与退出码不可能分叉。
+    """
+    lines: list[str] = []
+    gates: list[dict] = []
+    criteria_rows: list[dict] = []
+    artifact_rows: list[dict] = []
+    failures = 0
+
+    lines.append("— 仓内门禁 —")
+    for script, gate_args in GATE_SCRIPTS:
+        code, stdout, stderr = _run_gate(root, script, gate_args)
+        merged = (stdout + stderr).strip()  # 文本渲染口径:两股合起来(与历史输出一致)
+        soft = SOFT_FAIL_CODES.get(script)
+        soft_hit = soft is not None and code == soft
+        label = "✓" if code == 0 else ("!" if soft_hit else "✗")
+        lines.append(f"{label} {script} {' '.join(gate_args)} → exit {code}")
+        if merged:
+            for line in merged.splitlines():
+                lines.append(f"    {line}")
+        if code != 0 and not soft_hit:
+            failures += 1
+        gates.append(
+            {
+                "script": script,
+                "args": list(gate_args),
+                "exit_code": code,
+                "stdout_bytes": len(stdout.encode("utf-8")),
+                "soft_fail": soft is not None,
+                # output = stdout 原文(契约 §A1);stderr 单列,因为 check-doc-links.py
+                # 把整份报告写在 stderr(stdout=0)—— 少一栏就等于丢掉它的输出。
+                "output": stdout,
+                "stderr": stderr,
+            }
+        )
+
+    lines.append("— 判据 —")
     criteria_file = criteria_path(root)
     try:
         criteria = load_criteria(criteria_file)
     except CriteriaError as exc:
-        print(f"✗ {exc}", file=sys.stderr)
-        print("✗ 判据文件缺失或非法 —— 门禁 fail-closed(不放行)", file=sys.stderr)
-        return EXIT_USAGE
+        fatal = [f"✗ {exc}", "✗ 判据文件缺失或非法 —— 门禁 fail-closed(不放行)"]
+        return _gate_payload(gates, [], [], failures + 1, True), lines, fatal
 
     artifacts = discover_artifacts(root)
     repo_docs = _repo_documents(root)
@@ -516,63 +562,136 @@ def cmd_gate(root: Path, args) -> int:
             document = _artifact_document(root, artifact)
             result = evaluate(criteria, document, artifact.layer)
             state = "✓" if result.passed else "✗"
-            print(f"{state} {artifact.rel}: {len(result.failures)} 阻断失败 / {len(result.warnings)} 警告")
+            lines.append(
+                f"{state} {artifact.rel}: {len(result.failures)} 阻断失败 / {len(result.warnings)} 警告"
+            )
+            row_failures: list[str] = []
             for item in result.failures:
-                print(f"    ✗ {item.criterion_id} @ {item.locate()}: {item.message}")
+                text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
+                lines.append(f"    ✗ {text}")
+                row_failures.append(text)
+            row_warnings: list[str] = []
             for item in result.warnings:
-                print(f"    ! {item.criterion_id} @ {item.locate()}: {item.message}")
+                text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
+                lines.append(f"    ! {text}")
+                row_warnings.append(text)
             if not result.passed:
                 failures += 1
+            criteria_rows.append(
+                {
+                    "scope": "artifact",
+                    "target": artifact.rel,
+                    "passed": result.passed,
+                    "failures": row_failures,
+                    "warnings": row_warnings,
+                }
+            )
 
         # 跨层判据(scope=repo):按层求值一次,不是按制品 —— 它是层不变式
         for layer in _repo_scope_layers(criteria):
             result = evaluate_repo(criteria, layer, repo_docs)
             state = "✓" if result.passed else "✗"
-            print(f"{state} <跨层 {layer}>: {len(result.failures)} 阻断失败 / {len(result.warnings)} 警告")
+            lines.append(
+                f"{state} <跨层 {layer}>: {len(result.failures)} 阻断失败 / {len(result.warnings)} 警告"
+            )
+            row_failures = []
             for item in result.failures:
-                print(f"    ✗ {item.criterion_id} @ {item.locate()}: {item.message}")
+                text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
+                lines.append(f"    ✗ {text}")
+                row_failures.append(text)
+            row_warnings = []
             for item in result.warnings:
-                print(f"    ! {item.criterion_id} @ {item.locate()}: {item.message}")
+                text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
+                lines.append(f"    ! {text}")
+                row_warnings.append(text)
             if not result.passed:
                 failures += 1
+            criteria_rows.append(
+                {
+                    "scope": "layer",
+                    "target": layer,
+                    "passed": result.passed,
+                    "failures": row_failures,
+                    "warnings": row_warnings,
+                }
+            )
 
         # 仓库层判据(layer=repo)对整个仓求值,不对单个制品求值
         if any(item.layer == "repo" for item in criteria):
             document = Document.from_repo(root, _repo_text_files(root))
             result = evaluate(criteria, document, "repo")
             state = "✓" if result.passed else "✗"
-            print(f"{state} <repo>: {len(result.failures)} 阻断失败 / {len(result.warnings)} 警告")
+            lines.append(
+                f"{state} <repo>: {len(result.failures)} 阻断失败 / {len(result.warnings)} 警告"
+            )
+            row_failures = []
             for item in result.failures:
-                print(f"    ✗ {item.criterion_id} @ {item.locate()}: {item.message}")
+                text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
+                lines.append(f"    ✗ {text}")
+                row_failures.append(text)
+            row_warnings = []
             for item in result.warnings:
-                print(f"    ! {item.criterion_id} @ {item.locate()}: {item.message}")
+                text = f"{item.criterion_id} @ {item.locate()}: {item.message}"
+                lines.append(f"    ! {text}")
+                row_warnings.append(text)
             if not result.passed:
                 failures += 1
+            criteria_rows.append(
+                {
+                    "scope": "repo",
+                    "target": "repo",
+                    "passed": result.passed,
+                    "failures": row_failures,
+                    "warnings": row_warnings,
+                }
+            )
     except CriteriaError as exc:
         # 判据参数非法(契约 §4.1.1)—— 显式失败,退出码 2,绝不静默放行。
-        print(f"✗ {exc}", file=sys.stderr)
-        print("✗ 判据参数非法 —— 门禁 fail-closed(不放行)", file=sys.stderr)
-        return EXIT_USAGE
+        fatal = [f"✗ {exc}", "✗ 判据参数非法 —— 门禁 fail-closed(不放行)"]
+        return _gate_payload(gates, criteria_rows, artifact_rows, failures + 1, True), lines, fatal
 
     # 制品自洽性: 状态块 + 复审块(与 verify 共用 _field_problems)。
     # 契约里的规则如果只写在 verify 里, CI 跑的却是 gate —— 那就是假绿。
-    print("— 制品自洽性 —")
+    lines.append("— 制品自洽性 —")
     for artifact in artifacts:
         text = _entry_text(root, artifact)
         problems = _field_problems(
             parse_status(text, artifact.rel), parse_review(text, artifact.rel)
         )
         state = "✓" if not problems else "✗"
-        print(f"{state} {artifact.rel}: {len(problems)} 处不自洽")
+        lines.append(f"{state} {artifact.rel}: {len(problems)} 处不自洽")
         for problem in problems:
-            print(f"    ✗ {problem}")
+            lines.append(f"    ✗ {problem}")
         if problems:
             failures += 1
+        artifact_rows.append({"artifact": artifact.rel, "problems": list(problems)})
 
     # F9:派生视图**不落盘** —— 留痕 = 制品 + git 历史(不再写 control/state.json)。
-    payload, _dispatches = build_state(root)
-    if failures:
-        print(f"✗ 门禁未通过: {failures} 项")
+    return _gate_payload(gates, criteria_rows, artifact_rows, failures, False), lines, []
+
+
+def cmd_gate(root: Path, args) -> int:
+    """全仓门禁。`--json` 只改变**呈现**,不改判定。
+
+    文本模式的输出与历史版本逐字节一致;`--json` 时 stdout 只有**一个** JSON 对象。
+    """
+    as_json = bool(getattr(args, "json", False))
+    payload, lines, fatal = _collect_gate_report(root)
+    if as_json:
+        print(json.dumps(payload, ensure_ascii=False))
+        for message in fatal:
+            print(message, file=sys.stderr)
+        if fatal:
+            return EXIT_USAGE
+        return EXIT_FAIL if payload["failures"] else EXIT_OK
+    for line in lines:
+        print(line)
+    for message in fatal:
+        print(message, file=sys.stderr)
+    if fatal:
+        return EXIT_USAGE
+    if payload["failures"]:
+        print(f"✗ 门禁未通过: {payload['failures']} 项")
         return EXIT_FAIL
     print("✓ 全部门禁通过")
     return EXIT_OK

@@ -302,7 +302,7 @@ sed -n '/^### 1\.1/,/^### 1\.2/p' AGENTS.md
 - **判定只看退出码**：锚点 ⚠ 和可选层跳过都不改变判定
 - **`○` 跳过不是错误**：保护历史文件与未启用的可选层, 新文件不会触发
 - **修改存量前先跑 baseline**：记录修改前的 violation 数，避免误以为修改引入新问题
-- **CI 集成**：CI 里跑 `bash scripts/ssdctl.sh gate && bash scripts/ssdctl.sh scan --check`
+- **CI 集成**：CI 的「门禁」步骤跑 `bash scripts/acceptance/run-all-gates.sh`（内部消费 `bash scripts/ssdctl.sh gate --json`，门禁清单真源 = `scripts/lib/commands.py` 的 `GATE_SCRIPTS`），派生数据一致性跑 `bash scripts/ssdctl.sh scan --check`
 - **PR 前必跑**：避免把违规带入主分支
 
 ## Examples
@@ -312,11 +312,11 @@ sed -n '/^### 1\.1/,/^### 1\.2/p' AGENTS.md
 ```
 User: 校验整个仓库的 spec 规范
 Agent: phase: running
-Agent: === ssdctl.py gate ===
-Agent: ✓ 门禁: 64 项全部通过 (新增 1 项)
-Agent: ✓ 判据: 51 项全部通过 (新增 1 项)
-Agent: ✓ 追溯: 1 项全部通过
-Agent: === ssdctl.py scan --check ===
+Agent: === ssdctl.sh gate ===
+Agent: ✓ 8 个仓内门禁全部通过 (exit 0)
+Agent: ✓ 判据: 制品 / 跨层 / 仓库 三组全部通过 (0 阻断失败 / 0 警告)
+Agent: ✓ 制品自洽性: 0 处不自洽
+Agent: === ssdctl.sh scan --check ===
 Agent: ✓ 调度一致性: 派生索引与状态块一致
 Agent: phase: integrity
 Agent: ✓ skills-integrity.sh: 8 个规格 skill 的 front matter 与引用一致
@@ -346,8 +346,8 @@ Agent: 在 `## 验证用例` 段补 `### V-1: {场景名}`
 
 ```
 User: 校验整个仓库的 spec 规范
-Agent: ✓ ssdctl gate: 50 项全部通过 (含 13 项旧 Plan 跳过)
-Agent: ✓ 命名: 63 项全部通过
+Agent: ✓ ssdctl gate: 8 个仓内门禁全部通过 (exit 0)
+Agent: ✓ 命名与层结构: 制品 0 个 (可选层未启用, 跳过)
 Agent: ✓ 追溯: 0 项全部通过
 Agent: ### 可选层状态
 Agent: | test_cases/ | ○ 未启用 | 目录不存在则跳过 |

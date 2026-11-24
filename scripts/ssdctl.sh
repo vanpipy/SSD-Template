@@ -21,15 +21,15 @@
 # 退出码: 透传 ssdctl.py 的 0=通过 / 1=不通过 / 2=用法或环境错误(INV-7);
 #         找不到任何可用解释器时 exit 2(环境错误), 不静默继续。
 #
-# 用法:
+# 用法(子命令表必须与 scripts/ssdctl.py 的子命令表**完全一致** ——
+# 由 scripts/tests/test_scripts_hygiene.py 机器断言:多写或少写一个子命令都会让它转红):
 #   bash scripts/ssdctl.sh scan [--json] [--layer L] [--check]
-#   bash scripts/ssdctl.sh criteria <artifact>
-#   bash scripts/ssdctl.sh gate
-#   bash scripts/ssdctl.sh advance <artifact> --to Ready [--dry-run]
-#   bash scripts/ssdctl.sh queue <artifact>
-#   bash scripts/ssdctl.sh decide --artifact <path> --action approve --actor <name> --reason <text>
-#   bash scripts/ssdctl.sh evidence [--artifact <path>]
+#   bash scripts/ssdctl.sh criteria <artifact> [--json]
+#   bash scripts/ssdctl.sh gate [--json]
+#   bash scripts/ssdctl.sh advance <artifact> --to <Ready|Implemented|Deprecated> [--actor agent:<id>] [--external <ref>] [--dry-run]
+#   bash scripts/ssdctl.sh queue <artifact> [--json]
 #   bash scripts/ssdctl.sh verify <artifact>
+#   bash scripts/ssdctl.sh --python      只打印解析到的解释器路径(不跑 ssdctl.py)
 
 set -uo pipefail
 export LC_ALL="${LC_ALL:-C.UTF-8}"
@@ -96,8 +96,8 @@ fi
 # 让 CI 与本地文档用**同一条**解释器解析规则跑判据引擎的单元测试。
 if [ "${1:-}" = "--python" ]; then
   py="${PY_CMD[0]}"
-  # Git Bash 里 $HOME 是 /c/Users/...;转成 Windows 原生形式(C:/Users/...),
-  # 这样同一行命令在 bash 与 PowerShell 里都能用(POSIX 上保持原样)。
+  # Git Bash 里 $HOME 是 POSIX 形式(形如 /c/<用户目录>);转成 Windows 原生形式
+  # (盘符 + 路径),这样同一行命令在 bash 与 PowerShell 里都能用(POSIX 上保持原样)。
   case "$(uname -s 2>/dev/null)" in
     MINGW*|MSYS*|CYGWIN*)
       case "$py" in

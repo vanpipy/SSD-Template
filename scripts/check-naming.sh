@@ -33,17 +33,15 @@ DEFAULT_ROOT=$(dirname -- "$SCRIPT_DIR")
 JSON=0
 ROOT=""
 TARGET=""
-STAGE_OVERRIDE=""
 
 usage() {
   cat <<EOF
-用法: bash scripts/check-naming.sh [--json] [--root DIR] [--stage STAGE] [TARGET]
+用法: bash scripts/check-naming.sh [--json] [--root DIR] [TARGET]
 
   --json         以 JSON 输出(供 CI 消费)
   --root DIR     仓根目录(默认: 本脚本所在目录的上一级)
-  --stage STAGE  与其余门禁保持同一 CLI 契约(draft|ready|implemented|deprecated);
-                 本脚本只校验命名/层结构, 没有阶段相关必填项, 因此该参数被接受并回显,
-                 但不改变任何判定。阶段相关必填项由 check-md-schema.sh 按 M4 判定。
+  --stage        本门禁与阶段无关:阶段相关必填项由 scripts/check-md-schema.sh 判定。
+                 收到 --stage 立即退出 2(不接受,也不回显)。
   TARGET         可选, 只检查这一个文件或目录
   --help         显示本帮助
 
@@ -60,12 +58,10 @@ while [ $# -gt 0 ]; do
       ROOT=$1
       ;;
     --root=*) ROOT=${1#--root=} ;;
-    --stage)
-      shift
-      if [ $# -eq 0 ]; then printf '%s: --stage 需要参数\n' "$SCRIPT_PATH" >&2; exit 2; fi
-      STAGE_OVERRIDE=$(printf '%s' "$1" | tr 'A-Z' 'a-z')
+    --stage|--stage=*)
+      printf '%s: 本门禁与阶段无关;--stage 只对 scripts/check-md-schema.sh 有效\n' "$SCRIPT_PATH" >&2
+      exit 2
       ;;
-    --stage=*) STAGE_OVERRIDE=$(printf '%s' "${1#--stage=}" | tr 'A-Z' 'a-z') ;;
     --help|-h) usage; exit 0 ;;
     --) shift; break ;;
     -*) printf '%s: 未知参数: %s\n' "$SCRIPT_PATH" "$1" >&2; usage >&2; exit 2 ;;
@@ -76,13 +72,6 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-
-if [ -n "$STAGE_OVERRIDE" ]; then
-  case "$STAGE_OVERRIDE" in
-    draft|deprecated|ready|implemented) : ;;
-    *) printf '%s: --stage 取值非法: %s (可用: draft|ready|implemented|deprecated)\n' "$SCRIPT_PATH" "$STAGE_OVERRIDE" >&2; exit 2 ;;
-  esac
-fi
 
 if [ -z "$ROOT" ]; then ROOT=$DEFAULT_ROOT; fi
 if [ ! -d "$ROOT" ]; then printf '%s: 根目录不存在: %s\n' "$SCRIPT_PATH" "$ROOT" >&2; exit 2; fi
@@ -373,8 +362,8 @@ CODE=0
 if [ ${#ERRORS[@]} -gt 0 ]; then STATUS="violation"; CODE=1; fi
 
 if [ "$JSON" -eq 1 ]; then
-  printf '{"script":"check-naming.sh","root":"%s","status":"%s","exit_code":%d,"error_count":%d,"warning_count":%d,"artifacts":%d,"stage_override":"%s","errors":%s,"warnings":%s,"notes":%s}\n' \
-    "$(printf '%s' "$ROOT" | json_escape)" "$STATUS" "$CODE" "${#ERRORS[@]}" "${#WARNINGS[@]}" "$ARTIFACT_TOTAL" "$STAGE_OVERRIDE" \
+  printf '{"script":"check-naming.sh","root":"%s","status":"%s","exit_code":%d,"error_count":%d,"warning_count":%d,"artifacts":%d,"errors":%s,"warnings":%s,"notes":%s}\n' \
+    "$(printf '%s' "$ROOT" | json_escape)" "$STATUS" "$CODE" "${#ERRORS[@]}" "${#WARNINGS[@]}" "$ARTIFACT_TOTAL" \
     "$(json_str_array "${ERRORS[@]}")" \
     "$(json_str_array "${WARNINGS[@]}")" \
     "$(json_str_array "${NOTES[@]}")"

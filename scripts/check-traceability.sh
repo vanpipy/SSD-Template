@@ -27,6 +27,7 @@
 #
 # 用法:
 #   scripts/check-traceability.sh [--json] [--root DIR] [TARGET]
+#   (--stage 不适用于本脚本:阶段相关必填项由 scripts/check-md-schema.sh 判定;收到即退出 2)
 #
 # 退出码: 0=通过 1=违规 2=调用错误 / 环境错误
 
@@ -40,7 +41,6 @@ JSON=0
 ROOT=""
 TARGET=""
 NO_COLOR=${NO_COLOR:-0}
-STAGE_OVERRIDE=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -49,24 +49,17 @@ while [ $# -gt 0 ]; do
       [ $# -ge 2 ] || { printf '✗ --root 需要目录参数\n' >&2; exit 2; }
       ROOT="$2"; shift ;;
     --root=*) ROOT="${1#--root=}" ;;
-    --stage)
-      [ $# -ge 2 ] || { printf '✗ --stage 需要参数\n' >&2; exit 2; }
-      STAGE_OVERRIDE=$(printf '%s' "$2" | tr 'A-Z' 'a-z'); shift ;;
-    --stage=*) STAGE_OVERRIDE=$(printf '%s' "${1#--stage=}" | tr 'A-Z' 'a-z') ;;
+    --stage|--stage=*)
+      printf '%s: 本门禁与阶段无关;--stage 只对 scripts/check-md-schema.sh 有效\n' "$SCRIPT_PATH" >&2
+      exit 2
+      ;;
     --help|-h)
-      printf '用法: %s [--json] [--root DIR] [--stage STAGE] [TARGET]\n' "$SCRIPT_PATH"; exit 0 ;;
+      printf '用法: %s [--json] [--root DIR] [TARGET]\n' "$SCRIPT_PATH"; exit 0 ;;
     -*) printf '✗ 未知参数: %s\n' "$1" >&2; exit 2 ;;
     *) [ -z "$TARGET" ] && TARGET="$1" || { printf '✗ 只能指定一个 TARGET\n' >&2; exit 2; } ;;
   esac
   shift
 done
-
-if [ -n "$STAGE_OVERRIDE" ]; then
-  case "$STAGE_OVERRIDE" in
-    draft|deprecated|ready|implemented) : ;;
-    *) printf '✗ --stage 取值非法: %s (可用: draft|ready|implemented|deprecated)\n' "$STAGE_OVERRIDE" >&2; exit 2 ;;
-  esac
-fi
 
 [ -n "$ROOT" ] || ROOT="$DEFAULT_ROOT"
 if [ ! -d "$ROOT" ]; then
@@ -666,8 +659,8 @@ WARNC=${#WARNINGS[@]}
 if [ "$ERRC" -gt 0 ]; then STATUS="violation"; EXIT=1; else STATUS="pass"; EXIT=0; fi
 
 if [ "$JSON" -eq 1 ]; then
-  printf '{"script":"check-traceability.sh","root":"%s","status":"%s","exit_code":%d,"error_count":%d,"warning_count":%d,"checked":%d,"stage_override":"%s","errors":%s,"warnings":%s,"notes":%s}\n' \
-    "$(printf '%s' "$ROOT" | json_escape)" "$STATUS" "$EXIT" "$ERRC" "$WARNC" "$CHECKED" "$STAGE_OVERRIDE" \
+  printf '{"script":"check-traceability.sh","root":"%s","status":"%s","exit_code":%d,"error_count":%d,"warning_count":%d,"checked":%d,"errors":%s,"warnings":%s,"notes":%s}\n' \
+    "$(printf '%s' "$ROOT" | json_escape)" "$STATUS" "$EXIT" "$ERRC" "$WARNC" "$CHECKED" \
     "$(json_str_array "${ERRORS[@]+"${ERRORS[@]}"}")" \
     "$(json_str_array "${WARNINGS[@]+"${WARNINGS[@]}"}")" \
     "$(json_str_array "${NOTES[@]+"${NOTES[@]}"}")"

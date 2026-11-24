@@ -1,18 +1,29 @@
 #!/usr/bin/env bash
-# Lead-owned A17 end-to-end acceptance harness (lives in scripts/acceptance/ and IS version-controlled).
+# a17-e2e.sh — A17 端到端验收(驱动 Symphony runner 跑一轮,再拿仓内门禁复核工作区)
 #
-# Drives the Symphony runner once against the real SSD-Template WORKFLOW.md, with DSH as the
-# agent backend, and then checks the produced workspace against the repo gates.
+# 路径与解释器都不再写死:
+#   - 本仓根 = 脚本自身位置推导;
+#   - runner  = 本仓的**同级目录** symphony-runner(可用 $SYMPHONY_RUNNER 覆盖);
+#   - 解释器 = `bash scripts/ssdctl.sh --python`(全仓唯一口径)。
 #
-# Usage: bash scripts/acceptance/a17-e2e.sh [--dry-run-only]
+# 用法: bash scripts/acceptance/a17-e2e.sh [--dry-run-only]
 set -u
 
-RUNNER="D:\project\symphony-runner"
-REPO="D:\project\SSD-Template"
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+RUNNER="${SYMPHONY_RUNNER:-$(dirname "$REPO")/symphony-runner}"
 WORKFLOW="$REPO/WORKFLOW.md"
-PY="/c/Users/leroy/.dsh/dsh-runtimes/dsh-primary-runtime/dependencies/python/python.exe"
 DRY_ONLY=0
 [ "${1:-}" = "--dry-run-only" ] && DRY_ONLY=1
+
+if [ ! -d "$RUNNER" ]; then
+  echo "FAIL: symphony runner not found: $RUNNER (set SYMPHONY_RUNNER=<path>)"
+  exit 2
+fi
+
+PY="$(bash "$REPO/scripts/ssdctl.sh" --python)" || {
+  echo "FAIL: cannot resolve the python interpreter (bash scripts/ssdctl.sh --python)"
+  exit 2
+}
 
 export PYTHONPATH="$RUNNER/src"
 export DSH_PERMISSION_MODE=workspace-write

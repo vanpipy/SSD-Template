@@ -20,13 +20,16 @@
 #
 # 断言 C(旧目录已清):克隆内不得再出现已迁出的文档目录。
 #
-# 用法: bash scripts/acceptance/clone-verify.sh [clone_src_url] [dest_dir]
-#   clone_src_url 默认 file:///D:/project/SSD-Template(即当前仓的已提交 HEAD)
-#   dest_dir       默认 /d/project/_verify-merge2
+# 用法: bash scripts/acceptance/clone-verify.sh [clone_src] [dest_dir]
+#   clone_src  默认**当前仓**(脚本自身位置推导)—— 克隆的是它的**已提交 HEAD**
+#   dest_dir   默认当前仓的同级目录 _verify-merge2
+# 源仓不再写死一条机器相关的 URL:git 直接吃本地路径,比拼 URL 更不容易在
+# Windows / POSIX 之间走形(MSYS 风格的 /d/... 拼成 URL 后不是合法的 Windows 文件 URL)。
 set -u
 
-SRC="${1:-file:///D:/project/SSD-Template}"
-DEST="${2:-/d/project/_verify-merge2}"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SRC="${1:-$REPO_ROOT}"
+DEST="${2:-$(dirname "$REPO_ROOT")/_verify-merge2}"
 
 WHITELIST="scripts/check-doc-links.py scripts/lib/commands.py"
 
@@ -116,22 +119,48 @@ else
 fi
 
 # ------------------------------------------------------------ 既有门禁
-for s in check-line-endings check-naming check-md-schema check-traceability check-repo-baseline; do
-  out=$(bash "scripts/$s.sh" 2>&1); rc=$?
-  echo "$s rc=$rc bytes=${#out}"
-  [ $rc -ne 0 ] && fail=1
-done
+# 门禁清单的唯一真源是 scripts/lib/commands.py 的 GATE_SCRIPTS。
+# 这里不再自带第二份清单 —— 统一消费 `ssdctl gate --json`。
 PY="$(bash scripts/ssdctl.sh --python)"
-out=$("$PY" scripts/check-doc-links.py 2>&1); rc=$?
-echo "check-doc-links rc=$rc bytes=${#out}"
-[ $rc -ne 0 ] && fail=1
-bash scripts/ssdctl.sh gate >/dev/null 2>&1 || { echo "ssdctl gate FAILED"; fail=1; }
+gate_json="$(mktemp)"
+if bash scripts/ssdctl.sh gate --json >"$gate_json" 2>/dev/null; then
+  gate_rc=0
+else
+  gate_rc=$?
+fi
+if [ -s "$gate_json" ]; then
+  "$PY" - "$gate_json" <<'PYEOF'
+import json, sys
+
+try:  # 输出显式写 UTF-8 + LF,不用平台默认编码(中文 Windows 的默认编码是 GBK)
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace", newline="\n")
+except AttributeError:  # Python < 3.7 没有 reconfigure
+    pass
+
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+for g in data["gates"]:
+    name = g["script"].replace("scripts/", "").rsplit(".", 1)[0]
+    print("%s rc=%s bytes=%s" % (name, g["exit_code"], g["stdout_bytes"]))
+PYEOF
+else
+  echo "(gate --json 没有输出 JSON —— 下面是文本模式的输出)"
+  bash scripts/ssdctl.sh gate 2>&1 | sed 's/^/    | /'
+fi
+rm -f "$gate_json"
+echo "ssdctl gate rc=$gate_rc"
+[ "$gate_rc" -ne 0 ] && fail=1
 bash scripts/ssdctl.sh scan --check >/dev/null 2>&1 || { echo "scan --check FAILED"; fail=1; }
 bash scripts/sync-prd.sh >/dev/null 2>&1
 drift=$(git status --porcelain -- README.md material/)
 echo "drift after sync-prd: ${drift:-<none>}"
 [ -n "$drift" ] && fail=1
-"$PY" -m unittest discover -s scripts/tests -t scripts/tests 2>&1 | tail -3
-cd /d/project && rm -rf "$DEST"
+ut_out="$("$PY" -m unittest discover -s scripts/tests -t scripts/tests 2>&1)"
+ut_rc=$?
+printf '%s\n' "$ut_out" | tail -3
+if [ "$ut_rc" -ne 0 ]; then
+  echo "✗ 单元测试失败 (rc=$ut_rc)"
+  fail=1
+fi
+cd "$REPO_ROOT" && rm -rf "$DEST"
 echo "CLONE VERIFY fail=$fail"
 exit $fail

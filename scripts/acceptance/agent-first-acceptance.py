@@ -34,7 +34,7 @@ PY = sys.executable
 
 
 def _pick_bash() -> str:
-    """优先 Git Bash。PATH 上的 C:\\Windows\\System32\\bash.exe 是 WSL 转发器,不可用。"""
+    """优先 Git Bash。PATH 上 Windows 自带的 bash 是 WSL 转发器,不可用。"""
     for cand in (
         r"C:\Program Files\Git\bin\bash.exe",
         r"C:\Program Files\Git\usr\bin\bash.exe",
