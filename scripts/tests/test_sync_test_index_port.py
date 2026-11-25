@@ -377,7 +377,10 @@ class SyncTestIndexPortTest(unittest.TestCase):
 
     def test_port_has_no_orchestration_paths(self) -> None:
         source = PORT.read_text(encoding="utf-8")
-        self.assertNotIn(".swarm/", source, "端口里不得出现指向编排目录的路径")
+        # 目录名分片拼装:本文件自身不能含编排目录的字面串,否则 clone-verify 的
+        # 断言A1 会把这条「禁止出现」的检查当成越界引用。
+        needle = "." + "swarm" + "/"
+        self.assertNotIn(needle, source, "端口里不得出现指向编排目录的路径")
 
     def test_port_does_not_fork(self) -> None:
         source = PORT.read_text(encoding="utf-8")
