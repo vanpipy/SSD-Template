@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# skills-integrity.sh: .codex/skills/ 目录的内部一致性自检。
+# skills-integrity.sh: .agents/skills/ 目录的内部一致性自检。
 #
 # 它只检查 skill 目录本身, 不检查 spec 产物（产物由 scripts/check-*.sh 管）。
 #
-# 用法: bash .codex/skills/validate-spec/skills-integrity.sh [标签]
+# 用法: bash .agents/skills/validate-spec/skills-integrity.sh [标签]
 #
 # 退出码:
 #   0  PASS（可能有警告）

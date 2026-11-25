@@ -138,21 +138,21 @@ git commit -F .git/COMMIT_EDITMSG.tmp
 
 ## 安装 (Installation)
 
-skill 定义随仓库分发, agent 直接读 `.codex/skills/commit/SKILL.md` 即可, **无需注册**。
+skill 定义随仓库分发, agent 直接读 `.agents/skills/commit/SKILL.md` 即可, **无需注册**。
 
 需要把 skill 装进宿主 agent 的 skills 根目录时, 用仓内安装脚本：
 
 ```bash
-bash <repo>/.codex/skills/install.sh                     # 默认 ~/.codex/skills/
-bash <repo>/.codex/skills/install.sh --target <dir>      # 指定目标
-bash <repo>/.codex/skills/install.sh --unregister        # 注销
+bash <repo>/.agents/skills/install.sh                     # 默认 ~/.codex/skills/
+bash <repo>/.agents/skills/install.sh --target <dir>      # 指定目标
+bash <repo>/.agents/skills/install.sh --unregister        # 注销
 ```
 
 ## Related Skills
 
-- `.codex/skills/validate-spec/SKILL.md`：提交前跑判据与门禁, 把**实际输出**写进 commit 正文
-- `.codex/skills/to-prd/SKILL.md` / `.codex/skills/to-tech-design/SKILL.md` / `.codex/skills/to-plan/SKILL.md`：产出被提交的文件
-- `.codex/skills/sync-status/SKILL.md`：状态编排（状态块由 `ssdctl advance` 代写）
+- `.agents/skills/validate-spec/SKILL.md`：提交前跑判据与门禁, 把**实际输出**写进 commit 正文
+- `.agents/skills/to-prd/SKILL.md` / `.agents/skills/to-tech-design/SKILL.md` / `.agents/skills/to-plan/SKILL.md`：产出被提交的文件
+- `.agents/skills/sync-status/SKILL.md`：状态编排（状态块由 `ssdctl advance` 代写）
 
 ## Cross-References
 

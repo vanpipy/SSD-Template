@@ -143,7 +143,7 @@ Step 6 写用例文档时, 元信息表必须与 `schema/test_case.md` 的 10 �
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` / `git add` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行（见 `.codex/skills/commit/SKILL.md`）|
+| 自行 `git commit` / `git push` / `git add` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行（见 `.agents/skills/commit/SKILL.md`）|
 | 手改状态行 / 状态块 4 行 | 一律走 `bash scripts/ssdctl.sh advance` |
 | 在复审块写 `human:` 前缀或代填人名 | 写 `agent:<id>`; `human:` 前缀**只能由人自己填**, agent 不得代填 |
 | 伪造 `Reviewed-by:` / SHA / 行号 / handle / 外部依据 | 拿不准就不写 |
@@ -165,19 +165,19 @@ Step 6 写用例文档时, 元信息表必须与 `schema/test_case.md` 的 10 �
 
 ## 安装 (Installation)
 
-skill 定义随仓库分发, agent 直接读 `.codex/skills/to-test-cases/SKILL.md` 即可, **无需注册**。
+skill 定义随仓库分发, agent 直接读 `.agents/skills/to-test-cases/SKILL.md` 即可, **无需注册**。
 
 需要把 skill 装进宿主 agent 的 skills 根目录时, 用仓内安装脚本：
 
 ```bash
-bash <repo>/.codex/skills/install.sh                     # 默认 ~/.codex/skills/
-bash <repo>/.codex/skills/install.sh --target <dir>      # 指定目标
-bash <repo>/.codex/skills/install.sh --unregister        # 注销
+bash <repo>/.agents/skills/install.sh                     # 默认 ~/.codex/skills/
+bash <repo>/.agents/skills/install.sh --target <dir>      # 指定目标
+bash <repo>/.agents/skills/install.sh --unregister        # 注销
 ```
 
 ## Related Skills
 
-- `.codex/skills/to-prd/SKILL.md` / `.codex/skills/to-tech-design/SKILL.md`：上游输入（来源方向）
-- `.codex/skills/to-plan/SKILL.md`：下游消费方。Plan 编制时以本层 Ready 用例集为参考比照（Plan 元信息「参考 Test Cases」行，追溯判据校验）；同主题 Plan 已存在时双向核对主题覆盖（V 用例 ↔ TC 用例）
-- `.codex/skills/validate-spec/SKILL.md`：全量校验与门禁复核（test_cases 层由 `ssdctl gate` 覆盖）
-- `.codex/skills/sync-status/SKILL.md`：生命周期编排。状态推进由 `ssdctl advance` 执行；Deprecated 级联 / 复审回退同在它那里编排
+- `.agents/skills/to-prd/SKILL.md` / `.agents/skills/to-tech-design/SKILL.md`：上游输入（来源方向）
+- `.agents/skills/to-plan/SKILL.md`：下游消费方。Plan 编制时以本层 Ready 用例集为参考比照（Plan 元信息「参考 Test Cases」行，追溯判据校验）；同主题 Plan 已存在时双向核对主题覆盖（V 用例 ↔ TC 用例）
+- `.agents/skills/validate-spec/SKILL.md`：全量校验与门禁复核（test_cases 层由 `ssdctl gate` 覆盖）
+- `.agents/skills/sync-status/SKILL.md`：生命周期编排。状态推进由 `ssdctl advance` 执行；Deprecated 级联 / 复审回退同在它那里编排

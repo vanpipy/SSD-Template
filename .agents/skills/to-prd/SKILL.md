@@ -293,10 +293,10 @@ Agent: 产出 3 个 PRD，每个走完整流程
 
 ## 安装 (Installation)
 
-用 `.codex/skills/install.sh` 把本 skill 注册到 agent 的 skills 目录：
+用 `.agents/skills/install.sh` 把本 skill 注册到 agent 的 skills 目录：
 
 ```bash
-bash <repo>/.codex/skills/install.sh
+bash <repo>/.agents/skills/install.sh
 ```
 
 默认注册到：
@@ -307,9 +307,9 @@ bash <repo>/.codex/skills/install.sh
 
 ## Related Skills
 
-- `.codex/skills/to-tech-design/SKILL.md`：PRD → Tech Design（默认 v4 四子文件; v3 存量六子文件需显式 opt-in）
-- `.codex/skills/to-plan/SKILL.md`：Tech Design → Plan（强制按仓分组 Change）
-- `.codex/skills/validate-spec/SKILL.md`：跑全量判据与门禁
+- `.agents/skills/to-tech-design/SKILL.md`：PRD → Tech Design（默认 v4 四子文件; v3 存量六子文件需显式 opt-in）
+- `.agents/skills/to-plan/SKILL.md`：Tech Design → Plan（强制按仓分组 Change）
+- `.agents/skills/validate-spec/SKILL.md`：跑全量判据与门禁
 
 ## Cross-References
 

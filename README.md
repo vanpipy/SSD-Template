@@ -23,7 +23,7 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 ## 快速开始
 
 ```bash
-# 1. 读仓内 skill 定义(.codex/skills/<name>/SKILL.md,随仓库分发)
+# 1. 读仓内 skill 定义(.agents/skills/<name>/SKILL.md,随仓库分发)
 #    8 个 skill:to-prd / to-tech-design / to-plan / validate-spec
 #                to-test-cases / sync-status / sync-prd / to-deep-understand
 
@@ -45,7 +45,7 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 | 仓库契约(多仓 / 基线 / 证据锚点) | [AGENTS.md](AGENTS.md) |
 | 编排配置 + agent 工作契约(唯一真源) | [WORKFLOW.md](WORKFLOW.md) |
 | 模板定义 | [schema/](schema/) |
-| Skill 定义 | [.codex/skills/](.codex/skills/) |
+| Skill 定义 | [.agents/skills/](.agents/skills/) |
 | 校验脚本 | [scripts/](scripts/) |
 | 历史代际 | `git log --all -- <path>`(仓内不再保留归档目录) |
 

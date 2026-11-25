@@ -180,7 +180,7 @@ bash scripts/ssdctl.sh verify <artifact>       # 状态块与复审段自洽
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` / `git add` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行（见 `.codex/skills/commit/SKILL.md`）|
+| 自行 `git commit` / `git push` / `git add` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行（见 `.agents/skills/commit/SKILL.md`）|
 | 手改制品里的状态行 / 状态块 4 行 | 一律走 `ssdctl advance` |
 | 在复审块写 `human:` 前缀或代填人名 | 写 `agent:<id>`; `human:` 前缀**只能由人自己填**, agent 不得代填 |
 | 编造 PR 号 / 外部依据 / 评审人 handle | 依据必须来自真实外部事实; 拿不准就不写 |
@@ -215,21 +215,21 @@ bash scripts/ssdctl.sh verify <artifact>       # 状态块与复审段自洽
 
 ## 安装 (Installation)
 
-skill 定义随仓库分发, agent 直接读 `.codex/skills/sync-status/SKILL.md` 即可, **无需注册**。
+skill 定义随仓库分发, agent 直接读 `.agents/skills/sync-status/SKILL.md` 即可, **无需注册**。
 
 需要把 skill 装进宿主 agent 的 skills 根目录时, 用仓内安装脚本：
 
 ```bash
-bash <repo>/.codex/skills/install.sh                     # 默认 ~/.codex/skills/
-bash <repo>/.codex/skills/install.sh --target <dir>      # 指定目标
-bash <repo>/.codex/skills/install.sh --unregister        # 注销
+bash <repo>/.agents/skills/install.sh                     # 默认 ~/.codex/skills/
+bash <repo>/.agents/skills/install.sh --target <dir>      # 指定目标
+bash <repo>/.agents/skills/install.sh --unregister        # 注销
 ```
 
 ## Related Skills
 
-- `.codex/skills/to-test-cases/SKILL.md`：Test Cases 产出（本 skill 编排其生命周期转换）
-- `.codex/skills/validate-spec/SKILL.md`：全量校验与门禁复核
-- `.codex/skills/sync-prd/SKILL.md`：PRD 台账同步（可选层）
+- `.agents/skills/to-test-cases/SKILL.md`：Test Cases 产出（本 skill 编排其生命周期转换）
+- `.agents/skills/validate-spec/SKILL.md`：全量校验与门禁复核
+- `.agents/skills/sync-prd/SKILL.md`：PRD 台账同步（可选层）
 
 ## Cross-References
 

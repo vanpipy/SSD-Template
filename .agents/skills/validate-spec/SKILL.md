@@ -20,7 +20,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | Phase | agent 做什么 |
 |-------|--------------|
 | `running` | 跑 `bash scripts/ssdctl.sh gate` (全仓门禁 + 判据引擎 + 派生数据再生) 与 `bash scripts/ssdctl.sh scan --check` (调度一致性), 逐个记录退出码 |
-| `integrity` | 跑 `skills-integrity.sh` 自检 `.codex/skills/` 目录的一致性 |
+| `integrity` | 跑 `skills-integrity.sh` 自检 `.agents/skills/` 目录的一致性 |
 | `spot-checking` | 人工抽查 Tech Design「现状结论」的证据锚点（**只报 ⚠, 不改任何脚本退出码**）|
 | `reporting` | 输出统一报告（pass / skip / violation / 锚点警告）|
 
@@ -45,7 +45,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 |------|------|------|
 | 判据与门禁入口 | `scripts/ssdctl.py` | **唯一入口**: `gate` / `criteria` / `scan --check` / `verify` |
 | 判据权威 | `schema/criteria.json` | 机器判据（`blocking` / `kind` / `params`）|
-| 自检脚本 | `.codex/skills/validate-spec/skills-integrity.sh` | `.codex/skills/` 目录内部一致性自检 |
+| 自检脚本 | `.agents/skills/validate-spec/skills-integrity.sh` | `.agents/skills/` 目录内部一致性自检 |
 | 工作目录 | SSD-Template 仓根目录 | scripts 假设此位置 |
 
 ## Core Concept
@@ -58,7 +58,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | `ssdctl.py gate` | 全仓门禁: 既有门禁脚本 + 判据引擎 + 派生数据再生 | 逐条记录退出码 |
 | `ssdctl.py scan --check` | 跨制品一致性检查（上游闸门 / 三件套原子性 / 字段自洽）| 只回读, 不落盘 |
 | `ssdctl.py verify <artifact>` | 状态块与复审段自洽 | 只回读, 不写 |
-| `skills-integrity.sh` | `.codex/skills/` 目录一致性（front matter 键集合 / 悬空引用 / 代际口径 / 占位符 / 旧表述 / ssdctl 子命令名）| 只查 skill 目录, 不查 spec 产物 |
+| `skills-integrity.sh` | `.agents/skills/` 目录一致性（front matter 键集合 / 悬空引用 / 代际口径 / 占位符 / 旧表述 / ssdctl 子命令名）| 只查 skill 目录, 不查 spec 产物 |
 
 ### 可选层与条件启用
 
@@ -72,7 +72,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 | 理解层 `deep/` | `deep/` 目录存在 | **本 skill 完全不校验 `deep/` 内容**（见下）|
 | 实现基线 | 项目关联代码仓（AGENTS.md §1.1 登记了非 A 标识）且 TD 目录存在 | 0 代码仓项目跳过基线核对 |
 
-> **理解层 `deep/` 明确不在校验范围**。`deep/` 是可选知识层, `.codex/skills/validate-spec/SKILL.md` 不校验它的内容与结构。需要检查 `deep/` 时用 `scripts/deep-scan.py` 的台账输出, 不走本 skill。
+> **理解层 `deep/` 明确不在校验范围**。`deep/` 是可选知识层, `.agents/skills/validate-spec/SKILL.md` 不校验它的内容与结构。需要检查 `deep/` 时用 `scripts/deep-scan.py` 的台账输出, 不走本 skill。
 
 > **0 实例 → 0 违规**。模板自身仓库零实例, 所有校验器应全绿。
 
@@ -107,10 +107,10 @@ bash scripts/ssdctl.sh scan --check
 ### 2. Integrity Phase (skill 目录自检)
 
 ```bash
-bash .codex/skills/validate-spec/skills-integrity.sh
+bash .agents/skills/validate-spec/skills-integrity.sh
 ```
 
-自检 `.codex/skills/` 目录的内部一致性: front matter 键集合、悬空脚本引用、AGENTS.md 章节引用、v4 默认代际口径、模板占位符、em dash、**旧表述残留**、**ssdctl 子命令名封闭**。退出码同样记录在报告里。
+自检 `.agents/skills/` 目录的内部一致性: front matter 键集合、悬空脚本引用、AGENTS.md 章节引用、v4 默认代际口径、模板占位符、em dash、**旧表述残留**、**ssdctl 子命令名封闭**。退出码同样记录在报告里。
 
 > 该脚本只检查 skill 目录自身, **不检查 spec 产物**。它不替代前一个 phase 的门禁脚本。
 
@@ -359,22 +359,22 @@ Agent: ✅ 校验通过
 
 ## 安装 (Installation)
 
-skill 定义随仓库分发, agent 直接读 `.codex/skills/validate-spec/SKILL.md` 即可, **无需注册**。
+skill 定义随仓库分发, agent 直接读 `.agents/skills/validate-spec/SKILL.md` 即可, **无需注册**。
 
 需要把 skill 装进宿主 agent 的 skills 根目录时, 用仓内安装脚本：
 
 ```bash
-bash <repo>/.codex/skills/install.sh                     # 默认 ~/.codex/skills/
-bash <repo>/.codex/skills/install.sh --target <dir>      # 指定目标
-bash <repo>/.codex/skills/install.sh --unregister        # 注销
+bash <repo>/.agents/skills/install.sh                     # 默认 ~/.codex/skills/
+bash <repo>/.agents/skills/install.sh --target <dir>      # 指定目标
+bash <repo>/.agents/skills/install.sh --unregister        # 注销
 ```
 
 ## Related Skills
 
-- `.codex/skills/to-prd/SKILL.md`：原始需求 → PRD（产生新文件）
-- `.codex/skills/to-tech-design/SKILL.md`：PRD → Tech Design（产生新目录）
-- `.codex/skills/to-plan/SKILL.md`：Tech Design → Plan（产生新文件）
-- `.codex/skills/to-deep-understand/SKILL.md`：可选理解层（`deep/`），**不走本 skill 校验**
+- `.agents/skills/to-prd/SKILL.md`：原始需求 → PRD（产生新文件）
+- `.agents/skills/to-tech-design/SKILL.md`：PRD → Tech Design（产生新目录）
+- `.agents/skills/to-plan/SKILL.md`：Tech Design → Plan（产生新文件）
+- `.agents/skills/to-deep-understand/SKILL.md`：可选理解层（`deep/`），**不走本 skill 校验**
 
 ## Cross-References
 
@@ -384,6 +384,6 @@ bash <repo>/.codex/skills/install.sh --unregister        # 注销
 - <repo>/scripts/ssdctl.py（判据与门禁唯一入口）
 - <repo>/schema/criteria.json（判据机器权威）
 - <repo>/scripts/check-repo-baseline.sh（TD 实现基线段核对；由仓内门禁统一触发，skill 不单独手拼）
-- <repo>/.codex/skills/validate-spec/skills-integrity.sh（skill 目录自检）
+- <repo>/.agents/skills/validate-spec/skills-integrity.sh（skill 目录自检）
 - <repo>/AGENTS.md §3.4（门禁清单）
 - <repo>/WORKFLOW.md（脚本使用方式）

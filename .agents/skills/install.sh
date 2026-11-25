@@ -3,9 +3,9 @@
 # install.sh: 把本目录下的 skill 注册到宿主的 skills 根目录。
 #
 # 用法:
-#   bash .codex/skills/install.sh                  # 注册到 ~/.codex/skills/
-#   bash .codex/skills/install.sh --target <dir>   # 注册到指定目录
-#   bash .codex/skills/install.sh --unregister     # 注销已注册的 skill
+#   bash .agents/skills/install.sh                  # 注册到 ~/.codex/skills/
+#   bash .agents/skills/install.sh --target <dir>   # 注册到指定目录
+#   bash .agents/skills/install.sh --unregister     # 注销已注册的 skill
 #
 # 退出码:
 #   0  成功（全部 skill 都已安装）

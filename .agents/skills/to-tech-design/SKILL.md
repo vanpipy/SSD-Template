@@ -144,7 +144,7 @@ v4 的 `README.md` 含 `## 实现基线` 段, 固定 6 列（仓库 / 分支 / S
 
 | ❌ agent 不做 | ✅ agent 改做 |
 |--------------|--------------|
-| 自行 `git commit` / `git push` / `git add` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
+| 自行 `git commit` / `git push` / `git add` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.agents/skills/commit/SKILL.md`) |
 | 手改状态行 / 状态块 4 行 | 一律走 `bash scripts/ssdctl.sh advance` |
 | 在复审块写 `human:` 前缀或代填人名 | 写 `agent:<id>`; `human:` 前缀**只能由人自己填**, agent 不得代填 |
 | 伪造 `Reviewed-by:` / SHA / 行号 / handle / 外部依据 | 拿不准就不写; 无法核对时明确标注「未核对」 |
@@ -415,21 +415,21 @@ Agent: 🟢 ssdctl criteria 返回 0 (v3 分支)
 
 ## 安装 (Installation)
 
-skill 定义随仓库分发, agent 直接读 `.codex/skills/to-tech-design/SKILL.md` 即可, **无需注册**。
+skill 定义随仓库分发, agent 直接读 `.agents/skills/to-tech-design/SKILL.md` 即可, **无需注册**。
 
 需要把 skill 装进宿主 agent 的 skills 根目录时, 用仓内安装脚本：
 
 ```bash
-bash <repo>/.codex/skills/install.sh                     # 默认 ~/.codex/skills/
-bash <repo>/.codex/skills/install.sh --target <dir>      # 指定目标
-bash <repo>/.codex/skills/install.sh --unregister        # 注销
+bash <repo>/.agents/skills/install.sh                     # 默认 ~/.codex/skills/
+bash <repo>/.agents/skills/install.sh --target <dir>      # 指定目标
+bash <repo>/.agents/skills/install.sh --unregister        # 注销
 ```
 
 ## Related Skills
 
-- `.codex/skills/to-prd/SKILL.md`：原始需求 → PRD（本 skill 的上游）
-- `.codex/skills/to-plan/SKILL.md`：Tech Design → Plan（本 skill 的下游）
-- `.codex/skills/validate-spec/SKILL.md`：跑仓内判据与门禁并出统一报告
+- `.agents/skills/to-prd/SKILL.md`：原始需求 → PRD（本 skill 的上游）
+- `.agents/skills/to-plan/SKILL.md`：Tech Design → Plan（本 skill 的下游）
+- `.agents/skills/validate-spec/SKILL.md`：跑仓内判据与门禁并出统一报告
 
 ## Cross-References
 

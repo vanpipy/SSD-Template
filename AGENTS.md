@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > AI agent 在**规格仓库(spec repo)**工作时的操作契约。
-> **核心原则**:以 skill 为执行单元。agent 不直接拼装 `schema/` 模板或 `scripts/` 校验脚本,而是调用 `.codex/skills/<name>/SKILL.md`。
+> **核心原则**:以 skill 为执行单元。agent 不直接拼装 `schema/` 模板或 `scripts/` 校验脚本,而是调用 `.agents/skills/<name>/SKILL.md`。
 > 每次开始工作前,先读本文件 + 读对应 skill 的 `SKILL.md`(skill 内部已封装 schema 读取 + scripts 校验流程)。
 >
 > **契约真源**:`WORKFLOW.md`(状态推进、调度依据、硬禁止以它为准)。
@@ -108,7 +108,7 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用外部代�
 ### 1.5 多仓 Plan 编排 (Multi-repo Plan)
 
 > **本节用途**:定义多仓项目产出 Plan 时,Change 如何按仓分组。
-> **依据**:`.codex/skills/to-plan/SKILL.md` 的 10 处 `§1.5` 引用以此节为准。
+> **依据**:`.agents/skills/to-plan/SKILL.md` 的 10 处 `§1.5` 引用以此节为准。
 > **0 代码仓项目**:不分组。Change 直接列在 `## 变更清单` 下,视为单一分组。
 
 **分组规则**:
@@ -336,12 +336,14 @@ git -C <仓库本地路径> rev-parse --short HEAD
 - ❌ **不冒充人工署名**。`human:` 前缀**只能由人自己写**;agent 只能署 `agent:<id>`,不得代填人名,不得把 `评审方式` 写成「人工介入」(实施契约 §2 INV-3、决策 D-07)
 - ❌ **不手改状态行**。状态推进必须走 `bash scripts/ssdctl.sh advance` —— 由它校验判据、代写状态块与复审块、记录留痕(留痕 = 状态块 + 复审块 + git 历史);手改 = 绕过判据与留痕
 - ❌ **不凭推测写终态**。`Implemented` 需 `external:` 依据(`--external <ref>` 或制品正文里的 `external:` token);`Deprecated` 同样需要 `external:` 依据,且不允许写 `criteria:`
-- ❌ **交互式会话内不绕过 skill 直接拼 schema/scripts 命令**。保持调用入口单一,agent 首选 `.codex/skills/<name>/SKILL.md`。(本仓自主流水线按 `WORKFLOW.md` §6 直接跑 scripts,不受此限)
+- ❌ **交互式会话内不绕过 skill 直接拼 schema/scripts 命令**。保持调用入口单一,agent 首选 `.agents/skills/<name>/SKILL.md`。(本仓自主流水线按 `WORKFLOW.md` §6 直接跑 scripts,不受此限)
 
 ### 3.6 调用示例
 
-skill 定义在 `.codex/skills/<name>/SKILL.md`,front matter 只有 `name` 与 `description`。
-**调用形态取决于宿主**:交互式会话里 agent 直接读该 SKILL.md 并按正文执行;宿主支持 slash 命令时可写成 `/to-prd`;本仓自主流水线里由 `WORKFLOW.md` 按 `ssdctl scan` 的调度结果驱动对应 skill。
+skill 定义在 `.agents/skills/<name>/SKILL.md`,front matter 只有 `name` 与 `description`。
+**调用形态取决于宿主**:支持 skill 目录的宿主(DSH 等)按**会话工作目录所在项目根**(最近含 `.git` 的祖先)自动发现 `.agents/skills/<name>/SKILL.md` 并注册;不支持该约定的宿主里,agent 直接读该 SKILL.md 并按正文执行;宿主支持 slash 命令时可写成 `/to-prd`;本仓自主流水线里由 `WORKFLOW.md` 按 `ssdctl scan` 的调度结果驱动对应 skill。
+> 目录名用 `.agents/skills/`(宿主通用 skill 约定)而不是私有目录名:发现与否由宿主决定,约定由仓内决定。
+> 机器断言:`scripts/tests/test_skills_layout.py`(每个 skill 目录有 SKILL.md、front matter `name` == 目录名且唯一、`AGENTS.md` §3.7 清单 == 磁盘目录、旧目录名零残留)。
 
 ```bash
 # Step 1: 原始素材 → PRD
@@ -406,7 +408,7 @@ bash scripts/ssdctl.sh verify <artifact>
 
 ### 3.7 Skill 清单
 
-skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;agent 运行时直接读取该目录,无需额外注册步骤。
+skill 定义放在仓内 `.agents/skills/<name>/SKILL.md`,随仓库一起分发;agent 运行时直接读取该目录,无需额外注册步骤。**支持该约定的宿主按项目根自动发现**:在仓内开会话,`.agents/skills/` 下的 skill 自动进入该会话的技能目录(DSH 的 `project-agents` 扫描根 = 最近含 `.git` 的祖先目录);宿主不自动发现时,agent 仍按 §3.6 直接读该目录。
 
 **仓内 skill 共 9 个**:8 个规格流水线 skill(下表 1-8)+ 1 个辅助工具(第 9 行 `commit`)。
 
@@ -430,7 +432,7 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 
 | 需要什么 | 去哪里找 |
 |----------|----------|
-| **执行工作流**(首选) | `.codex/skills/{to-prd,to-tech-design,to-plan,validate-spec,to-test-cases,sync-status,sync-prd,to-deep-understand}/SKILL.md` ★ |
+| **执行工作流**(首选) | `.agents/skills/{to-prd,to-tech-design,to-plan,validate-spec,to-test-cases,sync-status,sync-prd,to-deep-understand}/SKILL.md` ★ |
 | 仓库契约唯一真源 | `WORKFLOW.md` |
 | 仓库入口(总览) | `README.md` |
 | 工作流指南与状态机 | `WORKFLOW.md` §11 使用指南 / §5 状态推进规则 |
@@ -499,9 +501,11 @@ skill 定义放在仓内 `.codex/skills/<name>/SKILL.md`,随仓库一起分发;a
 
 ### B. Skill 策略选择
 
-> 本模板选择**(a) 维护仓内 skill 目录**(`.codex/skills/`)。所有执行流程封装在 `.codex/skills/<name>/SKILL.md`。
+> 本模板选择**(a) 维护仓内 skill 目录**(`.agents/skills/`)。所有执行流程封装在 `.agents/skills/<name>/SKILL.md`。
 > 这是基于多仓 fork 经验(内联 prompt 步骤易漂移)进化出的设计。
-> **fork 项目推荐沿用本策略**:复制 `.codex/skills/` 目录,无需重建 prompt。
+> **fork 项目推荐沿用本策略**:复制 `.agents/skills/` 目录,无需重建 prompt。
+> **目录名的依据**:`.agents/skills/` 是宿主通用 skill 约定(DSH 按项目根扫描 `project-agents` 根)—— 放这里,支持的宿主**自动发现**,不支持的宿主按 `AGENTS.md` §3.6 直接读同一批文件;仓内不发明宿主不认的私有目录名。
+> **(历史)**:2026-11-25 之前这批 skill 放在 `.codex/` 这个私有目录下(宿主不认 ⇒ 只能靠 agent 手工打开),已迁到现位置;旧目录名由 `scripts/tests/test_skills_layout.py` 断言禁止再出现。
 
 ### C. Evaluator 阶段启用条件
 

@@ -13,7 +13,7 @@ description: >-
 可选的**理解层**: 把仓内规格文档转化为**带出处、可追溯、冲突可见**的理解底座（`deep/`）。
 
 > **本 skill 是可选层, 默认关闭**。5 步主流程（PRD → Tech Design → Plan → TDD → Layer 4）**不依赖** `deep/`。
-> **`.codex/skills/validate-spec/SKILL.md` 不校验 `deep/` 的内容与结构**。需要看 `deep/` 的新鲜度, 读 `scripts/deep-scan.py` 的台账输出, 不走 validate-spec。
+> **`.agents/skills/validate-spec/SKILL.md` 不校验 `deep/` 的内容与结构**。需要看 `deep/` 的新鲜度, 读 `scripts/deep-scan.py` 的台账输出, 不走 validate-spec。
 > 本 skill 只写 `deep/`, **不改** `prd/` / `tech_design/` / `plan/` / `test_cases/` 的内容。
 
 ## 执行阶段 (内部 phase 标识)
@@ -216,13 +216,13 @@ python3 scripts/deep-scan.py
 | 凭记忆写 SHA 或行号 | 锚点必须真实可解析; 拿不准就不写锚点 |
 | 写具体仓库目录名或专有系统名 | 用 AGENTS.md §1.1 的通用标识 |
 | 在本轮改 `prd/` / `tech_design/` / `plan/` 内容 | 本 skill 只写 `deep/` |
-| 跑 git commit/push | 产物何时提交由用户决定, 本 skill 不落 commit; git 写操作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
+| 跑 git commit/push | 产物何时提交由用户决定, 本 skill 不落 commit; git 写操作由人执行 (见 `.agents/skills/commit/SKILL.md`) |
 
 ## 禁止行为 (Agent 权限边界)
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
+| 自行 `git commit` / `git push` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.agents/skills/commit/SKILL.md`) |
 | 代答 `Q-{n}` 开放问题 | 登记问题, 等人工/产品确认 |
 | 编造 SHA / 行号 / handle / 专有系统名 | 锚点必须真实可解析; 拿不准就不写 |
 | 静默覆盖旧模型结论 | 登记 `C-{n}`, 双方保留 |
@@ -270,21 +270,21 @@ Agent: timeline.md 追加 1 条 (冲突登记)
 
 ## 安装 (Installation)
 
-skill 定义随仓库分发, agent 直接读 `.codex/skills/to-deep-understand/SKILL.md` 即可, **无需注册**。
+skill 定义随仓库分发, agent 直接读 `.agents/skills/to-deep-understand/SKILL.md` 即可, **无需注册**。
 
 需要把 skill 装进宿主 agent 的 skills 根目录时, 用仓内安装脚本：
 
 ```bash
-bash <repo>/.codex/skills/install.sh                     # 默认 ~/.codex/skills/
-bash <repo>/.codex/skills/install.sh --target <dir>      # 指定目标
-bash <repo>/.codex/skills/install.sh --unregister        # 注销
+bash <repo>/.agents/skills/install.sh                     # 默认 ~/.codex/skills/
+bash <repo>/.agents/skills/install.sh --target <dir>      # 指定目标
+bash <repo>/.agents/skills/install.sh --unregister        # 注销
 ```
 
 ## Related Skills
 
-- `.codex/skills/to-prd/SKILL.md` / `.codex/skills/to-tech-design/SKILL.md` / `.codex/skills/to-plan/SKILL.md` / `.codex/skills/to-test-cases/SKILL.md`：主要学习素材的来源层
-- `.codex/skills/validate-spec/SKILL.md`：**不校验** `deep/`; 修改 spec 层后用它复核
-- `.codex/skills/sync-prd/SKILL.md`：可选层, 提供素材侧的批次台账视角
+- `.agents/skills/to-prd/SKILL.md` / `.agents/skills/to-tech-design/SKILL.md` / `.agents/skills/to-plan/SKILL.md` / `.agents/skills/to-test-cases/SKILL.md`：主要学习素材的来源层
+- `.agents/skills/validate-spec/SKILL.md`：**不校验** `deep/`; 修改 spec 层后用它复核
+- `.agents/skills/sync-prd/SKILL.md`：可选层, 提供素材侧的批次台账视角
 
 ## Cross-References
 

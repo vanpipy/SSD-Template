@@ -472,10 +472,10 @@ CONTRACT_FILES = [
     "schema/plan.md",
     "schema/test_case.md",
     "schema/tech_design/README.md",
-    ".codex/skills/sync-status/SKILL.md",
-    ".codex/skills/to-prd/SKILL.md",
-    ".codex/skills/to-tech-design/SKILL.md",
-    ".codex/skills/to-plan/SKILL.md",
+    ".agents/skills/sync-status/SKILL.md",
+    ".agents/skills/to-prd/SKILL.md",
+    ".agents/skills/to-tech-design/SKILL.md",
+    ".agents/skills/to-plan/SKILL.md",
 ]
 
 

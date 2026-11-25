@@ -84,10 +84,10 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | 前缀 | 流水线入口 |
 |------|-----------|
-| `PRD-` | `.codex/skills/to-prd/SKILL.md` |
-| `TECH-` | `.codex/skills/to-tech-design/SKILL.md` |
-| `TEST-` | `.codex/skills/to-test-cases/SKILL.md` |
-| `PLAN-` | `.codex/skills/to-plan/SKILL.md` |
+| `PRD-` | `.agents/skills/to-prd/SKILL.md` |
+| `TECH-` | `.agents/skills/to-tech-design/SKILL.md` |
+| `TEST-` | `.agents/skills/to-test-cases/SKILL.md` |
+| `PLAN-` | `.agents/skills/to-plan/SKILL.md` |
 
 ### 哨兵定义
 
@@ -100,7 +100,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | 做 | 不做 |
 |----|------|
-| L1 骨架行补登记（台账只增, 直写）| 收敛产出 PRD（那是 `.codex/skills/to-prd/SKILL.md` 的职责）|
+| L1 骨架行补登记（台账只增, 直写）| 收敛产出 PRD（那是 `.agents/skills/to-prd/SKILL.md` 的职责）|
 | 充实待分析行的 `优先级` / `验收要点` / `提出人` | 改动已充实的历史行 |
 | 关系边**提议**（写入前需确认）| 未经确认直写 README 矩阵 |
 | 委派外部抓取 + 回填 `创建时间` | 修改素材原文内容 |
@@ -189,17 +189,17 @@ LC_ALL=C.UTF-8 bash scripts/sync-prd.sh
 | 复抓无变化也回填更新时间 | 只有内容变化才回填 |
 | 把待抓取行的空创建时间手工填上 | `创建时间` 只由抓取成功事件回填 |
 | 为凑 `提出人` 编造 handle | 识别不到就保持 `[待补]` 并点名 |
-| 收敛台账行 / 产出 PRD | 那是 `.codex/skills/to-prd/SKILL.md` 的职责 |
+| 收敛台账行 / 产出 PRD | 那是 `.agents/skills/to-prd/SKILL.md` 的职责 |
 | 在本 skill 里写死某个外部平台的抓取逻辑 | 外部抓取交给**项目自定义 skill**; 模板零外部工具依赖 |
 | 用模板外的来源值（如具体平台名）| `来源` 只有 `local` / `external` / `internal` |
-| 跑 git commit/push | 本 skill 只改工作区文件; 提交动作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
+| 跑 git commit/push | 本 skill 只改工作区文件; 提交动作由人执行 (见 `.agents/skills/commit/SKILL.md`) |
 | 把台账行状态改成 `Ready` / `Implemented` | 台账状态列是派生索引, 由 `ssdctl scan` 从制品状态块生成; 判定权归判据, 不在本 skill |
 
 ## 禁止行为 (Agent 权限边界)
 
 | ❌ Don't | ✅ Do |
 |----------|-------|
-| 自行 `git commit` / `git push` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.codex/skills/commit/SKILL.md`) |
+| 自行 `git commit` / `git push` / 切换或创建分支 | 只改工作区文件; git 写操作由人执行 (见 `.agents/skills/commit/SKILL.md`) |
 | 手改台账状态列 | 台账状态列是派生索引, 由 `ssdctl scan` 再生 |
 | 编造 `提出人` handle / URL / 抓取结果 | 识别不到就保持 `[待补]` 并点名 |
 | 修改 `schema/**` 下的模板 | 只读 `schema/prd-ledger.md` / `schema/prd-matrix.md` |
@@ -246,22 +246,22 @@ Agent: 创建时间保持空, 哨兵保留
 
 ## 安装 (Installation)
 
-skill 定义随仓库分发, agent 直接读 `.codex/skills/sync-prd/SKILL.md` 即可, **无需注册**。
+skill 定义随仓库分发, agent 直接读 `.agents/skills/sync-prd/SKILL.md` 即可, **无需注册**。
 
 需要把 skill 装进宿主 agent 的 skills 根目录时, 用仓内安装脚本：
 
 ```bash
-bash <repo>/.codex/skills/install.sh                     # 默认 ~/.codex/skills/
-bash <repo>/.codex/skills/install.sh --target <dir>      # 指定目标
-bash <repo>/.codex/skills/install.sh --unregister        # 注销
+bash <repo>/.agents/skills/install.sh                     # 默认 ~/.codex/skills/
+bash <repo>/.agents/skills/install.sh --target <dir>      # 指定目标
+bash <repo>/.agents/skills/install.sh --unregister        # 注销
 ```
 
 ## Related Skills
 
-- `.codex/skills/to-prd/SKILL.md`：收敛产出 PRD（消费台账, 登记关系边）
-- `.codex/skills/to-tech-design/SKILL.md` / `.codex/skills/to-plan/SKILL.md` / `.codex/skills/to-test-cases/SKILL.md`：按 ID 前缀路由的其他流水线入口
-- `.codex/skills/sync-status/SKILL.md`：四层生命周期编排（状态流转与级联; 状态行由 `ssdctl advance` 写）
-- `.codex/skills/validate-spec/SKILL.md`：校验链（判据与门禁走 `ssdctl.py`; 台账 / 矩阵一致性检查按产物存在与否条件启用）
+- `.agents/skills/to-prd/SKILL.md`：收敛产出 PRD（消费台账, 登记关系边）
+- `.agents/skills/to-tech-design/SKILL.md` / `.agents/skills/to-plan/SKILL.md` / `.agents/skills/to-test-cases/SKILL.md`：按 ID 前缀路由的其他流水线入口
+- `.agents/skills/sync-status/SKILL.md`：四层生命周期编排（状态流转与级联; 状态行由 `ssdctl advance` 写）
+- `.agents/skills/validate-spec/SKILL.md`：校验链（判据与门禁走 `ssdctl.py`; 台账 / 矩阵一致性检查按产物存在与否条件启用）
 
 ## Cross-References
 

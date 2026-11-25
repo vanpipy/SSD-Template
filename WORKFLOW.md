@@ -159,7 +159,7 @@ dsh:                                     # 扩展键: DSH agent 后端(本机唯
 1. **定位**:确定目标层(§2)与目标 topic。topic = 小写连字符,形状 `[a-z0-9]+(-[a-z0-9]+)*`;
    日期 = 今天的 `YYYY-MM-DD`。先看同仓已有制品的命名习惯,保持一致。
 2. **读**:读该层模板 + 上游制品 + issue 描述。**先读后写**;上游的每个 `KD-{n}` / `V-{n}` / `FR-{n}` 都要落到产物里。
-   仓内若存在 `.codex/skills/<skill>/SKILL.md`(如 `to-prd` / `to-tech-design` / `to-plan` / `to-test-cases`),
+   仓内若存在 `.agents/skills/<skill>/SKILL.md`(如 `to-prd` / `to-tech-design` / `to-plan` / `to-test-cases`),
    **先读该 skill 的流程**再动手;skill 与本文件冲突时以本文件为准。
 3. **写**:只写目标层的产物文件,形状见下表;状态块写 `Draft`,后三行允许缺省(§5、§7、实施契约 §3.1)。
 4. **跑门禁 + 推进状态**:跑 §6 中该层要求的脚本。退出码非 0 就**修产物**,不绕过;
@@ -906,7 +906,7 @@ flowchart TB
 | [schema/test_case.md](schema/test_case.md) | Test Case 模板 (可选 Layer 4) |
 | [schema/prd-ledger.md](schema/prd-ledger.md) | 批次 PRD 台账模板 (可选 material/ 启用) |
 | [schema/prd-matrix.md](schema/prd-matrix.md) | PRD 关联矩阵模板 (多 PRD 协作启用) |
-| [.codex/skills/](.codex/skills/) | 9 个 skill 定义(仓内随仓库分发) |
+| [.agents/skills/](.agents/skills/) | 9 个 skill 定义(仓内随仓库分发) |
 | 历史代际(不再留档) | `git log --all -- <path>` / `git show <commit>:<path>`(历史代际仅存于 git 历史) |
 | `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
 | `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `gate` / `advance` / `queue` / `verify`) |
@@ -1097,7 +1097,7 @@ Agent gets early feedback and works through it to reach the goal.
 4. `validate-spec` -- run focused check suite
 5. Goal exception -- decisions and pending work
 
-> 上面的 skill 全部是**仓内** skill,定义在 `.codex/skills/<name>/SKILL.md`,随仓库分发。
+> 上面的 skill 全部是**仓内** skill,定义在 `.agents/skills/<name>/SKILL.md`,随仓库分发。
 > 完整 9 个 skill 的清单与调用签名见 [AGENTS.md](AGENTS.md) §3.7。
 
 ### 12.9 Drawbacks
@@ -1138,7 +1138,7 @@ Agent gets early feedback and works through it to reach the goal.
 | **R-5 留痕分流** | 转换留痕的唯一权威 = **制品本身(状态块 + 复审段)+ git 历史**;编排层的**叙事报告**(编排层工作区的 reports 目录)不作为验收证据 | lane 的叙事报告写编排层工作区;**验收只看**制品里的状态块 / 复审段与 git 历史 | `bash scripts/ssdctl.sh verify <artifact>` 读回该制品的状态块与复审段;任何门禁都不读编排层的报告目录 |
 | **R-6 交互分层** | Lead(Coordinator)可对话;**执行 lane 静默**,只对 Lead 说话(`send_message` 给 Lead),不直接 `ask_user_question` | lane 需要澄清时把问题写进 workpad 并 `send_message` 给 Lead,由 Lead 决定是否问人 | lane 侧不出现对用户的提问;§1「你不与用户对话」约束的是**产制品那一轮**,不约束 Lead |
 | **R-7 提交归人** | 交互式会话里 lane **不 commit**;提交 / 推送由人做。**swarm 侧对 git 写权限零规则 ⇒ brief 是唯一保险** | brief 必须写明「本轮不 commit / 不 push」;需要提交时把改动留在工作区,在汇报里列出路径 | 工作区改动**未提交**(§8「交互式会话里提交由人自己做」);§3 第 15 条的 git 边界不被越过 |
-| **R-8 skill 双轨** | SDD 9 skill 管**怎么做制品**(§4 通用步骤第 2 步优先);swarm `swarm-craft-*` 管**怎么干活**;冲突时以 `WORKFLOW.md` 为准 | 做制品读 `.codex/skills/<name>/SKILL.md`;干活方法读 swarm 侧技能;两者冲突以本文件为准 | 产物形状按 §4 / §7 核对,不按通用模板核对;§1「参考资料可信度排序」以本文件最高 |
+| **R-8 skill 双轨** | SDD 9 skill 管**怎么做制品**(§4 通用步骤第 2 步优先);swarm `swarm-craft-*` 管**怎么干活**;冲突时以 `WORKFLOW.md` 为准 | 做制品读 `.agents/skills/<name>/SKILL.md`;干活方法读 swarm 侧技能;两者冲突以本文件为准 | 产物形状按 §4 / §7 核对,不按通用模板核对;§1「参考资料可信度排序」以本文件最高 |
 | **R-9 写集隔离** | 并行 lane **不得**写:`README.md` 统计块、`test_cases/_index.md` 索引块;也不得写**别人 issue 的制品**。`write_scopes` advisory,须由 Lead 在 brief 里点名排除 | brief 里点名两项禁写路径 + 别人的制品;lane 发现需要改这些 → **报告**,不改(§3 第 12 条) | 工作区改动清单里不出现这两类路径与别人的制品(§13.4 第 2 项) |
 
 ### 13.2 派发前置:唯一机器资格源 = 仓内 `ssdctl scan`
