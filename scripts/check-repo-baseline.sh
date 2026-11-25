@@ -19,7 +19,7 @@
 #
 # 用法:
 #   scripts/check-repo-baseline.sh [--json] [--root DIR] [--max-age-days N] [TARGET]
-#   (--stage 不适用于本脚本:阶段相关必填项由 scripts/check-md-schema.sh 判定;收到即退出 2)
+#   (--stage 不适用于本脚本:阶段相关必填项由 scripts/check-md-schema.py 判定;收到即退出 2)
 #
 # 退出码: 0=通过 1=违规 2=调用错误 / 环境错误
 
@@ -43,7 +43,7 @@ while [ $# -gt 0 ]; do
       ROOT="$2"; shift ;;
     --root=*) ROOT="${1#--root=}" ;;
     --stage|--stage=*)
-      printf '%s: 本门禁与阶段无关;--stage 只对 scripts/check-md-schema.sh 有效\n' "$SCRIPT_PATH" >&2
+      printf '%s: 本门禁与阶段无关;--stage 只对 scripts/check-md-schema.py 有效\n' "$SCRIPT_PATH" >&2
       exit 2
       ;;
     --max-age-days)

@@ -19,10 +19,10 @@ scripts/
 ├── README.md                  ← 本文件:脚本清单唯一真源
 ├── ssdctl.sh                  ← 顶层入口:解释器解析包装器
 ├── ssdctl.py                  ← 顶层入口:状态 / 调度 / 判据 CLI(唯一真入口)
-├── check-md-schema.sh         ← 门禁:必填段 + 状态枚举 + 阶段感知
-├── check-naming.sh            ← 门禁:命名与层结构形状
+├── check-md-schema.py         ← 门禁:必填段 + 状态枚举 + 阶段感知
+├── check-naming.py            ← 门禁:命名与层结构形状
 ├── check-repo-baseline.sh     ← 门禁:实现基线 6 列快照
-├── check-traceability.sh      ← 门禁:跨文件引用闭环
+├── check-traceability.py      ← 门禁:跨文件引用闭环
 ├── check-doc-links.py         ← 门禁:Markdown 相对链接死链
 ├── sync-prd.sh                ← 同步:PRD 台账 + 根 README 统计块
 ├── sync-test-index.sh         ← 同步:test_cases/_index.md 再生
@@ -41,7 +41,7 @@ scripts/
 树里是相对 `scripts/` 的短名;**完整仓库相对路径**(`scripts/...`)见下方分组清单。
 
 **谁负责谁**:`scripts/ssdctl.sh` → `scripts/ssdctl.py` → `scripts/lib/*` 是**唯一一条调用链**(命令 → CLI → 库);
-`scripts/check-*.sh` 与 `scripts/sync-*.sh` 是**独立门禁**,只被 `GATE_SCRIPTS` 聚合,不反向依赖库;
+`scripts/check-*.py` 与 `scripts/check-repo-baseline.sh` / `scripts/sync-*.sh` 是**独立门禁**,只被 `GATE_SCRIPTS` 聚合,不反向依赖库;
 `scripts/acceptance/*` 与 `scripts/tests/*` 是**验证层**:其中 `scripts/acceptance/run-all-gates.sh` 是 **CI 的门禁入口**(CI 与本地跑同一条命令 ⇒ 门禁清单不可能在两边漂移),其余只验证上面三层。
 
 ## 2. 脚本清单
@@ -63,10 +63,10 @@ scripts/
 
 | 路径 | 职责 | 调用形态 | 退出码 | 谁调用它 | 改了要同步改哪里 | 必跑 |
 |------|------|---------|--------|---------|-----------------|------|
-| `scripts/check-md-schema.sh` | 必填段 / 状态枚举 / 阶段感知(M3 状态枚举 4 值、M4 阶段感知、M5 必填段);**唯一支持 `--stage` 语义**的门禁(只能收紧,不能放宽) | `bash scripts/check-md-schema.sh [--json] [--root DIR] [--stage draft\|ready\|implemented\|deprecated] [TARGET]` | 0 = 通过,1 = 存在违规,2 = 调用 / 环境错误(单文件模式有违规即退 1,不把违规条数当退出码) | `scripts/lib/commands.py`(`GATE_SCRIPTS`)、`.github/workflows/spec-check.yml`「门禁」步骤、`scripts/sync-prd.sh`、`scripts/check-naming.sh`、`scripts/lib/artifacts.py`、`scripts/tests/test_md_schema_gate.py` | `schema/*.md`(必填段 / 状态枚举)、`schema/criteria.json`(状态枚举同口径)、`scripts/lib/artifacts.py`、`scripts/lib/commands.py` | **是** |
-| `scripts/check-naming.sh` | 目录 / 文件命名与层结构形状(M2):`prd/{YYYY-MM-DD}/{topic}.md` 等形状 + 日期与 topic 正则;层目录存在但无制品 → ⚠ 且退 0;全仓零制品 → 退 1 | `bash scripts/check-naming.sh [--json] [--root DIR] [TARGET]` | 0 = 通过,1 = 形状违规 / 全仓零制品,2 = 调用 / 环境错误 | `scripts/lib/commands.py`(`GATE_SCRIPTS`)、`.github/workflows/spec-check.yml`「门禁」步骤、`prd/README.md` | `schema/*` 的路径形状约定、`scripts/lib/commands.py` 的 `GATE_SCRIPTS`、`prd/README.md` | **是** |
+| `scripts/check-md-schema.py` | 必填段 / 状态枚举 / 阶段感知(M3 状态枚举 4 值、M4 阶段感知、M5 必填段);**唯一支持 `--stage` 语义**的门禁(只能收紧,不能放宽) | `"$PY" scripts/check-md-schema.py [--json] [--root DIR] [--stage draft\|ready\|implemented\|deprecated] [TARGET]` | 0 = 通过,1 = 存在违规,2 = 调用 / 环境错误(单文件模式有违规即退 1,不把违规条数当退出码) | `scripts/lib/commands.py`(`GATE_SCRIPTS`)、`.github/workflows/spec-check.yml`「门禁」步骤、`scripts/sync-prd.sh`、`scripts/check-naming.py`、`scripts/lib/artifacts.py`、`scripts/tests/test_md_schema_gate.py` | `schema/*.md`(必填段 / 状态枚举)、`schema/criteria.json`(状态枚举同口径)、`scripts/lib/artifacts.py`、`scripts/lib/commands.py` | **是** |
+| `scripts/check-naming.py` | 目录 / 文件命名与层结构形状(M2):`prd/{YYYY-MM-DD}/{topic}.md` 等形状 + 日期与 topic 正则;层目录存在但无制品 → ⚠ 且退 0;全仓零制品 → 退 1 | `"$PY" scripts/check-naming.py [--json] [--root DIR] [TARGET]` | 0 = 通过,1 = 形状违规 / 全仓零制品,2 = 调用 / 环境错误 | `scripts/lib/commands.py`(`GATE_SCRIPTS`)、`.github/workflows/spec-check.yml`「门禁」步骤、`prd/README.md` | `schema/*` 的路径形状约定、`scripts/lib/commands.py` 的 `GATE_SCRIPTS`、`prd/README.md` | **是** |
 | `scripts/check-repo-baseline.sh` | Tech Design `## 实现基线` 6 列表(仓库 / 分支 / SHA / 核对日期 / 核对项 / 状态)与实际仓状态一致;SHA 必须本地可解析;核对日期超 `--max-age-days`(默认 7)→ ⚠;状态含 `待补` / `TODO` / `✗` / `❌` → ✗;0 关联代码仓写 `> 不适用:` → ○ 跳过 | `bash scripts/check-repo-baseline.sh [--json] [--root DIR] [--max-age-days N] [TARGET]` | 0 = 通过(可含 ⚠),1 = 违规,2 = 调用错误 / 环境错误 | `scripts/lib/commands.py`、`.github/workflows/spec-check.yml`「门禁」步骤、`.agents/skills/validate-spec/SKILL.md`、`AGENTS.md` | `schema/tech_design/README.md` 的「## 实现基线」段、`AGENTS.md` §1.6 实现基线 | 条件 |
-| `scripts/check-traceability.sh` | 跨文件引用闭环(T1 PRD 场景 ⊆ TD 场景映射、T2/T3 `V-` / `KD-` 定义、T4 Plan 必须引用 TD、T6 台账 ID、T7/T8 关系边与 supersede ↔ Deprecated 一致、T9 上游存在性);**只有 PRD 的仓库必须 exit 0** | `bash scripts/check-traceability.sh [--json] [--root DIR] [TARGET]` | 0 = 通过,1 = 违规,2 = 调用错误 / 环境错误 | `scripts/lib/commands.py`(`GATE_SCRIPTS`)、`.github/workflows/spec-check.yml`「门禁」步骤、`scripts/acceptance/agent-first-acceptance.py` | `schema/criteria.json`、`scripts/lib/criteria.py`、`AGENTS.md` §1.7 证据锚点与关系边约定 | **是** |
+| `scripts/check-traceability.py` | 跨文件引用闭环(T1 PRD 场景 ⊆ TD 场景映射、T2/T3 `V-` / `KD-` 定义、T4 Plan 必须引用 TD、T6 台账 ID、T7/T8 关系边与 supersede ↔ Deprecated 一致、T9 上游存在性);**只有 PRD 的仓库必须 exit 0** | `"$PY" scripts/check-traceability.py [--json] [--root DIR] [TARGET]` | 0 = 通过,1 = 违规,2 = 调用错误 / 环境错误 | `scripts/lib/commands.py`(`GATE_SCRIPTS`)、`.github/workflows/spec-check.yml`「门禁」步骤、`scripts/acceptance/agent-first-acceptance.py` | `schema/criteria.json`、`scripts/lib/criteria.py`、`AGENTS.md` §1.7 证据锚点与关系边约定 | **是** |
 | `scripts/check-doc-links.py` | 仓内受版本控制的 Markdown 相对链接死链;含 `{}` 的占位路径不算错;`#L12` 行号锚点不算错;段内锚点只 ⚠;外链不检查(禁网络) | `"$PY" scripts/check-doc-links.py [--json] [--root DIR]` | 0 = 无死链,1 = 有死链,2 = 调用错误 / 环境错误 | `scripts/lib/commands.py`、`.github/workflows/spec-check.yml`「门禁」步骤、`scripts/acceptance/a17-e2e.sh`、`scripts/acceptance/agent-first-acceptance.py`、`scripts/acceptance/clone-verify.sh` | 各 `.md` 里的相对链接、`scripts/check-doc-links.py` 的 `skip_dirs`,以及仓库层判据的受检集合口径(`scripts/lib/commands.py` 的 `REPO_TEXT_SKIP_PARTS`;成员以代码为准,本文档不写死) | **是** |
 | `scripts/sync-prd.sh` | PRD 台账机械登记(可选层 `material/{YYYY-MM-DD}/PRDS.md`)+ 根 README 统计块再生成;**只写这两处**,统计块标记外的内容永不触碰;不做任何 git 写操作;写模式幂等 | `bash scripts/sync-prd.sh [--json] [--root DIR] [--check]`<br>写模式 = 不带 `--check` | 0 = 通过 / 已更新,1 = 违规(`--check` 下表示统计块或台账与实际制品漂移),2 = 调用 / 环境错误 | `scripts/lib/commands.py`、`.github/workflows/spec-check.yml` 的「PRD 台账登记」与「门禁」两步、`.agents/skills/sync-prd/SKILL.md` | `schema/prd-ledger.md`(台账模板)、根 README 的 `<!-- prd-stats:begin -->` … `<!-- prd-stats:end -->` 标记、`.agents/skills/sync-prd/SKILL.md` | 条件 |
 | `scripts/sync-test-index.sh` | 再生成 `test_cases/_index.md`;**只写这一个文件**;数据真源 = 用例文档的元信息表;写模式幂等 | `bash scripts/sync-test-index.sh [--json] [--root DIR] [--check]`<br>写模式 = 不带 `--check` | 0 = 通过 / 已更新,1 = 违规(`--check` 发现差异),2 = 调用错误 / 环境错误;`test_cases/` 不存在 → 该层未启用 → 跳过并退 0 | `scripts/lib/commands.py`、`.github/workflows/spec-check.yml`「门禁」步骤、`.agents/skills/to-test-cases/prompts/step6-writing.md` | `schema/test_case.md`(元信息表)、`test_cases/_index.md` 的 `<!-- test-index:begin -->` … `<!-- test-index:end -->` 标记、`.agents/skills/to-test-cases/prompts/step6-writing.md` | 条件 |
@@ -99,18 +99,21 @@ scripts/
 | `scripts/acceptance/a17-e2e.sh` | A17 端到端验收:用 Symphony runner + DSH 后端跑一次真实 `WORKFLOW.md`,再对产物跑仓内门禁 | `bash scripts/acceptance/a17-e2e.sh [--dry-run-only]` | 0 = 通过,1 = 有失败,2 = 用法 / 环境错误 | 仓内无调用方(人工 / 端到端手动跑);`scripts/acceptance/clone-verify.sh` 只把它列进**排除清单**,不是调用 | ① 端到端步骤清单;② runner 位置口径(`$SYMPHONY_RUNNER` 覆盖,默认取本仓同级目录 `symphony-runner`;机器绑定路径已去掉) |
 | `scripts/acceptance/agent-first-acceptance.py` | 按实施契约 §10 的 A-1..A-10 逐条验收(Lead 自用) | `"$PY" scripts/acceptance/agent-first-acceptance.py [--write] [--keep]`<br>`--write` 会额外跑 `sync-prd` 写模式并检查 README / material 漂移(**会改文件,只应在所有 lane 结束后跑**) | 0 = 全部通过,1 = 有失败项,2 = 用法错误 | `scripts/acceptance/recheck.sh`、`scripts/tests/test_acceptance_rules.py` | 实施契约 §10 的 A-1..A-10 清单 |
 
-### 2.6 单测(13 —— unittest,`python -m unittest discover -s scripts/tests -t scripts/tests`)
+### 2.6 单测(16 —— unittest,`python -m unittest discover -s scripts/tests -t scripts/tests`)
 
 | 路径 | 职责 | 谁调用它 |
 |------|------|---------|
 | `scripts/tests/_support.py` | 公共支撑:把 `scripts/` 放进 `sys.path`、搭临时仓、判据夹具(`fixtures/criteria.fixture.json`)、用 `sys.executable` 调 CLI | 全部 `scripts/tests/test_*.py` |
 | `scripts/tests/test_acceptance_rules.py` | 「旧命令形态残留」规则的判别性测试(旧 `decide` / `evidence` / `--decision` / `control/` 不得复活) | unittest discovery |
+| `scripts/tests/test_check_md_schema_port.py` | `scripts/check-md-schema.py` 的**端口等价**测试:corpus 契约(端口输出 == 仓内 golden)+ 差分(bash 原件在场时现场重跑)+ 变异自证 | unittest discovery |
+| `scripts/tests/test_check_naming_port.py` | `scripts/check-naming.py` 的**端口等价**测试(同上三件套) | unittest discovery |
+| `scripts/tests/test_check_traceability_port.py` | `scripts/check-traceability.py` 的**端口等价**测试(同上三件套) | unittest discovery |
 | `scripts/tests/test_dispatch.py` | 调度谓词 5 合取的正反两半用例 | unittest discovery |
 | `scripts/tests/test_gate_json.py` | `gate --json` 的 JSON 契约测试(输出结构 + 退出码)—— **Lane A 本轮新增** | unittest discovery |
 | `scripts/tests/test_human_signature.py` | F9 R-2 / R-3:人工接入 = 制品内署名 + 同一条 `advance` | unittest discovery |
 | `scripts/tests/test_implemented_trio.py` | F6:三件套必须同时进入 `Implemented` | unittest discovery |
 | `scripts/tests/test_kinds.py` | 判据 12 种 kind 的正反两向 | unittest discovery |
-| `scripts/tests/test_md_schema_gate.py` | `scripts/check-md-schema.sh` 的反证测试(需 bash,可用 `SSDCTL_BASH` 指定解释器) | unittest discovery |
+| `scripts/tests/test_md_schema_gate.py` | `scripts/check-md-schema.py` 的反证测试(**单进程 Python,不再依赖 bash** —— 端口带来的直接收益) | unittest discovery |
 | `scripts/tests/test_param_contract.py` | 判据参数契约反证(非法参数一律抛 `CriteriaError` → 退出码 2) | unittest discovery |
 | `scripts/tests/test_repo_scope.py` | `scope=repo` 的跨层判据 | unittest discovery |
 | `scripts/tests/test_scripts_hygiene.py` | 脚本卫生检查(行尾 / 可执行位 / 引用完整性)—— **Lane A 本轮新增** | unittest discovery |
@@ -118,11 +121,12 @@ scripts/
 | `scripts/tests/test_single_carrier.py` | F9 单载体:授权来源 / 控制平面消失 / CLI 表面 / 跨制品一致性 | unittest discovery |
 | `scripts/tests/test_skills_layout.py` | 仓内 skill 目录的宿主可发现性断言(每个 skill 目录有 SKILL.md、front matter `name` == 目录名且唯一、`AGENTS.md` §3.7 清单 == 磁盘目录、旧目录名的**仓内相对路径形态**零残留) | unittest discovery |
 
-### 2.7 夹具(1 组)
+### 2.7 夹具(2 组)
 
 | 路径 | 职责 | 谁调用它 |
 |------|------|---------|
 | `scripts/tests/fixtures/**` | 夹具组:`fixtures/artifacts/`(17 个样例制品:好 / 坏 PRD、TD README、Plan、用例、三件套等)+ `fixtures/criteria.fixture.json`(判据夹具)。**按组登记,不逐个列**;存在性断言对本组整体豁免 | `scripts/tests/_support.py`、`scripts/tests/test_md_schema_gate.py` 等 |
+| `scripts/tests/fixtures/*-corpus.json` | 三个门禁的**端口语料**:每份含 `source_gate` / `source_sha1`(bash 原件现场采集时的 SHA-1)/ `rules`(规则表)/ `cases[{name, files, args, expect_exit, expect_stdout}]`。`expect_stdout` 里的根路径写成 `{ROOT}`;**golden 只能由 bash 原件采集**,端口迁移后原件删除,这份 corpus 就是唯一 oracle | `scripts/tests/test_check_*_port.py` |
 
 ### 2.8 索引自身(1)
 
@@ -179,7 +183,7 @@ bash scripts/acceptance/run-all-gates.sh
 补充口径:
 
 - **门禁脚本的 1 与 `ssdctl.py` 的 1 含义不同**:门禁脚本的 1 = 脚本自己发现的违规(命名 / 字段 / 追溯 / 死链 …);`ssdctl.py` 的 1 = **判据或状态校验不通过**(判据数据在 `schema/criteria.json`),它把门禁退出码与判据结果合并汇总。两者都是「不通过」,排查方向不同。
-- `--stage` **只对 `scripts/check-md-schema.sh` 有效**(且只能收紧、不能放宽);其余门禁收到 `--stage` 会 `exit 2`(本轮已落地;机器断言见 `scripts/tests/test_scripts_hygiene.py`)。
+- `--stage` **只对 `scripts/check-md-schema.py` 有效**(且只能收紧、不能放宽);其余门禁收到 `--stage` 会 `exit 2`(本轮已落地;机器断言见 `scripts/tests/test_scripts_hygiene.py`)。
 - **仓库层判据单项**(`bash scripts/ssdctl.sh criteria --repo`)的退出码同样是 **0 / 1 / 2**(1 = 仓库层判据不通过;2 = 判据文件缺失或非法);它与 `gate` 里的仓库层**同源**(同一批判据、同一份受检文件集合)。
 - `scripts/sync-prd.sh` 与 `scripts/sync-test-index.sh` 的退出码 1 属于**软失败**:在 `--check` 模式下表示「统计块 / 台账 / 索引与实际制品漂移」,台账里有「待分析」待办行也是常态 —— CI 因此**不按这两个脚本的退出码单独判红**,改为写模式 + 比对差异(见 `scripts/lib/commands.py` 的 `SOFT_FAIL_CODES`)。
 - 层目录不存在 → 该层**跳过**(不是失败);层目录存在但没有制品 → ⚠ 且退 0;**全仓所有层都没有制品** → 退 1。
@@ -233,7 +237,7 @@ bash scripts/acceptance/run-all-gates.sh
 - **解释器探测 3 套 → 1 套**:统一到 `bash scripts/ssdctl.sh --python`;不再有脚本自带候选探测。
 - **机器绑定路径 4 处 → 0**:`scripts/acceptance/recheck.sh` 与 `scripts/acceptance/a17-e2e.sh` 的写死路径已改成「由脚本自身位置 / 环境变量推导」。
 - **`recheck.sh` 里门禁跑两遍 → 1 遍**:它现在消费 `run-all-gates.sh`(即 `gate --json` 的渲染层),不再单独再跑一遍 `ssdctl gate`。
-- **阶段参数语义收敛**:`--stage` 只对 `scripts/check-md-schema.sh` 有效,其余门禁收到即 `exit 2`。
+- **阶段参数语义收敛**:`--stage` 只对 `scripts/check-md-schema.py` 有效,其余门禁收到即 `exit 2`。
 - **`gate --json` 变成真 JSON**(顶层 5 个键:`ok` / `failures` / `gates` / `criteria` / `artifacts`),`scripts/acceptance/run-all-gates.sh` 改成 JSON 渲染层。
 - **CI 里的门禁步骤 9 → 1**:原先 `.github/workflows/spec-check.yml` 逐个列出每个门禁脚本、之后再跑一次 `ssdctl gate`(同一批门禁在 CI 里实际跑了两遍)⇒ 现在合并成一步「门禁(既有门禁 + 判据引擎 + 制品自洽性)」,调 `scripts/acceptance/run-all-gates.sh`;**CI 里不再有第二份门禁清单**。
 
@@ -245,5 +249,16 @@ bash scripts/acceptance/run-all-gates.sh
 - **仓库层判据可单独跑**:新增 `bash scripts/ssdctl.sh criteria --repo`(退出码 0 / 1 / 2,`--json` 可用),与 `gate` 里的仓库层**同源**。
 - **CR 判定性能**:同一棵工作树上的 A/B 实测(Lead 集成期,2026-11-25)—— 旧独立行尾脚本 **47349 / 47668 / 48517 ms**(3 次),新 `bash scripts/ssdctl.sh criteria --repo` **1544 / 1571 / 1744 ms**(3 次)⇒ **约 30 倍**。拆开看:纯进程内判据(读 107 个受检文件 + 求值)**417 ms**,纯 CR 字节扫描 **37 ms**,其余是 shell + 解释器启动开销。
   需求集 R-10 记的旧基线 **27185 ms** 是在另一台负载状态下测的,与上面的 A/B 不可直接相减 —— **同树同刻的 A/B 才是可比口径**。
-- **整体 gate 耗时没有因此下降**:改前中位 **44799 ms**,改后中位 **44320 ms**(3 次:44320 / 46290 / 42539)。原因很直白:CR 段虽然从「逐文件 fork 4 个进程」变成进程内判定,但它本来就不是当前瓶颈 —— 现在的瓶颈是 `check-traceability.sh`(**19671 ms**)与 `check-md-schema.sh`(**6867 ms**)。**这属于 Phase B 的目标**(把剩余 bash 门禁的规则逐个迁入判据引擎,每迁一个删一个 shell 脚本),本轮不动。
+- **整体 gate 耗时没有因此下降**:改前中位 **44799 ms**,改后中位 **44320 ms**(3 次:44320 / 46290 / 42539)。原因很直白:CR 段虽然从「逐文件 fork 4 个进程」变成进程内判定,但它本来就不是当前瓶颈 —— 当时的瓶颈是 `check-traceability.py`(端口前的 bash 实现,**19671 ms**)与 `check-md-schema.py`(端口前的 bash 实现,**6867 ms**)。**这属于 Phase B 的目标**(见 §8.3),本轮不动。
 - **文档侧同步**:`WORKFLOW.md` §6、`AGENTS.md` §3.4 / §3.6 / §3.8、根 `README.md` 的门禁表述与计数一并改为 7;四份文档里不再出现被删脚本的名字。
+
+### 8.3 本轮(Phase B · 三条 bash 门禁端口为 Python)
+
+- **三条 bash 门禁 → 单进程 Python 端口**:`check-naming` / `check-md-schema` / `check-traceability` 端口为 Python 实现,**bash 原件删除**(同一条规则只留一份实现 —— 新旧并存就是两份实现,谁生效取决于谁先跑)。门禁清单仍是 `GATE_SCRIPTS`(**仍是 7 条**),工具数仍是 **22**(顶层 10,3 换 3)。
+- **等价性口径**:端口 = bash 原件「**归一化后逐字节相同**」+ 同退出码;唯一允许的差异是脚本自身身份串(`.sh` → `.py`)。三个 corpus(命名 **44** / 字段 **78** / 追溯 **55** 例)现场重跑 bash 原件差分 **diffs=0**。golden 留在 `scripts/tests/fixtures/*-corpus.json`,**原件删除后它是唯一 oracle**;端口单测里「重跑原件」的用例在原件缺失时 skip,corpus 契约用例照常执行。
+- **门禁耗时**(五轮,同机同刻,门禁清单从 `GATE_SCRIPTS` 派生):中位 **22194.9 ms → 2258.2 ms**(约 **9.8 倍**);按负载归一后 **13105.0 ms → 2191.8 ms**(约 **6.0 倍**)。逐门禁中位:命名 2819.6 → **61.1 ms**、字段 3778.7 → **51.3 ms**、追溯 11046.9 → **49.8 ms**。
+- **单测耗时**:套件中位 **122002.3 ms → 31896.5 ms**(约 **3.8 倍**,用例 122 → **162**)。瓶颈本来就与规则数量无关,而是「每个用例 fork 一次 bash 门禁」与「重复跑全门禁」。
+- **CRLF 口径**:bash 原件经 MSYS awk 以**文本模式**读文件(行尾 CR 被吃掉);端口在 `read_lines()` 里显式去掉行尾 CR(实测最多去 2 个)以等价。corpus 新增 **4 条 CRLF 用例**(golden 仍只能由 bash 原件采集)。
+- **验收脚本写回保持 LF**:`scripts/acceptance/agent-first-acceptance.py` 的 8 处 `write_text` 显式 `newline="\n"` —— Windows 默认会把仓内制品写成 CRLF,违反 `.gitattributes` 的 `* text=auto eol=lf`,并让验收脚本**不可重复执行**。
+- **阶段参数语义不变**:`--stage` 只对 `scripts/check-md-schema.py` 有效,其余门禁收到即 `exit 2`。
+- **已知偏差(已豁免,见需求集修订记录)**:行尾 **≥3 个连续 CR** 的形态下,端口比原件多报 4 条违规(方向是**更严**,不是漏判);该形态无任何仓内写路径可产生。

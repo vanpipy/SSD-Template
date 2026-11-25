@@ -1,0 +1,1265 @@
+{
+  "gate": "scripts/check-traceability.py",
+  "source_gate": "scripts/check-traceability.sh",
+  "source_sha1": "9e9026dd7b6b541446814f60e4bfb10974736aa7",
+  "collected_by": "bash 原件逐例采集(C:\\Program Files\\Git\\bin\\bash.exe,相对路径调用),未使用 Python 端口反推;golden 只替换临时根路径为 {ROOT}",
+  "root_placeholder": "{ROOT}",
+  "normalization": "basename check-*.sh|check-*.py -> {GATE}; 调用前缀 bash scripts/|python scripts/ -> {RUN} scripts/; 临时根路径(Windows / JSON 转义 / POSIX) -> {ROOT}",
+  "rules": {
+    "T1": {
+      "desc": "PRD 场景 → Tech Design 场景映射覆盖",
+      "require_fail_case": true
+    },
+    "T2": {
+      "desc": "Plan 引用的 V-{n} 必须在同文件有 `### V-{n}:` 定义",
+      "require_fail_case": true
+    },
+    "T3": {
+      "desc": "Plan 引用的 KD-{n} 必须在 Tech Design 的 ards.md/decisions.md 有 `## KD-{n}:` 定义",
+      "require_fail_case": true
+    },
+    "T4": {
+      "desc": "Plan 的 Change 段必须引用 V-{n},已定义的 V-{n} 必须有 Change 关联",
+      "require_fail_case": true
+    },
+    "T6": {
+      "desc": "PRD 台账 ID 必须匹配 {PRD|TECH|TEST|PLAN}-{YYYYMMDD}-{NN} 且不得重复",
+      "require_fail_case": true
+    },
+    "T7": {
+      "desc": "README 关系边表的关系类型与节点路径必须合法",
+      "require_fail_case": true
+    },
+    "T8": {
+      "desc": "supersede 边的被替代节点必须是 Deprecated,且 Deprecated PRD 必须有 supersede 边指向",
+      "require_fail_case": true
+    },
+    "T9": {
+      "desc": "Test Case 元信息里的上游引用路径必须存在",
+      "require_fail_case": true
+    },
+    "T10": {
+      "desc": "README 用例登记的 TEST-ID 不得重复、路径必须存在",
+      "require_fail_case": true
+    },
+    "T11": {
+      "desc": "Plan 的「参考 Test Cases」路径必须存在",
+      "require_fail_case": true
+    },
+    "T12": {
+      "desc": "上游 PRD/Tech Design 已 Deprecated 时,下游必须同步降级",
+      "require_fail_case": true
+    },
+    "M6": {
+      "desc": "仓内没有任何规格产物时门禁必须报错",
+      "require_fail_case": true
+    },
+    "M11": {
+      "desc": "层容错:下游层存在而上游层缺失时必须给出提示",
+      "require_fail_case": true
+    },
+    "CLI": {
+      "desc": "CLI 契约:--json/--root/--stage/TARGET/--help 与退出码 0/1/2",
+      "require_fail_case": true
+    }
+  },
+  "cases": [
+    {
+      "name": "m6-empty-repo",
+      "files": {},
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ 本仓没有任何规格产物,门禁无从校验\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "M6"
+      ],
+      "expect_contains": [
+        "本仓没有任何规格产物,门禁无从校验"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "m6-prd-only",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 0 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "M6"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "本仓没有任何规格产物"
+      ]
+    },
+    {
+      "name": "m11-plan-without-td",
+      "files": {
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ 存在 Plan 制品但 tech_design 层没有任何 Tech Design — 下游层存在而上游层缺失(契约 M11)\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "M11"
+      ],
+      "expect_contains": [
+        "存在 Plan 制品但 tech_design 层没有任何 Tech Design"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "m11-td-without-prd",
+      "files": {
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ 存在 Tech Design 但 prd 层没有 PRD — 按契约 M11 跳过 PRD↔Tech Design 闭环\n✓ 追溯校验通过 (检查 1 个制品)\n· 1 项提示\n",
+      "expect_stderr": "",
+      "rules": [
+        "M11"
+      ],
+      "expect_contains": [
+        "存在 Tech Design 但 prd 层没有 PRD"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "m11-tc-without-upstream",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "test_cases/2026-01-01/alpha.md": "# alpha 测试用例\n\n| 字段 | 值 |\n| --- | --- |\n| **来源** | `prd/2026-01-01/alpha.md` |\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ 存在 Test Cases 但没有上游 Tech Design/Plan — 按契约 M11 跳过上游闭环\n✓ 追溯校验通过 (检查 1 个制品)\n· 1 项提示\n",
+      "expect_stderr": "",
+      "rules": [
+        "M11"
+      ],
+      "expect_contains": [
+        "存在 Test Cases 但没有上游 Tech Design/Plan"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t1-mapping-ok",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 1 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "T1"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "场景映射表格行数"
+      ]
+    },
+    {
+      "name": "t1-scenario-file-short",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n### 场景：场景2\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n### 场景：场景3\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n### 场景：场景4\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n",
+        "tech_design/2026-01-01-alpha/scenario-mapping.md": "| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ tech_design/2026-01-01-alpha//scenario-mapping.md — 场景映射表格行数 (3) 少于 PRD 场景数 (4)\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T1"
+      ],
+      "expect_contains": [
+        "场景映射表格行数 (3) 少于 PRD 场景数 (4)"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t1-readme-mapping-short",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n### 场景：场景2\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n### 场景：场景3\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n### 场景：场景4\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ tech_design/2026-01-01-alpha//README.md — 场景映射表格行数 (3) 少于 PRD 场景数 (4)\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T1"
+      ],
+      "expect_contains": [
+        "场景映射表格行数 (3) 少于 PRD 场景数 (4)"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t2-v-missing",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n覆盖 V-9 场景\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ plan/2026-01-01-alpha/alpha.md — 引用 V-9 但同文件没有 `### V-9:` 定义\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T2"
+      ],
+      "expect_contains": [
+        "引用 V-9 但同文件没有 `### V-9:` 定义"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t2-v-defined",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n覆盖 V-9 场景\n\n### V-9: 登录接口\n\n说明。\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 2 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "T2"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "引用 V-9 但同文件没有"
+      ]
+    },
+    {
+      "name": "t3-kd-missing",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-9: 其他决策\n\n占位。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n覆盖 KD-1 决策\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ plan/2026-01-01-alpha/alpha.md — 引用 KD-1 但 tech_design/2026-01-01-alpha/ards.md 中没有 `## KD-1:` 定义\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T3"
+      ],
+      "expect_contains": [
+        "引用 KD-1 但",
+        "中没有 `## KD-1:` 定义"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t3-kd-defined",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n覆盖 KD-1 决策\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 2 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "T3"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "引用 KD-1 但"
+      ]
+    },
+    {
+      "name": "t4-change-without-v",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 变更索引\n\n### Change #1: 登录\n\n改动说明。\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ plan/2026-01-01-alpha/alpha.md — ### 未引用任何 V-{n}(Change 段应有 `**验证**: V-{n}`)\n✗ plan/2026-01-01-alpha/alpha.md — Change 未引用任何 V-{n}(Change 段应有 `**验证**: V-{n}`)\n✗ plan/2026-01-01-alpha/alpha.md — #1: 未引用任何 V-{n}(Change 段应有 `**验证**: V-{n}`)\n✗ plan/2026-01-01-alpha/alpha.md — 登录 未引用任何 V-{n}(Change 段应有 `**验证**: V-{n}`)\n✗ 追溯校验: 4 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T4"
+      ],
+      "expect_contains": [
+        "未引用任何 V-{n}"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t4-v-without-change",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 变更索引\n\n### V-1: 登录接口\n\n说明。\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ plan/2026-01-01-alpha/alpha.md — V-1 已定义但无 Change 关联(Change 段 / 变更索引 / 对账行 / V 段自引均未覆盖)\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T4"
+      ],
+      "expect_contains": [
+        "V-1 已定义但无 Change 关联"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t4-ok",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 变更索引\n\n### Change #1: 登录\n\n**验证**: V-1\n\n### V-1: 登录接口\n\n对应 Change #1\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 2 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "T4"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "未引用任何 V-{n}",
+        "已定义但无 Change 关联"
+      ]
+    },
+    {
+      "name": "t6-ledger-ok",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "material/2026-01-01/ledger.md": "# 素材台账\n\n## PRD台账\n\n| ID | 名称 | 状态 |\n| --- | --- | --- |\n| PRD-20260101-01 | 登录 | Draft |\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 1 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "T6"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "台账 ID 格式非法",
+        "台账 ID 重复"
+      ]
+    },
+    {
+      "name": "t6-ledger-bad-id",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "material/2026-01-01/ledger.md": "# 素材台账\n\n## PRD台账\n\n| ID | 名称 | 状态 |\n| --- | --- | --- |\n| PRD-2026-01 | 登录 | Draft |\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ material/2026-01-01/ledger.md — 台账 ID 格式非法: 'PRD-2026-01' (期望 {PRD|TECH|TEST|PLAN}-{YYYYMMDD}-{NN})\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T6"
+      ],
+      "expect_contains": [
+        "台账 ID 格式非法"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t6-ledger-dup",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "material/2026-01-01/ledger.md": "# 素材台账\n\n## PRD台账\n\n| ID | 名称 | 状态 |\n| --- | --- | --- |\n| PRD-20260101-01 | 登录 | Draft |\n| PRD-20260101-01 | 登出 | Draft |\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ material/2026-01-01/ledger.md — 台账 ID 重复: PRD-20260101-01\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T6"
+      ],
+      "expect_contains": [
+        "台账 ID 重复"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t6-ledger-no-id-column",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "material/2026-01-01/ledger.md": "# 素材台账\n\n## PRD台账\n\n| 编号 | 名称 | 状态 |\n| --- | --- | --- |\n| PRD-20260101-01 | 登录 | Draft |\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ material/2026-01-01/ledger.md — 台账表未找到 `ID` 列, 跳过 ID 校验\n✓ 追溯校验通过 (检查 0 个制品)\n· 1 项提示\n",
+      "expect_stderr": "",
+      "rules": [
+        "T6"
+      ],
+      "expect_contains": [
+        "台账表未找到 `ID` 列, 跳过 ID 校验"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t7-rel-type-invalid",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n| 1 | prd/2026-01-01/alpha.md | unknown-rel | prd/2026-01-01/alpha.md | 说明 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ README.md — 关系边类型非法: 'unknown-rel' (应为 supersede/inherit/depend/shared/conflict/relate/split-from/merge-into)\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T7"
+      ],
+      "expect_contains": [
+        "关系边类型非法"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t7-node-missing",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n| 1 | prd/2026-01-01/nope.md | depend | prd/2026-01-01/alpha.md | 说明 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ README.md — 关系边节点路径不存在: prd/2026-01-01/nope.md\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T7"
+      ],
+      "expect_contains": [
+        "关系边节点路径不存在"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t7-node-unregistered",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n| 1 | PRD-20260101-01 | depend | prd/2026-01-01/alpha.md | 说明 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ README.md — 关系边节点标识未在台账登记且不是仓内路径, 无法核对: PRD-20260101-01\n✓ 追溯校验通过 (检查 1 个制品)\n· 1 项提示\n",
+      "expect_stderr": "",
+      "rules": [
+        "T7"
+      ],
+      "expect_contains": [
+        "关系边节点标识未在台账登记且不是仓内路径"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t8-supersede-not-deprecated",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "prd/2026-01-01/old.md": "# old PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n| 1 | prd/2026-01-01/alpha.md | supersede | prd/2026-01-01/old.md | 说明 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ README.md — supersede 边的被替代节点状态不是 Deprecated: prd/2026-01-01/old.md (当前: Draft)\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T8"
+      ],
+      "expect_contains": [
+        "supersede 边的被替代节点状态不是 Deprecated"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t8-supersede-ok",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "prd/2026-01-01/old.md": "# old PRD\n\n> **状态**: Deprecated\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n| 1 | prd/2026-01-01/alpha.md | supersede | prd/2026-01-01/old.md | 说明 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 1 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "T8"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "supersede 边的被替代节点状态不是 Deprecated"
+      ]
+    },
+    {
+      "name": "t8-deprecated-without-edge",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Deprecated\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "prd/2026-01-01/old.md": "# old PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n| 1 | prd/2026-01-01/alpha.md | depend | prd/2026-01-01/old.md | 说明 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-01-01/alpha.md — 状态为 Deprecated, 但 README 关系边表中没有 supersede 边指向它\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T8"
+      ],
+      "expect_contains": [
+        "状态为 Deprecated, 但 README 关系边表中没有 supersede 边指向它"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t9-upstream-missing",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "test_cases/2026-01-01/alpha.md": "# alpha 测试用例\n\n| 字段 | 值 |\n| --- | --- |\n| **来源** | `prd/2026-01-01/missing.md` |\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ test_cases/2026-01-01/alpha.md — 元信息上游引用不存在: prd/2026-01-01/missing.md\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T9"
+      ],
+      "expect_contains": [
+        "元信息上游引用不存在"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t9-ok",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "test_cases/2026-01-01/alpha.md": "# alpha 测试用例\n\n| 字段 | 值 |\n| --- | --- |\n| **来源** | `prd/2026-01-01/alpha.md` |\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 2 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "T9"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "元信息上游引用不存在"
+      ]
+    },
+    {
+      "name": "t10-registry-ok",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "test_cases/2026-01-01/alpha.md": "# alpha 测试用例\n\n| 字段 | 值 |\n| --- | --- |\n| **来源** | `prd/2026-01-01/alpha.md` |\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n\n## 用例登记\n\n| 用例 ID | 文件 | 说明 |\n| --- | --- | --- |\n| TEST-20260101-01 | `test_cases/2026-01-01/alpha.md` | 冒烟 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ 存在 Test Cases 但没有上游 Tech Design/Plan — 按契约 M11 跳过上游闭环\n✓ 追溯校验通过 (检查 2 个制品)\n· 1 项提示\n",
+      "expect_stderr": "",
+      "rules": [
+        "T10"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "用例登记 ID 重复",
+        "用例登记路径不存在"
+      ]
+    },
+    {
+      "name": "t10-registry-dup",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "test_cases/2026-01-01/alpha.md": "# alpha 测试用例\n\n| 字段 | 值 |\n| --- | --- |\n| **来源** | `prd/2026-01-01/alpha.md` |\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n\n## 用例登记\n\n| 用例 ID | 文件 | 说明 |\n| --- | --- | --- |\n| TEST-20260101-01 | `test_cases/2026-01-01/alpha.md` | 冒烟 |\n| TEST-20260101-01 | `test_cases/2026-01-01/alpha.md` | 冒烟 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "⚠ 存在 Test Cases 但没有上游 Tech Design/Plan — 按契约 M11 跳过上游闭环\n✗ README.md — 用例登记 ID 重复: TEST-20260101-01\n✗ 追溯校验: 1 项违规\n· 1 项提示\n",
+      "expect_stderr": "",
+      "rules": [
+        "T10"
+      ],
+      "expect_contains": [
+        "用例登记 ID 重复"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t10-registry-path-missing",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n\n## 用例登记\n\n| 用例 ID | 文件 | 说明 |\n| --- | --- | --- |\n| TEST-20260101-01 | `test_cases/2026-01-01/nope.md` | 冒烟 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ README.md — 用例登记路径不存在: test_cases/2026-01-01/nope.md\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T10"
+      ],
+      "expect_contains": [
+        "用例登记路径不存在"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t11-tc-ref-missing",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "test_cases/2026-01-01/alpha.md": "# alpha 测试用例\n\n| 字段 | 值 |\n| --- | --- |\n| **来源** | `prd/2026-01-01/alpha.md` |\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n> **参考 Test Cases**: `test_cases/2026-01-01/nope.md`\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ plan/2026-01-01-alpha/alpha.md — 参考 Test Cases 引用不存在: test_cases/2026-01-01/nope.md\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T11"
+      ],
+      "expect_contains": [
+        "参考 Test Cases 引用不存在"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t11-tc-ref-ok",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "test_cases/2026-01-01/alpha.md": "# alpha 测试用例\n\n| 字段 | 值 |\n| --- | --- |\n| **来源** | `prd/2026-01-01/alpha.md` |\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n> **参考 Test Cases**: `test_cases/2026-01-01/alpha.md`\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 3 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "T11"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "参考 Test Cases 引用不存在"
+      ]
+    },
+    {
+      "name": "t12-prd-deprecated",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Deprecated\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ plan/2026-01-01-alpha/alpha.md — 父 PRD 已 Deprecated (prd/2026-01-01/alpha.md), Plan 未同步降级 (当前: Draft)\n✗ tech_design/2026-01-01-alpha//README.md — 父 PRD 已 Deprecated (prd/2026-01-01/alpha.md), Tech Design 未同步降级 (当前: Draft)\n✗ 追溯校验: 2 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T12"
+      ],
+      "expect_contains": [
+        "父 PRD 已 Deprecated",
+        "Plan 未同步降级",
+        "Tech Design 未同步降级"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t12-td-deprecated",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Deprecated\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ plan/2026-01-01-alpha/alpha.md — 父 Tech Design 已 Deprecated (tech_design/2026-01-01-alpha), Plan 未同步降级 (当前: Draft)\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T12"
+      ],
+      "expect_contains": [
+        "父 Tech Design 已 Deprecated",
+        "Plan 未同步降级"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t12-cascade-ok",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Deprecated\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Deprecated\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Deprecated\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 2 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "T12"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "未同步降级"
+      ]
+    },
+    {
+      "name": "plan-missing-td-ref",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ plan/2026-01-01-alpha/alpha.md — 未引用可解析的 Tech Design(`../../tech_design/{date}-{topic}/`); 上游层存在但引用缺失\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T3"
+      ],
+      "expect_contains": [
+        "未引用可解析的 Tech Design"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t3-no-kd-source",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n覆盖 KD-1 决策\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ plan/2026-01-01-alpha/alpha.md — Tech Design tech_design/2026-01-01-alpha 既无 ards.md 也无 decisions.md, 跳过 KD 闭环\n✓ 追溯校验通过 (检查 2 个制品)\n· 1 项提示\n",
+      "expect_stderr": "",
+      "rules": [
+        "T3"
+      ],
+      "expect_contains": [
+        "既无 ards.md 也无 decisions.md, 跳过 KD 闭环"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "td-missing-prd-ref",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ tech_design/2026-01-01-alpha//README.md — 未引用上游 PRD(`../../prd/{date}/{topic}.md`), 跳过 PRD↔Tech Design 闭环\n✓ 追溯校验通过 (检查 1 个制品)\n· 1 项提示\n",
+      "expect_stderr": "",
+      "rules": [
+        "T1"
+      ],
+      "expect_contains": [
+        "未引用上游 PRD"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "td-prd-ref-missing",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/nope.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ tech_design/2026-01-01-alpha//README.md — 引用的上游 PRD 不存在: prd/2026-01-01/nope.md\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T1"
+      ],
+      "expect_contains": [
+        "引用的上游 PRD 不存在"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t8-supersede-unresolvable",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n| 1 | prd/2026-01-01/alpha.md | supersede | PRD-20260101-09 | 说明 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ README.md — 关系边节点标识未在台账登记且不是仓内路径, 无法核对: PRD-20260101-09\n⚠ README.md — 无法解析被替代节点状态, 跳过 supersede 一致性核对: PRD-20260101-09\n✓ 追溯校验通过 (检查 1 个制品)\n· 2 项提示\n",
+      "expect_stderr": "",
+      "rules": [
+        "T8"
+      ],
+      "expect_contains": [
+        "无法解析被替代节点状态, 跳过 supersede 一致性核对"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "t8-state-line-without-marker",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n**状态**: Deprecated\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "prd/2026-01-01/old.md": "# old PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n| 1 | prd/2026-01-01/alpha.md | depend | prd/2026-01-01/old.md | 说明 |\n\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-01-01/alpha.md — 状态为 Deprecated, 但 README 关系边表中没有 supersede 边指向它\n✗ 追溯校验: 1 项违规\n",
+      "expect_stderr": "",
+      "rules": [
+        "T8"
+      ],
+      "expect_contains": [
+        "状态为 Deprecated, 但 README 关系边表中没有 supersede 边指向它"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-root-equals-form",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "--root=."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 0 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "追溯校验通过"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-help",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "--help"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "用法: scripts/check-traceability.sh [--json] [--root DIR] [TARGET]\n",
+      "expect_stderr": "",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "用法:"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-stage",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "--stage",
+        "ready"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/check-traceability.sh: 本门禁与阶段无关;--stage 只对 scripts/check-md-schema.sh 有效\n",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "本门禁与阶段无关"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-unknown-arg",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "--bogus"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ 未知参数: --bogus\n",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "未知参数"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-two-targets",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "a",
+        "b"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ 只能指定一个 TARGET\n",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "只能指定一个 TARGET"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-root-missing-value",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "--root"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ --root 需要目录参数\n",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "--root 需要目录参数"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-root-missing-dir",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "--root",
+        "/no/such/dir"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ --root 目录不存在: /no/such/dir\n",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "--root 目录不存在"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-target-missing",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd/2026-01-01/nope.md"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ TARGET 不存在: {ROOT}/prd/2026-01-01/nope.md\n",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "TARGET 不存在"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-target-not-in-layer",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "README.md": "# SSD-Template\n\n## PRD关联矩阵\n\n### 关系边表\n\n| # | 节点 | 关系 | 节点 | 说明 |\n| --- | --- | --- | --- | --- |\n\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "README.md"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ TARGET 不在任何规格层内: README.md\n",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "TARGET 不在任何规格层内"
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-json-pass",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n"
+      },
+      "args": [
+        "--json",
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "{\"script\":\"check-traceability.sh\",\"root\":\"{ROOT}\",\"status\":\"pass\",\"exit_code\":0,\"error_count\":0,\"warning_count\":0,\"checked\":0,\"errors\":[],\"warnings\":[],\"notes\":[]}\n",
+      "expect_stderr": "",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "\"status\":\"pass\""
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-json-violation",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n### 场景：场景2\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n### 场景：场景3\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n### 场景：场景4\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n",
+        "tech_design/2026-01-01-alpha/scenario-mapping.md": "| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n"
+      },
+      "args": [
+        "--json",
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "{\"script\":\"check-traceability.sh\",\"root\":\"{ROOT}\",\"status\":\"violation\",\"exit_code\":1,\"error_count\":1,\"warning_count\":0,\"checked\":1,\"errors\":[\"tech_design/2026-01-01-alpha//scenario-mapping.md — 场景映射表格行数 (3) 少于 PRD 场景数 (4)\"],\"warnings\":[],\"notes\":[]}\n",
+      "expect_stderr": "",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [
+        "\"status\":\"violation\""
+      ],
+      "expect_absent": []
+    },
+    {
+      "name": "cli-target-prd",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd/2026-01-01/alpha.md"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 1 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "未同步降级"
+      ]
+    },
+    {
+      "name": "cli-target-plan",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n",
+        "plan/2026-01-01-alpha/alpha.md": "# alpha Plan\n\n> **状态**: Draft\n\n上游 Tech Design：../../tech_design/2026-01-01-alpha\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "plan/2026-01-01-alpha/alpha.md"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 1 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "未同步降级"
+      ]
+    },
+    {
+      "name": "cli-target-tech-design",
+      "files": {
+        "prd/2026-01-01/alpha.md": "# alpha PRD\n\n> **状态**: Draft\n\n## 场景 (Scenarios)\n\n### 场景：场景1\n\n**Given** 前置条件\n**When** 执行动作\n**Then** 预期结果\n\n",
+        "tech_design/2026-01-01-alpha/README.md": "# alpha TD\n\n> **状态**: Draft\n\n上游 PRD：../../prd/2026-01-01/alpha.md\n\n## 场景映射\n\n| PRD 场景 | TD 组件 | 接口 | 数据 | 策略 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n| 场景1 | AuthController | POST /login | session | JWT | 主链路 |\n| 场景2 | AuthController | POST /logout | session | JWT | 主链路 |\n\n",
+        "tech_design/2026-01-01-alpha/ards.md": "# 架构决策\n\n## KD-1: 令牌方案\n\n采用 JWT。\n\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "tech_design/2026-01-01-alpha"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 追溯校验通过 (检查 0 个制品)\n",
+      "expect_stderr": "",
+      "rules": [
+        "CLI"
+      ],
+      "expect_contains": [],
+      "expect_absent": [
+        "未同步降级"
+      ]
+    }
+  ]
+}

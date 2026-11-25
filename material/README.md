@@ -47,7 +47,7 @@ material/
 | 脚本 | 作用 |
 |------|------|
 | `scripts/sync-prd.sh` | 补登台账骨架行、标记待办行(`待分析` / `待抓取` / 孤儿行)、幂等再生成根 README 的统计块 |
-| `scripts/check-traceability.sh` | 台账存在时校验 ID 格式与 `## PRD台账` 段 |
+| `scripts/check-traceability.py` | 台账存在时校验 ID 格式与 `## PRD台账` 段 |
 
 > `sync-prd.sh` **不做任何 git 写操作**,只改工作区文件;退出码 `1` 表示存在待办行(台账待办信号),不是失败。
 

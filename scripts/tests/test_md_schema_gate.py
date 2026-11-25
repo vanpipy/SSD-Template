@@ -1,50 +1,28 @@
-"""`scripts/check-md-schema.sh` 的反证测试: 契约里每条规则都必须**能失败**。
+"""`scripts/check-md-schema.py` 的反证测试: 契约里每条规则都必须**能失败**。
 
 形态(Lead 的验收要求): 搭一个临时仓 → 改掉制品的一行 → 跑门禁 →
 断言**退出码 1** 且输出**点名该条规则**。断言写在测试里, 所以规则一旦
 从门禁里被删掉(或退化成恒真), 这个测试就会红 —— 门禁不会「悄悄放过」。
 
 运行: `python -m unittest discover -s scripts/tests -t scripts/tests`
-(需要 bash: Windows 上优先用 Git Bash, POSIX 上用 PATH 里的 bash;
-可用环境变量 `SSDCTL_BASH` 指定解释器。)
+(门禁是单进程 Python 实现, 无需 bash —— 这是端口带来的直接收益:
+19 个用例不再各 fork 一次 shell。)
 """
 
 from __future__ import annotations
 
-import os
-import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 from _support import SCRIPTS_DIR, write_text  # noqa: F401  (把 scripts/ 放进 sys.path)
 
-GATE = SCRIPTS_DIR / "check-md-schema.sh"
+GATE = SCRIPTS_DIR / "check-md-schema.py"
 DATE_DIR = "2026-11-22"
 TOPIC = "demo-feature"
 
-
-def _bash() -> str | None:
-    """找一个能跑本仓 shell 门禁的 bash。
-
-    Windows 上 PATH 里的 `bash` 可能是 WSL 转发(不接受 Windows 路径),
-    所以先找 Git Bash; 找不到就返回 None(测试 skip, 而不是假装通过)。
-    """
-    override = os.environ.get("SSDCTL_BASH")
-    if override:
-        return override
-    if os.name == "nt":
-        for candidate in (
-            r"C:\Program Files\Git\bin\bash.exe",
-            r"C:\Program Files (x86)\Git\bin\bash.exe",
-        ):
-            if os.path.exists(candidate):
-                return candidate
-    return shutil.which("bash")
-
-
-BASH = _bash()
 
 # 一份**合规**的 Ready PRD: 状态块 4 行 + 复审块 4 行都填满。
 READY_PRD = """# PRD: demo-feature
@@ -126,14 +104,12 @@ DRAFT_PRD = """# PRD: demo-feature
 
 def _run_gate(text: str) -> tuple[int, str]:
     """在临时仓里跑字段门禁, 返回 (退出码, 输出)。"""
-    assert BASH is not None
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"
-        (repo / "scripts").mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(GATE, repo / "scripts" / "check-md-schema.sh")
+        repo.mkdir(parents=True, exist_ok=True)
         write_text(repo / "prd" / DATE_DIR / f"{TOPIC}.md", text)
         proc = subprocess.run(
-            [BASH, "scripts/check-md-schema.sh", "--root", "."],
+            [sys.executable, str(GATE), "--root", "."],
             cwd=str(repo),
             capture_output=True,
             text=True,
@@ -143,7 +119,6 @@ def _run_gate(text: str) -> tuple[int, str]:
     return proc.returncode, proc.stdout + proc.stderr
 
 
-@unittest.skipIf(BASH is None, "找不到可用的 bash(设置 SSDCTL_BASH 或安装 Git Bash)")
 class FieldGateRulesTest(unittest.TestCase):
     """每条规则一个用例: 期望退出码 + 期望输出片段。"""
 

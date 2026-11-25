@@ -150,7 +150,7 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用外部代�
 ### 验证用例 (V-1 跨仓覆盖,按场景聚合)
 ```
 
-> **层级兼容**:`scripts/check-md-schema.sh` 按标题正则识别 `### Change #N:` 与 `#### Change #N:` 两种 Change 标题(不按嵌套层级),仓库组标题占 h4 时 Change 条目同样落 h4,V 用例仍用 h3 `### V-{n}:`。
+> **层级兼容**:`scripts/check-md-schema.py` 按标题正则识别 `### Change #N:` 与 `#### Change #N:` 两种 Change 标题(不按嵌套层级),仓库组标题占 h4 时 Change 条目同样落 h4,V 用例仍用 h3 `### V-{n}:`。
 
 ### 1.6 实现基线 (Implementation Baseline)
 
@@ -320,7 +320,7 @@ git -C <仓库本地路径> rev-parse --short HEAD
 | Plan | `schema/plan.md` 完成检查段 | `validate-spec` |
 | Test Cases(可选) | `schema/test_case.md` 全文 | `validate-spec`(目录存在时才校验) |
 | 实现基线(可选) | Tech Design `## 实现基线` 段 | `scripts/check-repo-baseline.sh`(有关联代码仓时才校验) |
-| PRD 台账 / 关联矩阵(可选) | `schema/prd-ledger.md` / `schema/prd-matrix.md` | `scripts/sync-prd.sh` / `scripts/check-traceability.sh`(层存在时才校验) |
+| PRD 台账 / 关联矩阵(可选) | `schema/prd-ledger.md` / `schema/prd-matrix.md` | `scripts/sync-prd.sh` / `scripts/check-traceability.py`(层存在时才校验) |
 | 仓库层(全仓) | `schema/criteria.json` 的仓库层判据(`REPO-NO-CR` 行尾 CR / `REPO-NO-PLACEHOLDER` 冲突标记) | `bash scripts/ssdctl.sh criteria --repo`(随 `bash scripts/ssdctl.sh gate` 执行) |
 
 **调用方式**:用 `validate-spec` skill(它按层跑全部校验脚本),不要手拼脚本命令。脚本退出码是唯一判定依据:全部 `✓` 只说明**格式与追溯**合规;**能否进 `Ready` 由 `schema/criteria.json` 的判据决定**,由 `bash scripts/ssdctl.sh advance` 代写状态块与复审块(见 §3.3),既不由「✓ 的数量」决定,也不是人工敲状态行。
@@ -453,9 +453,9 @@ skill 定义放在仓内 `.agents/skills/<name>/SKILL.md`,随仓库一起分发;
 | 原始素材(可选) | `material/{YYYY-MM-DD}/` |
 | 理解底座(可选) | `deep/` |
 | 校验脚本 | `scripts/` |
-| 命名校验 | `scripts/check-naming.sh` |
-| 字段校验 | `scripts/check-md-schema.sh` |
-| 追溯校验 | `scripts/check-traceability.sh` |
+| 命名校验 | `scripts/check-naming.py` |
+| 字段校验 | `scripts/check-md-schema.py` |
+| 追溯校验 | `scripts/check-traceability.py` |
 | 实现基线校验(可选) | `scripts/check-repo-baseline.sh` |
 | PRD 台账同步(可选) | `scripts/sync-prd.sh` |
 | 用例索引再生 | `scripts/sync-test-index.sh` |

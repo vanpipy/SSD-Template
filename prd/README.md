@@ -31,7 +31,7 @@ prd/
 **PRD 命名**: `{简短主题}.md`,topic 必须匹配 `^[a-z0-9]+(-[a-z0-9]+)*$`(小写字母与数字,中划线分隔,如 `login` / `checkout-flow`)。一个日期可有多个 PRD(1:N 关系)。
 **素材命名**: `{来源描述}.md`,可多个,不强制 topic 格式。
 
-> **目录内两类文件共存**:`{topic}.md` 是 Layer 1 制品;其余为暂存素材。`scripts/check-naming.sh` 对后者只报 `⚠` 提示,不报错。素材长期暂存时,建议迁到 [material/](../material/README.md)。
+> **目录内两类文件共存**:`{topic}.md` 是 Layer 1 制品;其余为暂存素材。`scripts/check-naming.py` 对后者只报 `⚠` 提示,不报错。素材长期暂存时,建议迁到 [material/](../material/README.md)。
 
 ## 转换关系(素材 → Layer 1)
 

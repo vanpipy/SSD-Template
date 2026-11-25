@@ -34,16 +34,16 @@ import unittest
 from _support import REPO_ROOT, run_cli
 from lib import commands
 
-# 文本模式的门禁行:「✓ scripts/check-naming.sh  → exit 0」/「! scripts/sync-prd.sh --check → exit 1」
+# 文本模式的门禁行:「✓ scripts/check-naming.py  → exit 0」/「! scripts/sync-prd.sh --check → exit 1」
 GATE_LINE = re.compile(r"^(?P<label>[✓!✗]) (?P<script>\S+) (?P<args>.*?)→ exit (?P<code>-?\d+)$")
 
 TEXT_HEADERS = ("— 仓内门禁 —", "— 判据 —", "— 制品自洽性 —")
 
 # golden:文本模式的稳定骨架(小标题 + 门禁清单 + 末行结论)
 GOLDEN_SKELETON = """— 仓内门禁 —
-scripts/check-naming.sh
-scripts/check-md-schema.sh
-scripts/check-traceability.sh
+scripts/check-naming.py
+scripts/check-md-schema.py
+scripts/check-traceability.py
 scripts/check-repo-baseline.sh
 scripts/check-doc-links.py
 scripts/sync-prd.sh --check

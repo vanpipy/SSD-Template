@@ -16,6 +16,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -40,10 +41,10 @@ BANNED_PATH_PATTERNS = [
 # 本文件不再自带一份硬编码清单 —— 否则「清单只有一份」这件事本身就破了自己的规矩。
 GATE_SCRIPT_NAMES = [Path(script).name for script, _args in commands.GATE_SCRIPTS]
 
-# 与阶段无关的门禁(阶段相关必填项由 check-md-schema.sh 判定)
+# 与阶段无关的门禁(阶段相关必填项由 check-md-schema.py 判定)
 STAGE_IRRELEVANT = [
-    "check-naming.sh",
-    "check-traceability.sh",
+    "check-naming.py",
+    "check-traceability.py",
     "check-repo-baseline.sh",
 ]
 
@@ -165,12 +166,16 @@ class ScriptsHygiene(unittest.TestCase):
         )
 
     def test_stage_irrelevant_gates_reject_stage_flag(self):
-        bash = _bash()
         for name in STAGE_IRRELEVANT:
             with self.subTest(script=name):
+                # 门禁实现的语言不同,入口不同:shell 脚本走 bash,Python 脚本走解释器。
+                launcher = [_bash(), f"scripts/{name}"] if name.endswith(".sh") else [
+                    sys.executable,
+                    f"scripts/{name}",
+                ]
                 for flag in ("--stage", "--stage=ready"):
                     proc = subprocess.run(
-                        [bash, f"scripts/{name}", flag, "ready"],
+                        [*launcher, flag, "ready"],
                         cwd=str(REPO_ROOT),
                         capture_output=True,
                         text=True,

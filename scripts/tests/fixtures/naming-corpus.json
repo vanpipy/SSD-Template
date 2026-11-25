@@ -1,0 +1,910 @@
+{
+  "gate": "scripts/check-naming.py",
+  "source_gate": "scripts/check-naming.sh",
+  "source_sha1": "1eb9b3fd3e6d821715d15b38cda68d1ae8caa122",
+  "collected_by": "bash 原件逐例采集(C:\\Program Files\\Git\\bin\\bash.exe,相对路径调用),未使用 Python 端口反推;golden 只替换临时根路径为 {ROOT}",
+  "root_placeholder": "{ROOT}",
+  "normalization": "basename check-*.sh|check-*.py -> {GATE}; 调用前缀 bash scripts/|python scripts/ -> {RUN} scripts/; 临时根路径(Windows / JSON 转义 / POSIX) -> {ROOT}",
+  "rules": {
+    "cli-help": {
+      "desc": "--help 输出用法到 stdout 并 exit 0",
+      "require_fail_case": false
+    },
+    "cli-json": {
+      "desc": "--json 输出单行 JSON 载荷",
+      "require_fail_case": true
+    },
+    "cli-root-missing": {
+      "desc": "--root 指向不存在目录 ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-target-missing": {
+      "desc": "TARGET 不存在 ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-unknown-arg": {
+      "desc": "未知参数 ⇒ stderr + usage ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-two-targets": {
+      "desc": "两个 TARGET ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-root-no-value": {
+      "desc": "--root 缺值 ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-stage": {
+      "desc": "--stage ⇒ exit 2(阶段无关)",
+      "require_fail_case": true
+    },
+    "cli-root-equals-form": {
+      "desc": "--root=DIR 与 --root DIR 等价",
+      "require_fail_case": false
+    },
+    "cli-double-dash": {
+      "desc": "-- 之后的参数被忽略(不进 JSON 模式)",
+      "require_fail_case": false
+    },
+    "layer-not-enabled-note": {
+      "desc": "层目录不存在 ⇒ note「层未启用(目录不存在,跳过)」",
+      "require_fail_case": true
+    },
+    "layer-enabled-but-no-artifact-warn": {
+      "desc": "层目录存在但没有 .md ⇒ warn「层已启用但没有任何制品」",
+      "require_fail_case": true
+    },
+    "layer-only-root-docs-warn": {
+      "desc": "层目录只有 README.md/_index.md ⇒ warn「层已启用但没有任何规格制品」",
+      "require_fail_case": true
+    },
+    "repo-empty-err": {
+      "desc": "全仓没有任何规格产物 ⇒ err",
+      "require_fail_case": true
+    },
+    "layer-root-extra-file-err": {
+      "desc": "层根目录出现第三个文件 ⇒ err",
+      "require_fail_case": true
+    },
+    "material-root-md-warn": {
+      "desc": "material/ 根目录出现 .md ⇒ warn",
+      "require_fail_case": true
+    },
+    "prd-depth-err": {
+      "desc": "prd/ 深度 ≠ 2 ⇒ err",
+      "require_fail_case": true
+    },
+    "prd-date-dir-err": {
+      "desc": "prd/ 日期目录格式错 ⇒ err",
+      "require_fail_case": true
+    },
+    "prd-topic-warn": {
+      "desc": "prd/ topic 非法 ⇒ warn(原件不判违规)",
+      "require_fail_case": false
+    },
+    "td-depth-err": {
+      "desc": "tech_design/ 深度 ≠ 2 ⇒ err",
+      "require_fail_case": true
+    },
+    "td-dir-name-err": {
+      "desc": "tech_design/ 目录名 ≠ {date}-{topic} ⇒ err",
+      "require_fail_case": true
+    },
+    "plan-depth-err": {
+      "desc": "plan/ 深度 ≠ 2 ⇒ err",
+      "require_fail_case": true
+    },
+    "plan-dir-name-err": {
+      "desc": "plan/ 目录名 ≠ {date}-{topic} ⇒ err",
+      "require_fail_case": true
+    },
+    "plan-name-must-match-dir-err": {
+      "desc": "plan/ 文件名 ≠ 目录 topic ⇒ err",
+      "require_fail_case": true
+    },
+    "tc-depth-err": {
+      "desc": "test_cases/ 深度 ≠ 2 ⇒ err",
+      "require_fail_case": true
+    },
+    "tc-date-dir-err": {
+      "desc": "test_cases/ 日期目录格式错 ⇒ err",
+      "require_fail_case": true
+    },
+    "tc-topic-err": {
+      "desc": "test_cases/ topic 非法 ⇒ err",
+      "require_fail_case": true
+    },
+    "tc-suffix-strip-ok": {
+      "desc": "test_cases/ -smoke / -key-points 后缀被剥离后校验 topic",
+      "require_fail_case": false
+    },
+    "material-depth-err": {
+      "desc": "material/ 深度 ≠ 2 ⇒ err",
+      "require_fail_case": true
+    },
+    "material-date-dir-err": {
+      "desc": "material/ 批次目录格式错 ⇒ err",
+      "require_fail_case": true
+    },
+    "target-single-file-ok": {
+      "desc": "TARGET 文件模式: 合法制品 ⇒ 通过",
+      "require_fail_case": false
+    },
+    "target-single-file-depth-err": {
+      "desc": "TARGET 文件模式: 深度错 ⇒ err",
+      "require_fail_case": true
+    },
+    "target-single-file-topic-warn": {
+      "desc": "TARGET 文件模式: topic 非法 ⇒ warn",
+      "require_fail_case": false
+    },
+    "target-single-file-skips-name-check": {
+      "desc": "TARGET 文件模式只查深度,不查目录名/topic(原件口径)",
+      "require_fail_case": false
+    },
+    "target-single-dir-mode": {
+      "desc": "TARGET 目录模式: 只 note 不扫描(原件口径)",
+      "require_fail_case": false
+    },
+    "target-bad-layer-dir": {
+      "desc": "TARGET 目录不是已知层 ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "target-bad-layer-file": {
+      "desc": "TARGET 文件不在已知层 ⇒ exit 2",
+      "require_fail_code_only": true,
+      "require_fail_case": true
+    },
+    "material-not-counted-as-artifact": {
+      "desc": "material/ 制品不计入「制品 N 个」",
+      "require_fail_case": false
+    },
+    "hidden-md-is-scanned": {
+      "desc": "隐藏 .md 文件也被 find 收进来",
+      "require_fail_case": false
+    },
+    "uppercase-suffix-ignored": {
+      "desc": ".MD 大写后缀不被 find 收录",
+      "require_fail_case": true
+    },
+    "multi-file-sort-order": {
+      "desc": "同层多文件按 LC_ALL=C 字节序扫描",
+      "require_fail_case": false
+    },
+    "mixed-layers-order": {
+      "desc": "多层违规按 prd→tech_design→plan→test_cases→material 顺序输出",
+      "require_fail_case": true
+    }
+  },
+  "cases": [
+    {
+      "name": "empty-repo",
+      "files": {},
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n✗ 本仓没有任何规格产物,门禁无从校验\n",
+      "expect_stderr": "",
+      "rules": [
+        "layer-not-enabled-note",
+        "repo-empty-err"
+      ]
+    },
+    {
+      "name": "happy-path",
+      "files": {
+        "prd/2026-11-22/feature-a.md": "# fixture\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# fixture\n",
+        "tech_design/2026-11-22-feature-a/ards.md": "# fixture\n",
+        "plan/2026-11-22-feature-a/feature-a.md": "# fixture\n",
+        "test_cases/2026-11-22/feature-a.md": "# fixture\n",
+        "material/2026-11-22/raw.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 命名与层结构检查通过 (制品 5 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "layer-not-enabled-note",
+        "multi-file-sort-order"
+      ]
+    },
+    {
+      "name": "prd-depth3",
+      "files": {
+        "prd/2026-11-22/sub/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ 形状错误: prd/ 下只允许 {YYYY-MM-DD}/{topic}.md 两级结构, 实际深度 3: prd/2026-11-22/sub/feature-a.md\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "prd-depth-err"
+      ]
+    },
+    {
+      "name": "prd-bad-date",
+      "files": {
+        "prd/20261122/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ 日期目录格式错误(期望 YYYY-MM-DD): prd/20261122\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "prd-date-dir-err"
+      ]
+    },
+    {
+      "name": "prd-bad-topic",
+      "files": {
+        "prd/2026-11-22/Feature_A.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ 疑似 PRD 命名不合规(topic 必须小写连字符), 按暂存素材处理并跳过字段校验: prd/2026-11-22/Feature_A.md\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n✓ 命名与层结构检查通过 (制品 0 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "prd-topic-warn"
+      ]
+    },
+    {
+      "name": "prd-root-extra-file",
+      "files": {
+        "prd/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ 层根目录不允许放规格文件(只允许 README.md / _index.md): prd/feature-a.md\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "layer-root-extra-file-err"
+      ]
+    },
+    {
+      "name": "prd-root-docs-only",
+      "files": {
+        "prd/README.md": "# fixture\n",
+        "prd/_index.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "⚠ 层已启用但没有任何规格制品(只有 README.md / _index.md): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n✗ 本仓没有任何规格产物,门禁无从校验\n",
+      "expect_stderr": "",
+      "rules": [
+        "layer-only-root-docs-warn",
+        "repo-empty-err"
+      ]
+    },
+    {
+      "name": "layer-enabled-no-md",
+      "files": {
+        "prd/notes.txt": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "⚠ 层已启用但没有任何制品(仅可能有 README.md / _index.md): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n✗ 本仓没有任何规格产物,门禁无从校验\n",
+      "expect_stderr": "",
+      "rules": [
+        "layer-enabled-but-no-artifact-warn",
+        "repo-empty-err"
+      ]
+    },
+    {
+      "name": "td-bad-dir",
+      "files": {
+        "tech_design/feature-a/README.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n✗ Tech Design 目录名必须为 {YYYY-MM-DD}-{topic}: tech_design/feature-a\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "td-dir-name-err"
+      ]
+    },
+    {
+      "name": "td-depth3",
+      "files": {
+        "tech_design/2026-11-22-feature-a/sub/ards.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n✗ 形状错误: tech_design/ 下只允许 {YYYY-MM-DD}-{topic}/*.md 两级结构, 实际深度 3: tech_design/2026-11-22-feature-a/sub/ards.md\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "td-depth-err"
+      ]
+    },
+    {
+      "name": "plan-bad-dir",
+      "files": {
+        "plan/feature-a/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n✗ Plan 目录名必须为 {YYYY-MM-DD}-{topic}: plan/feature-a\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "plan-dir-name-err"
+      ]
+    },
+    {
+      "name": "plan-name-mismatch",
+      "files": {
+        "plan/2026-11-22-feature-a/other.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n✗ Plan 文件名必须等于目录 topic(目录 2026-11-22-feature-a): plan/2026-11-22-feature-a/other.md\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "plan-name-must-match-dir-err"
+      ]
+    },
+    {
+      "name": "plan-depth3",
+      "files": {
+        "plan/2026-11-22-feature-a/sub/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n✗ 形状错误: plan/ 下只允许 {YYYY-MM-DD}-{topic}/{topic}.md 三级结构, 实际深度 3: plan/2026-11-22-feature-a/sub/feature-a.md\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "plan-depth-err"
+      ]
+    },
+    {
+      "name": "tc-bad-date",
+      "files": {
+        "test_cases/20261122/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n✗ 日期目录格式错误(期望 YYYY-MM-DD): test_cases/20261122\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "tc-date-dir-err"
+      ]
+    },
+    {
+      "name": "tc-bad-topic",
+      "files": {
+        "test_cases/2026-11-22/Feature_A.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n✗ 测试用例文件名不合法(topic 小写连字符, 允许 -smoke / -key-points 后缀): test_cases/2026-11-22/Feature_A.md\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "tc-topic-err"
+      ]
+    },
+    {
+      "name": "tc-depth3",
+      "files": {
+        "test_cases/2026-11-22/sub/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n✗ 形状错误: test_cases/ 下只允许 {YYYY-MM-DD}/{topic}.md 两级结构, 实际深度 3: test_cases/2026-11-22/sub/feature-a.md\n· 层未启用(目录不存在,跳过): material/\n",
+      "expect_stderr": "",
+      "rules": [
+        "tc-depth-err"
+      ]
+    },
+    {
+      "name": "tc-suffix-ok",
+      "files": {
+        "test_cases/2026-11-22/feature-a.md": "# fixture\n",
+        "test_cases/2026-11-22/feature-a-smoke.md": "# fixture\n",
+        "test_cases/2026-11-22/feature-a-key-points.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): material/\n✓ 命名与层结构检查通过 (制品 3 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "tc-suffix-strip-ok"
+      ]
+    },
+    {
+      "name": "material-root-md",
+      "files": {
+        "material/raw.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n⚠ 素材区根目录出现 .md(建议放 material/{YYYY-MM-DD}/): material/raw.md\n✓ 命名与层结构检查通过 (制品 0 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "material-root-md-warn"
+      ]
+    },
+    {
+      "name": "material-bad-date",
+      "files": {
+        "material/20261122/raw.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n✗ 素材批次目录格式错误(期望 YYYY-MM-DD): material/20261122\n",
+      "expect_stderr": "",
+      "rules": [
+        "material-date-dir-err"
+      ]
+    },
+    {
+      "name": "material-depth3",
+      "files": {
+        "material/2026-11-22/sub/raw.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n✗ 形状错误: material/ 下只允许 {YYYY-MM-DD}/*.md 两级结构, 实际深度 3: material/2026-11-22/sub/raw.md\n",
+      "expect_stderr": "",
+      "rules": [
+        "material-depth-err"
+      ]
+    },
+    {
+      "name": "material-only-repo",
+      "files": {
+        "material/2026-11-22/raw.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n✓ 命名与层结构检查通过 (制品 0 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "material-not-counted-as-artifact"
+      ]
+    },
+    {
+      "name": "target-file-prd",
+      "files": {
+        "prd/2026-11-22/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd/2026-11-22/feature-a.md"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 单文件模式: 只检查 prd/2026-11-22/feature-a.md\n✓ 命名与层结构检查通过 (制品 1 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "target-single-file-ok"
+      ]
+    },
+    {
+      "name": "target-file-prd-bad-name",
+      "files": {
+        "prd/2026-11-22/Feature_A.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd/2026-11-22/Feature_A.md"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 单文件模式: 只检查 prd/2026-11-22/Feature_A.md\n⚠ 疑似 PRD 命名不合规, 按暂存素材处理并跳过字段校验: prd/2026-11-22/Feature_A.md\n✓ 命名与层结构检查通过 (制品 0 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "target-single-file-topic-warn"
+      ]
+    },
+    {
+      "name": "target-file-prd-depth1",
+      "files": {
+        "prd/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd/feature-a.md"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 单文件模式: 只检查 prd/feature-a.md\n✗ 形状错误: prd/ 下只允许 {YYYY-MM-DD}/{topic}.md 两级结构: prd/feature-a.md\n",
+      "expect_stderr": "",
+      "rules": [
+        "target-single-file-depth-err"
+      ]
+    },
+    {
+      "name": "target-file-plan-other-name",
+      "files": {
+        "plan/2026-11-22-feature-a/other.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "plan/2026-11-22-feature-a/other.md"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 单文件模式: 只检查 plan/2026-11-22-feature-a/other.md\n✓ 命名与层结构检查通过 (制品 1 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "target-single-file-skips-name-check"
+      ]
+    },
+    {
+      "name": "target-file-plan-depth3",
+      "files": {
+        "plan/2026-11-22-feature-a/sub/other.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "plan/2026-11-22-feature-a/sub/other.md"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 单文件模式: 只检查 plan/2026-11-22-feature-a/sub/other.md\n✗ 形状错误: plan/ 下只允许 {YYYY-MM-DD}-{topic}/{topic}.md 三级结构: plan/2026-11-22-feature-a/sub/other.md\n",
+      "expect_stderr": "",
+      "rules": [
+        "target-single-file-depth-err"
+      ]
+    },
+    {
+      "name": "target-dir-prd",
+      "files": {
+        "prd/2026-11-22/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 单目录模式: 只检查 prd/\n✓ 命名与层结构检查通过 (制品 0 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "target-single-dir-mode"
+      ]
+    },
+    {
+      "name": "target-bad-layer-dir",
+      "files": {
+        "docs/notes.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "docs"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/check-naming.sh: 无法识别的层目录: docs\n",
+      "rules": [
+        "target-bad-layer-dir"
+      ]
+    },
+    {
+      "name": "target-bad-layer-file",
+      "files": {
+        "README.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "README.md"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/check-naming.sh: 无法识别的层路径: README.md\n",
+      "rules": [
+        "target-bad-layer-file"
+      ]
+    },
+    {
+      "name": "target-missing",
+      "files": {
+        "prd/2026-11-22/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd/2026-11-22/nope.md"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/check-naming.sh: TARGET 不存在: {ROOT}/prd/2026-11-22/nope.md\n",
+      "rules": [
+        "cli-target-missing"
+      ]
+    },
+    {
+      "name": "root-missing",
+      "files": {},
+      "args": [
+        "--root",
+        "./no-such-root"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/check-naming.sh: 根目录不存在: ./no-such-root\n",
+      "rules": [
+        "cli-root-missing"
+      ]
+    },
+    {
+      "name": "root-without-value",
+      "files": {},
+      "args": [
+        "--root"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/check-naming.sh: --root 需要参数\n",
+      "rules": [
+        "cli-root-no-value"
+      ]
+    },
+    {
+      "name": "root-equals-form",
+      "files": {
+        "prd/2026-11-22/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root=."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n✓ 命名与层结构检查通过 (制品 1 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "cli-root-equals-form"
+      ]
+    },
+    {
+      "name": "unknown-arg",
+      "files": {},
+      "args": [
+        "--root",
+        ".",
+        "--nope"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/check-naming.sh: 未知参数: --nope\n用法: bash scripts/check-naming.sh [--json] [--root DIR] [TARGET]\n\n  --json         以 JSON 输出(供 CI 消费)\n  --root DIR     仓根目录(默认: 本脚本所在目录的上一级)\n  --stage        本门禁与阶段无关:阶段相关必填项由 scripts/check-md-schema.sh 判定。\n                 收到 --stage 立即退出 2(不接受,也不回显)。\n  TARGET         可选, 只检查这一个文件或目录\n  --help         显示本帮助\n\n退出码: 0=通过 1=存在违规 2=调用/环境错误\n",
+      "rules": [
+        "cli-unknown-arg"
+      ]
+    },
+    {
+      "name": "two-targets",
+      "files": {},
+      "args": [
+        "--root",
+        ".",
+        "prd",
+        "plan"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/check-naming.sh: 只接受一个 TARGET\n",
+      "rules": [
+        "cli-two-targets"
+      ]
+    },
+    {
+      "name": "stage",
+      "files": {},
+      "args": [
+        "--root",
+        ".",
+        "--stage"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/check-naming.sh: 本门禁与阶段无关;--stage 只对 scripts/check-md-schema.sh 有效\n",
+      "rules": [
+        "cli-stage"
+      ]
+    },
+    {
+      "name": "help",
+      "files": {},
+      "args": [
+        "--help"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "用法: bash scripts/check-naming.sh [--json] [--root DIR] [TARGET]\n\n  --json         以 JSON 输出(供 CI 消费)\n  --root DIR     仓根目录(默认: 本脚本所在目录的上一级)\n  --stage        本门禁与阶段无关:阶段相关必填项由 scripts/check-md-schema.sh 判定。\n                 收到 --stage 立即退出 2(不接受,也不回显)。\n  TARGET         可选, 只检查这一个文件或目录\n  --help         显示本帮助\n\n退出码: 0=通过 1=存在违规 2=调用/环境错误\n",
+      "expect_stderr": "",
+      "rules": [
+        "cli-help"
+      ]
+    },
+    {
+      "name": "double-dash-ignores-rest",
+      "files": {
+        "prd/2026-11-22/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "--",
+        "--json"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n✓ 命名与层结构检查通过 (制品 1 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "cli-double-dash"
+      ]
+    },
+    {
+      "name": "json-ok",
+      "files": {
+        "prd/2026-11-22/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "--json"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "{\"script\":\"check-naming.sh\",\"root\":\"{ROOT}\",\"status\":\"pass\",\"exit_code\":0,\"error_count\":0,\"warning_count\":0,\"artifacts\":1,\"errors\":[],\"warnings\":[],\"notes\":[\"层未启用(目录不存在,跳过): tech_design/\",\"层未启用(目录不存在,跳过): plan/\",\"层未启用(目录不存在,跳过): test_cases/\",\"层未启用(目录不存在,跳过): material/\"]}\n",
+      "expect_stderr": "",
+      "rules": [
+        "cli-json"
+      ]
+    },
+    {
+      "name": "json-violation",
+      "files": {
+        "prd/2026-11-22/sub/feature-a.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "--json"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "{\"script\":\"check-naming.sh\",\"root\":\"{ROOT}\",\"status\":\"violation\",\"exit_code\":1,\"error_count\":1,\"warning_count\":0,\"artifacts\":0,\"errors\":[\"形状错误: prd/ 下只允许 {YYYY-MM-DD}/{topic}.md 两级结构, 实际深度 3: prd/2026-11-22/sub/feature-a.md\"],\"warnings\":[],\"notes\":[\"层未启用(目录不存在,跳过): tech_design/\",\"层未启用(目录不存在,跳过): plan/\",\"层未启用(目录不存在,跳过): test_cases/\",\"层未启用(目录不存在,跳过): material/\"]}\n",
+      "expect_stderr": "",
+      "rules": [
+        "cli-json"
+      ]
+    },
+    {
+      "name": "hidden-md-scanned",
+      "files": {
+        "prd/2026-11-22/.hidden.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ 疑似 PRD 命名不合规(topic 必须小写连字符), 按暂存素材处理并跳过字段校验: prd/2026-11-22/.hidden.md\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n✓ 命名与层结构检查通过 (制品 0 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "hidden-md-is-scanned",
+        "prd-topic-warn"
+      ]
+    },
+    {
+      "name": "uppercase-suffix-ignored",
+      "files": {
+        "prd/2026-11-22/feature-a.MD": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "⚠ 层已启用但没有任何制品(仅可能有 README.md / _index.md): prd/\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n✗ 本仓没有任何规格产物,门禁无从校验\n",
+      "expect_stderr": "",
+      "rules": [
+        "uppercase-suffix-ignored",
+        "repo-empty-err"
+      ]
+    },
+    {
+      "name": "multi-file-sort-order",
+      "files": {
+        "prd/2026-11-22/Zebra.md": "# fixture\n",
+        "prd/2026-11-22/Apple.md": "# fixture\n",
+        "prd/2026-11-22/mango_1.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "⚠ 疑似 PRD 命名不合规(topic 必须小写连字符), 按暂存素材处理并跳过字段校验: prd/2026-11-22/Apple.md\n⚠ 疑似 PRD 命名不合规(topic 必须小写连字符), 按暂存素材处理并跳过字段校验: prd/2026-11-22/Zebra.md\n⚠ 疑似 PRD 命名不合规(topic 必须小写连字符), 按暂存素材处理并跳过字段校验: prd/2026-11-22/mango_1.md\n· 层未启用(目录不存在,跳过): tech_design/\n· 层未启用(目录不存在,跳过): plan/\n· 层未启用(目录不存在,跳过): test_cases/\n· 层未启用(目录不存在,跳过): material/\n✓ 命名与层结构检查通过 (制品 0 个)\n",
+      "expect_stderr": "",
+      "rules": [
+        "multi-file-sort-order"
+      ]
+    },
+    {
+      "name": "mixed-layers",
+      "files": {
+        "prd/2026-11-22/sub/feature-a.md": "# fixture\n",
+        "tech_design/feature-a/README.md": "# fixture\n",
+        "plan/feature-a/feature-a.md": "# fixture\n",
+        "test_cases/20261122/feature-a.md": "# fixture\n",
+        "material/raw.md": "# fixture\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ 形状错误: prd/ 下只允许 {YYYY-MM-DD}/{topic}.md 两级结构, 实际深度 3: prd/2026-11-22/sub/feature-a.md\n✗ Tech Design 目录名必须为 {YYYY-MM-DD}-{topic}: tech_design/feature-a\n✗ Plan 目录名必须为 {YYYY-MM-DD}-{topic}: plan/feature-a\n✗ 日期目录格式错误(期望 YYYY-MM-DD): test_cases/20261122\n⚠ 素材区根目录出现 .md(建议放 material/{YYYY-MM-DD}/): material/raw.md\n",
+      "expect_stderr": "",
+      "rules": [
+        "mixed-layers-order",
+        "material-root-md-warn",
+        "prd-depth-err",
+        "td-dir-name-err",
+        "plan-dir-name-err",
+        "tc-date-dir-err"
+      ]
+    }
+  ]
+}

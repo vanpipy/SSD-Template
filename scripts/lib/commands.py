@@ -63,9 +63,9 @@ EXIT_USAGE = 2
 # 仓内既有门禁(契约 §8:7 个门禁全部保留,`ssdctl gate` 把它们一起跑)
 # 门禁清单的**唯一真源** —— 验收脚本、测试、文档都从这里派生,不再各抄一份。
 GATE_SCRIPTS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("scripts/check-naming.sh", ()),
-    ("scripts/check-md-schema.sh", ()),
-    ("scripts/check-traceability.sh", ()),
+    ("scripts/check-naming.py", ()),
+    ("scripts/check-md-schema.py", ()),
+    ("scripts/check-traceability.py", ()),
     ("scripts/check-repo-baseline.sh", ()),
     ("scripts/check-doc-links.py", ()),
     ("scripts/sync-prd.sh", ("--check",)),
@@ -83,7 +83,7 @@ REVIEW_CONCLUSIONS = ("通过", "有条件通过", "需返工")
 # test-case 独立于三件套生命周期(AGENTS.md §3.3),不参与这条规则。
 TRIO_LAYERS = ("prd", "td", "plan")
 
-# 状态块取值格式(契约 §3.1)—— 与 scripts/check-md-schema.sh 的常量同口径
+# 状态块取值格式(契约 §3.1)—— 与 scripts/check-md-schema.py 的常量同口径
 _STATE_SUBJECT_RE = re.compile(r"^(agent|human):[A-Za-z0-9._-]+$")
 # F9:`--actor` 只允许 agent 署名 —— 人工署名写在制品的复审段里,机器不代填(INV-3)。
 _AGENT_ACTOR_RE = re.compile(r"^agent:[A-Za-z0-9._-]+$")
@@ -1132,7 +1132,7 @@ def _field_problems(status, review) -> list[str]:
     `cmd_verify` 与 `cmd_gate` 共用这一份判定 —— 两处说同一件事,
     免得出现「verify 说没问题、gate 说有问题」的门禁空洞。
 
-    判定口径与 `scripts/check-md-schema.sh` 的 `check_status_meta` /
+    判定口径与 `scripts/check-md-schema.py` 的 `check_status_meta` /
     `check_review_block` 一致。
     """
     problems: list[str] = []

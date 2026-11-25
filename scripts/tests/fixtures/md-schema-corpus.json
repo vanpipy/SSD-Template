@@ -1,0 +1,1076 @@
+{
+  "gate": "scripts/check-md-schema.py",
+  "source_gate": "scripts/check-md-schema.sh",
+  "source_sha1": "78c778fc27b371d93c8d22bb8ef48228a7ec5bb0",
+  "cases": [
+    {
+      "name": "prd-ready-valid",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-draft-valid",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Draft\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**:\n> **评审日期**:\n> **评审结论**:\n> **评审方式**:\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-basis-two-criteria",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01,PRD-READY-02\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-basis-criteria-and-external",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01,external:pr-123\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-state-time-utc",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T15:30:00Z\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-review-conclusion-conditional",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 有条件通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-review-method-external-fact",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 外部事实\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-draft-known-issue-valid-id",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **已知问题**: PRD-XXX-01 — 待产品确认\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-missing-state-line",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 缺少状态行(应写 `> **状态**: Draft|Ready|Implemented|Deprecated`)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-state-template-enum",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Draft | Ready | Implemented | Deprecated\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态值非法(仍是模板枚举, 未填写): Draft | Ready | Implemented | Deprecated\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-state-illegal-value",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Banana\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态值非法: 'Banana' (应为 Draft / Ready / Implemented / Deprecated)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-missing-state-subject",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 状态块缺少 `> **状态主体**: agent:<id>`\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-missing-state-time",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 状态块缺少 `> **状态时间**: <ISO-8601 带时区>`\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-missing-state-basis",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 状态块缺少 `> **状态依据**: criteria:<id>[,external:<ref>]`\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-state-subject-illegal",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: bot:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态主体非法: 'bot:sddctl' (应为 agent:<id> 或 human:<handle>)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-state-time-without-timezone",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22 23:30:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态时间不是带时区的 ISO-8601: '2026-11-22 23:30:00'\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-state-basis-no-prefix",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: 我觉得可以\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态依据项非法: '我觉得可以' (应为 criteria:<id>[,<id>…] / external:<ref>)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-state-basis-garbage-after-criteria",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01,我可以\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态依据项非法: '我可以' (应为 criteria:<id>[,<id>…] / external:<ref>)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-state-basis-decision-prefix",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01,decision:control/decisions/d1.md#D1\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态依据项非法: 'decision:control/decisions/d1.md#D1' (应为 criteria:<id>[,<id>…] / external:<ref>)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-deprecated-basis-criteria",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Deprecated\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Deprecated, 状态依据不允许 criteria: ('criteria:PRD-READY-01'), 只能用 external:<ref>\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-missing-reviewer",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 复审段缺少评审人(应写 `> **评审人**: {github-handle}`)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-reviewer-placeholder",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: {handle}\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 评审人仍是占位符: '{handle}'\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-review-date-not-iso",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 22/11/2026\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 评审日期不是 YYYY-MM-DD: '22/11/2026'\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-missing-review-conclusion",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 复审段缺少评审结论(应写 通过 / 有条件通过 / 需返工)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-review-conclusion-out-of-domain",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 大概可以\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 评审结论取值非法: '大概可以' (应为 通过 / 有条件通过 / 需返工)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-missing-review-method",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 复审段缺少评审方式(应写 `> **评审方式**: 自动判据 | 人工介入 | 外部事实`)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-review-method-out-of-domain",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 随便\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 评审方式取值非法: '随便' (应为 自动判据 / 人工介入 / 外部事实)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-agent-reviewer-cannot-claim-human-review",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 人工介入\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 评审人为 agent 署名 ('agent:sddctl') 时评审方式不得为「人工介入」\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-missing-review-section",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 评审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 缺少必填段 `## 复审 (Review)`\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-missing-scenario-section",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 缺少必填段 `## 场景`\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-goal-without-checkbox",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — `## 目标` 段没有验证标准(`- [ ]` 勾选项)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-scenario-without-given",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — `## 场景` 段没有 Given/When/Then(`**Given**`)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-placeholder-left-in-body",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 {TOPIC}\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 仍含模板占位符:\n    14:- [ ] AC-1 {TOPIC}\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-known-issue-illegal-id",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **已知问题**: 我觉得不对\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — `已知问题` 行的判据 id 非法: '我觉得不对' (应为形如 PRD-XXX-01 的大写字母/数字/连字符 id, 后接说明)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v4-valid",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 场景映射\n\n| 场景 | 决策 | 约束 |\n| --- | --- | --- |\n| S-1 | KD-1 | 幂等写入 |\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/ards.md": "# ARD: demo-feature\n\n## KD-1: 采用幂等写入\n\n- 理由: 避免重复提交。\n\n## 门禁清单\n\n- [ ] AC-1 每个决策都有备选\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/apis.md": "# API: demo-feature\n\n## 接口清单\n\n| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| GET | /orders | 查询订单 |\n\n## 门禁清单\n\n- [ ] AC-1 每个接口有降级策略\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型: demo-feature\n\n```erDiagram\n    USER ||--o{ ORDER : places\n```\n\n## 门禁清单\n\n- [ ] AC-1 字段类型明确\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v3-valid",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature (v3)\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/decisions.md": "# 决策\n\n## KD-1: 采用幂等写入\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/api-contracts.md": "# 接口契约\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/scenario-mapping.md": "# 场景映射\n\n| 场景 | 决策 |\n| --- | --- |\n| S-1 | KD-1 |\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/quality.md": "# 质量属性\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/interactions.md": "# 交互\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v3-missing-interactions-is-warn",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature (v3)\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/decisions.md": "# 决策\n\n## KD-1: 采用幂等写入\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/api-contracts.md": "# 接口契约\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/scenario-mapping.md": "# 场景映射\n\n| 场景 | 决策 |\n| --- | --- |\n| S-1 | KD-1 |\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/quality.md": "# 质量属性\n\n## 门禁清单\n\n- [ ] AC-1\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n⚠ tech_design/2026-11-22-demo-feature — 缺少 interactions.md 且 README.md 未声明跳过(条件必填)\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-unknown-generation",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 场景映射\n\n| 场景 | 决策 | 约束 |\n| --- | --- | --- |\n| S-1 | KD-1 | 幂等写入 |\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n✗ tech_design/2026-11-22-demo-feature — 无法判定代际(既无 v4 的 ards.md/apis.md, 也无 v3 的 decisions.md 等)\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v4-missing-readme",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/ards.md": "# ARD: demo-feature\n\n## KD-1: 采用幂等写入\n\n- 理由: 避免重复提交。\n\n## 门禁清单\n\n- [ ] AC-1 每个决策都有备选\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/apis.md": "# API: demo-feature\n\n## 接口清单\n\n| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| GET | /orders | 查询订单 |\n\n## 门禁清单\n\n- [ ] AC-1 每个接口有降级策略\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型: demo-feature\n\n```erDiagram\n    USER ||--o{ ORDER : places\n```\n\n## 门禁清单\n\n- [ ] AC-1 字段类型明确\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n✗ tech_design/2026-11-22-demo-feature — 缺少必填子文件: README.md\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v4-missing-subfile",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 场景映射\n\n| 场景 | 决策 | 约束 |\n| --- | --- | --- |\n| S-1 | KD-1 | 幂等写入 |\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/ards.md": "# ARD: demo-feature\n\n## KD-1: 采用幂等写入\n\n- 理由: 避免重复提交。\n\n## 门禁清单\n\n- [ ] AC-1 每个决策都有备选\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/apis.md": "# API: demo-feature\n\n## 接口清单\n\n| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| GET | /orders | 查询订单 |\n\n## 门禁清单\n\n- [ ] AC-1 每个接口有降级策略\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n✗ tech_design/2026-11-22-demo-feature — v4 缺少必填子文件: data-model.md\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v4-readme-missing-scenario-mapping",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 场景对应\n\n| 场景 | 决策 | 约束 |\n| --- | --- | --- |\n| S-1 | KD-1 | 幂等写入 |\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/ards.md": "# ARD: demo-feature\n\n## KD-1: 采用幂等写入\n\n- 理由: 避免重复提交。\n\n## 门禁清单\n\n- [ ] AC-1 每个决策都有备选\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/apis.md": "# API: demo-feature\n\n## 接口清单\n\n| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| GET | /orders | 查询订单 |\n\n## 门禁清单\n\n- [ ] AC-1 每个接口有降级策略\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型: demo-feature\n\n```erDiagram\n    USER ||--o{ ORDER : places\n```\n\n## 门禁清单\n\n- [ ] AC-1 字段类型明确\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n✗ tech_design/2026-11-22-demo-feature/README.md — 缺少 `## 场景映射` 段\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v4-subfile-missing-gate-section",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 场景映射\n\n| 场景 | 决策 | 约束 |\n| --- | --- | --- |\n| S-1 | KD-1 | 幂等写入 |\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/ards.md": "# ARD: demo-feature\n\n## KD-1: 采用幂等写入\n\n- 理由: 避免重复提交。\n\n## 检查项\n\n- [ ] AC-1 每个决策都有备选\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/apis.md": "# API: demo-feature\n\n## 接口清单\n\n| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| GET | /orders | 查询订单 |\n\n## 门禁清单\n\n- [ ] AC-1 每个接口有降级策略\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型: demo-feature\n\n```erDiagram\n    USER ||--o{ ORDER : places\n```\n\n## 门禁清单\n\n- [ ] AC-1 字段类型明确\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n✗ tech_design/2026-11-22-demo-feature/ards.md — 缺少 `## 门禁清单 (Completion Gate)` 段\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v4-subfile-missing-change-log",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 场景映射\n\n| 场景 | 决策 | 约束 |\n| --- | --- | --- |\n| S-1 | KD-1 | 幂等写入 |\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/ards.md": "# ARD: demo-feature\n\n## KD-1: 采用幂等写入\n\n- 理由: 避免重复提交。\n\n## 门禁清单\n\n- [ ] AC-1 每个决策都有备选\n\n## 修订记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/apis.md": "# API: demo-feature\n\n## 接口清单\n\n| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| GET | /orders | 查询订单 |\n\n## 门禁清单\n\n- [ ] AC-1 每个接口有降级策略\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型: demo-feature\n\n```erDiagram\n    USER ||--o{ ORDER : places\n```\n\n## 门禁清单\n\n- [ ] AC-1 字段类型明确\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n✗ tech_design/2026-11-22-demo-feature/ards.md — 缺少 `## 变更记录 (Change Log)` 段\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v4-data-model-without-er",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 场景映射\n\n| 场景 | 决策 | 约束 |\n| --- | --- | --- |\n| S-1 | KD-1 | 幂等写入 |\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/ards.md": "# ARD: demo-feature\n\n## KD-1: 采用幂等写入\n\n- 理由: 避免重复提交。\n\n## 门禁清单\n\n- [ ] AC-1 每个决策都有备选\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/apis.md": "# API: demo-feature\n\n## 接口清单\n\n| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| GET | /orders | 查询订单 |\n\n## 门禁清单\n\n- [ ] AC-1 每个接口有降级策略\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型: demo-feature\n\n```mermaid\n    USER ||--o{ ORDER : places\n```\n\n## 门禁清单\n\n- [ ] AC-1 字段类型明确\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n✗ tech_design/2026-11-22-demo-feature/data-model.md — 既无 ER 图(erDiagram)也无「无数据模型变更」声明\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "td-v4-data-model-declared-no-change",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 场景映射\n\n| 场景 | 决策 | 约束 |\n| --- | --- | --- |\n| S-1 | KD-1 | 幂等写入 |\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/ards.md": "# ARD: demo-feature\n\n## KD-1: 采用幂等写入\n\n- 理由: 避免重复提交。\n\n## 门禁清单\n\n- [ ] AC-1 每个决策都有备选\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/apis.md": "# API: demo-feature\n\n## 接口清单\n\n| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| GET | /orders | 查询订单 |\n\n## 门禁清单\n\n- [ ] AC-1 每个接口有降级策略\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型: demo-feature\n\n无数据模型变更\n\n```mermaid\n    USER ||--o{ ORDER : places\n```\n\n## 门禁清单\n\n- [ ] AC-1 字段类型明确\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "plan-valid",
+      "files": {
+        "plan/2026-11-22-demo-feature/demo-feature.md": "# Plan: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PLAN-READY-01\n\n## 变更清单\n\n### Change #1: 仓A/src/orders.ts\n\n- 策略: 按 PRD S-1 实现幂等写入。\n\n## 跨文件引用对账\n\n| 来源 | 目标 | 结论 |\n| --- | --- | --- |\n| PRD S-1 | V-1 | 已覆盖 |\n\n### V-1: 幂等写入验证\n\n- **场景**: S-1\n- **Then** 重复提交不产生第二条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "plan-missing-change-list",
+      "files": {
+        "plan/2026-11-22-demo-feature/demo-feature.md": "# Plan: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PLAN-READY-01\n\n## 变更\n\n### Change #1: 仓A/src/orders.ts\n\n- 策略: 按 PRD S-1 实现幂等写入。\n\n## 跨文件引用对账\n\n| 来源 | 目标 | 结论 |\n| --- | --- | --- |\n| PRD S-1 | V-1 | 已覆盖 |\n\n### V-1: 幂等写入验证\n\n- **场景**: S-1\n- **Then** 重复提交不产生第二条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n✗ plan/2026-11-22-demo-feature/demo-feature.md — 缺少必填段 `## 变更清单 (Changes)`\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "plan-missing-reconciliation",
+      "files": {
+        "plan/2026-11-22-demo-feature/demo-feature.md": "# Plan: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PLAN-READY-01\n\n## 变更清单\n\n### Change #1: 仓A/src/orders.ts\n\n- 策略: 按 PRD S-1 实现幂等写入。\n\n## 对账\n\n| 来源 | 目标 | 结论 |\n| --- | --- | --- |\n| PRD S-1 | V-1 | 已覆盖 |\n\n### V-1: 幂等写入验证\n\n- **场景**: S-1\n- **Then** 重复提交不产生第二条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n✗ plan/2026-11-22-demo-feature/demo-feature.md — 缺少必填段 `## 跨文件引用对账`\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "plan-change-numbering-not-from-one",
+      "files": {
+        "plan/2026-11-22-demo-feature/demo-feature.md": "# Plan: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PLAN-READY-01\n\n## 变更清单\n\n### Change #2: 仓A/src/orders.ts\n\n- 策略: 按 PRD S-1 实现幂等写入。\n\n## 跨文件引用对账\n\n| 来源 | 目标 | 结论 |\n| --- | --- | --- |\n| PRD S-1 | V-1 | 已覆盖 |\n\n### V-1: 幂等写入验证\n\n- **场景**: S-1\n- **Then** 重复提交不产生第二条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n✗ plan/2026-11-22-demo-feature/demo-feature.md — 变更条目必须从 `### Change #1:` 开始编号\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "plan-v2-single-section",
+      "files": {
+        "plan/2026-11-22-demo-feature/demo-feature.md": "# Plan: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PLAN-READY-01\n\n## 变更清单\n\n#### 变更说明\n\n- 策略: 按 PRD S-1 实现幂等写入。\n\n## 跨文件引用对账\n\n| 来源 | 目标 | 结论 |\n| --- | --- | --- |\n| PRD S-1 | V-1 | 已覆盖 |\n\n### V-1: 幂等写入验证\n\n- **场景**: S-1\n- **Then** 重复提交不产生第二条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n✗ plan/2026-11-22-demo-feature/demo-feature.md — v2 单段 Plan 不再被接受(决策 D4): 缺少 `### Change #1:` / `#### Change #1:`\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "plan-missing-v1",
+      "files": {
+        "plan/2026-11-22-demo-feature/demo-feature.md": "# Plan: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PLAN-READY-01\n\n## 变更清单\n\n### Change #1: 仓A/src/orders.ts\n\n- 策略: 按 PRD S-1 实现幂等写入。\n\n## 跨文件引用对账\n\n| 来源 | 目标 | 结论 |\n| --- | --- | --- |\n| PRD S-1 | V-1 | 已覆盖 |\n\n### 验证用例\n\n- **场景**: S-1\n- **Then** 重复提交不产生第二条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n✗ plan/2026-11-22-demo-feature/demo-feature.md — 缺少 `### V-1:`(验证用例定义)\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "testcase-valid",
+      "files": {
+        "test_cases/2026-11-22/demo-feature.md": "# Test Case: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TC-READY-01\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | demo-feature | ✓ | 与目录/文件名一致 |\n| **业务产品** | POS | ✓ | 业务产品 |\n| **目标平台** | Web | ✓ | 运行平台 |\n| **来源** | prd/2026-11-22/demo-feature.md | ✓ | 上游 PRD |\n| **生成日期** | 2026-11-22 | ✓ | 首次生成日期 |\n| **状态** | Ready | ✓ | Draft / Ready / Implemented / Deprecated |\n| **用例总数** | 1 | ✓ | 用例总数 |\n\n## 用例总览\n\n| 编号 | 标题 |\n| --- | --- |\n| TC-001 | 幂等写入 |\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "test_cases/2026-11-22/demo-feature-key-points.md": "# 核心测试点: demo-feature\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n✓ 字段校验通过 (检查 2 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "testcase-missing-meta-field",
+      "files": {
+        "test_cases/2026-11-22/demo-feature.md": "# Test Case: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TC-READY-01\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | demo-feature | ✓ | 与目录/文件名一致 |\n| **业务产品** | POS | ✓ | 业务产品 |\n| **目标平台** | Web | ✓ | 运行平台 |\n| **来源** | prd/2026-11-22/demo-feature.md | ✓ | 上游 PRD |\n| **生成日期** | 2026-11-22 | ✓ | 首次生成日期 |\n| **状态** | Ready | ✓ | Draft / Ready / Implemented / Deprecated |\n\n## 用例总览\n\n| 编号 | 标题 |\n| --- | --- |\n| TC-001 | 幂等写入 |\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "test_cases/2026-11-22/demo-feature-key-points.md": "# 核心测试点: demo-feature\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n✗ test_cases/2026-11-22/demo-feature.md — 元信息缺少必填行 `用例总数`\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "testcase-meta-placeholder",
+      "files": {
+        "test_cases/2026-11-22/demo-feature.md": "# Test Case: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TC-READY-01\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | demo-feature | ✓ | 与目录/文件名一致 |\n| **业务产品** | {PRODUCT} | ✓ | 业务产品 |\n| **目标平台** | Web | ✓ | 运行平台 |\n| **来源** | prd/2026-11-22/demo-feature.md | ✓ | 上游 PRD |\n| **生成日期** | 2026-11-22 | ✓ | 首次生成日期 |\n| **状态** | Ready | ✓ | Draft / Ready / Implemented / Deprecated |\n| **用例总数** | 1 | ✓ | 用例总数 |\n\n## 用例总览\n\n| 编号 | 标题 |\n| --- | --- |\n| TC-001 | 幂等写入 |\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "test_cases/2026-11-22/demo-feature-key-points.md": "# 核心测试点: demo-feature\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n✗ test_cases/2026-11-22/demo-feature.md — 元信息 `业务产品` 仍为占位符: {PRODUCT}\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "testcase-illegal-state",
+      "files": {
+        "test_cases/2026-11-22/demo-feature.md": "# Test Case: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TC-READY-01\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | demo-feature | ✓ | 与目录/文件名一致 |\n| **业务产品** | POS | ✓ | 业务产品 |\n| **目标平台** | Web | ✓ | 运行平台 |\n| **来源** | prd/2026-11-22/demo-feature.md | ✓ | 上游 PRD |\n| **生成日期** | 2026-11-22 | ✓ | 首次生成日期 |\n| **状态** | Approved | ✓ | Draft / Ready / Implemented / Deprecated |\n| **用例总数** | 1 | ✓ | 用例总数 |\n\n## 用例总览\n\n| 编号 | 标题 |\n| --- | --- |\n| TC-001 | 幂等写入 |\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "test_cases/2026-11-22/demo-feature-key-points.md": "# 核心测试点: demo-feature\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n✗ test_cases/2026-11-22/demo-feature.md — 状态非合法枚举前缀: 'Approved' (应为 Draft/Ready/Implemented/Deprecated)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "testcase-missing-overview",
+      "files": {
+        "test_cases/2026-11-22/demo-feature.md": "# Test Case: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TC-READY-01\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | demo-feature | ✓ | 与目录/文件名一致 |\n| **业务产品** | POS | ✓ | 业务产品 |\n| **目标平台** | Web | ✓ | 运行平台 |\n| **来源** | prd/2026-11-22/demo-feature.md | ✓ | 上游 PRD |\n| **生成日期** | 2026-11-22 | ✓ | 首次生成日期 |\n| **状态** | Ready | ✓ | Draft / Ready / Implemented / Deprecated |\n| **用例总数** | 1 | ✓ | 用例总数 |\n\n## 用例一览\n\n| 编号 | 标题 |\n| --- | --- |\n| TC-001 | 幂等写入 |\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "test_cases/2026-11-22/demo-feature-key-points.md": "# 核心测试点: demo-feature\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n✗ test_cases/2026-11-22/demo-feature.md — 缺少 `## 用例总览` 段\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "testcase-ready-missing-key-points",
+      "files": {
+        "test_cases/2026-11-22/demo-feature.md": "# Test Case: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TC-READY-01\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | demo-feature | ✓ | 与目录/文件名一致 |\n| **业务产品** | POS | ✓ | 业务产品 |\n| **目标平台** | Web | ✓ | 运行平台 |\n| **来源** | prd/2026-11-22/demo-feature.md | ✓ | 上游 PRD |\n| **生成日期** | 2026-11-22 | ✓ | 首次生成日期 |\n| **状态** | Ready | ✓ | Draft / Ready / Implemented / Deprecated |\n| **用例总数** | 1 | ✓ | 用例总数 |\n\n## 用例总览\n\n| 编号 | 标题 |\n| --- | --- |\n| TC-001 | 幂等写入 |\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n✗ test_cases/2026-11-22/demo-feature.md — 状态为 Ready 但缺少伴生要点 `demo-feature-key-points.md`\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "testcase-key-points-missing-section",
+      "files": {
+        "test_cases/2026-11-22/demo-feature.md": "# Test Case: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TC-READY-01\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | demo-feature | ✓ | 与目录/文件名一致 |\n| **业务产品** | POS | ✓ | 业务产品 |\n| **目标平台** | Web | ✓ | 运行平台 |\n| **来源** | prd/2026-11-22/demo-feature.md | ✓ | 上游 PRD |\n| **生成日期** | 2026-11-22 | ✓ | 首次生成日期 |\n| **状态** | Ready | ✓ | Draft / Ready / Implemented / Deprecated |\n| **用例总数** | 1 | ✓ | 用例总数 |\n\n## 用例总览\n\n| 编号 | 标题 |\n| --- | --- |\n| TC-001 | 幂等写入 |\n\n## 业务背景\n\n- 订单提交。\n\n## 核心测试点\n\n- 重复提交只落一条记录。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "test_cases/2026-11-22/demo-feature-key-points.md": "# 核心测试点: demo-feature\n\n## 业务背景\n\n- 订单提交。\n\n## 要点\n\n- 重复提交只落一条记录。\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n✗ test_cases/2026-11-22/demo-feature-key-points.md — 要点文档缺少 `## 核心测试点` 段\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "stage-ready-tightens-draft",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Draft\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**:\n> **评审日期**:\n> **评审结论**:\n> **评审方式**:\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "--stage",
+        "ready"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· prd/2026-11-22/demo-feature.md — 按 --stage ready 假定阶段校验(制品自身声明: Draft)\n✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 状态块缺少 `> **状态主体**: agent:<id>`\n✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 状态块缺少 `> **状态时间**: <ISO-8601 带时区>`\n✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 状态块缺少 `> **状态依据**: criteria:<id>[,external:<ref>]`\n✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 复审段缺少评审日期(应写 `> **评审日期**: YYYY-MM-DD`)\n✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 复审段缺少评审人(应写 `> **评审人**: {github-handle}`)\n✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 复审段缺少评审结论(应写 通过 / 有条件通过 / 需返工)\n✗ prd/2026-11-22/demo-feature.md — 状态为 Ready, 复审段缺少评审方式(应写 `> **评审方式**: 自动判据 | 人工介入 | 外部事实`)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "stage-draft-relaxes-ready",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "--stage",
+        "draft"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 用 --stage draft 放宽了已处于 Ready 的制品(只允许收紧, 不允许放宽)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "stage-implemented-tightens-ready",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "--stage",
+        "implemented"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· prd/2026-11-22/demo-feature.md — 按 --stage implemented 假定阶段校验(制品自身声明: Ready)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "stage-invalid-value",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "--stage",
+        "bogus"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/{GATE-md}: --stage 取值非法: bogus (可用: draft|ready|implemented|deprecated)\n"
+    },
+    {
+      "name": "cli-help",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--help"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "用法: {RUN} scripts/{GATE-md} [--json] [--root DIR] [--stage STAGE] [TARGET]\n\n  --json         以 JSON 输出(供 CI 消费)\n  --root DIR     仓根目录(默认: 本脚本所在目录的上一级)\n  --stage STAGE  假定制品处于该阶段(draft|ready|implemented|deprecated)。\n                 只允许**收紧**校验: 用比制品自身状态更宽松的阶段取值会报错,\n                 不会变成绕过签署校验的开关。\n                 不给该参数时按制品自身声明的状态判定(契约 M4 / A5)。\n  TARGET         可选, 单个文件或目录(只校验它)\n  --help         显示本帮助\n\n退出码: 0=通过 1=存在违规 2=调用/环境错误\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "cli-json",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "--json"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "{\"script\":\"{GATE-md}\",\"root\":\"{ROOT}\",\"status\":\"pass\",\"exit_code\":0,\"error_count\":0,\"warning_count\":0,\"checked\":1,\"stage_override\":\"\",\"errors\":[],\"warnings\":[],\"notes\":[\"层未启用或无制品(跳过 Tech Design 校验): tech_design/\",\"层未启用或无制品(跳过 Plan 校验): plan/\",\"层未启用或无制品(跳过 Test Case 校验): test_cases/\"]}\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "cli-root-missing-value",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/{GATE-md}: --root 需要参数\n"
+    },
+    {
+      "name": "cli-root-not-exist",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        "nope"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/{GATE-md}: 根目录不存在: nope\n"
+    },
+    {
+      "name": "cli-unknown-argument",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "--nope"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/{GATE-md}: 未知参数: --nope\n用法: {RUN} scripts/{GATE-md} [--json] [--root DIR] [--stage STAGE] [TARGET]\n\n  --json         以 JSON 输出(供 CI 消费)\n  --root DIR     仓根目录(默认: 本脚本所在目录的上一级)\n  --stage STAGE  假定制品处于该阶段(draft|ready|implemented|deprecated)。\n                 只允许**收紧**校验: 用比制品自身状态更宽松的阶段取值会报错,\n                 不会变成绕过签署校验的开关。\n                 不给该参数时按制品自身声明的状态判定(契约 M4 / A5)。\n  TARGET         可选, 单个文件或目录(只校验它)\n  --help         显示本帮助\n\n退出码: 0=通过 1=存在违规 2=调用/环境错误\n"
+    },
+    {
+      "name": "cli-two-targets",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd/2026-11-22/demo-feature.md",
+        "prd/2026-11-22/demo-feature.md"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/{GATE-md}: 只接受一个 TARGET\n"
+    },
+    {
+      "name": "cli-target-missing",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd/2026-11-22/nope.md"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/{GATE-md}: TARGET 不存在: {ROOT}/prd/2026-11-22/nope.md\n"
+    },
+    {
+      "name": "cli-target-single-file",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd/2026-11-22/demo-feature.md"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "cli-target-layer-root",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:PRD-READY-01\n\n## 为什么 (Why)\n\n- 门禁必须能识别违规制品。\n\n## 目标 (Goal)\n\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\n\n## 场景 (Scenarios)\n\n### 场景 1\n\n**Given** 某个 Ready 制品\n**When** 跑字段门禁\n**Then** 退出码为 1\n\n## 不在范围内 (Out of Scope)\n\n- 不做界面。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n\n## 变更记录 (Change Log)\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "prd"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/{GATE-md}: 层根目录不能作为单文件校验目标: prd\n"
+    },
+    {
+      "name": "cli-target-unknown-type",
+      "files": {
+        "other/x.md": "# x\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "other/x.md"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "scripts/{GATE-md}: 无法识别的文件类型(只支持 prd/ tech_design/ plan/ test_cases/ 下的制品): other/x.md\n"
+    },
+    {
+      "name": "cli-target-tech-design-dir",
+      "files": {
+        "tech_design/2026-11-22-demo-feature/README.md": "# TD: demo-feature\n\n> **状态**: Ready\n> **状态主体**: agent:sddctl\n> **状态时间**: 2026-11-22T23:30:00+08:00\n> **状态依据**: criteria:TD-READY-01\n\n## 场景映射\n\n| 场景 | 决策 | 约束 |\n| --- | --- | --- |\n| S-1 | KD-1 | 幂等写入 |\n\n## 门禁清单\n\n- [ ] AC-1 场景映射覆盖 PRD 全部场景\n\n## 变更记录\n\n- 2026-11-22 初版。\n\n## 复审 (Review)\n\n> **评审人**: agent:sddctl\n> **评审日期**: 2026-11-22\n> **评审结论**: 通过\n> **评审方式**: 自动判据\n",
+        "tech_design/2026-11-22-demo-feature/ards.md": "# ARD: demo-feature\n\n## KD-1: 采用幂等写入\n\n- 理由: 避免重复提交。\n\n## 门禁清单\n\n- [ ] AC-1 每个决策都有备选\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/apis.md": "# API: demo-feature\n\n## 接口清单\n\n| 方法 | 路径 | 说明 |\n| --- | --- | --- |\n| GET | /orders | 查询订单 |\n\n## 门禁清单\n\n- [ ] AC-1 每个接口有降级策略\n\n## 变更记录\n\n- 2026-11-22 初版。\n",
+        "tech_design/2026-11-22-demo-feature/data-model.md": "# 数据模型: demo-feature\n\n```erDiagram\n    USER ||--o{ ORDER : places\n```\n\n## 门禁清单\n\n- [ ] AC-1 字段类型明确\n\n## 变更记录\n\n- 2026-11-22 初版。\n"
+      },
+      "args": [
+        "--root",
+        ".",
+        "tech_design/2026-11-22-demo-feature"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "repo-without-artifacts",
+      "files": {},
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 层未启用或无制品(跳过 PRD 校验): prd/\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✗ 本仓没有任何规格产物,门禁无从校验\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-crlf",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\r\n\r\n> **状态**: Ready\r\n> **状态主体**: agent:sddctl\r\n> **状态时间**: 2026-11-22T23:30:00+08:00\r\n> **状态依据**: criteria:PRD-READY-01\r\n\r\n## 为什么 (Why)\r\n\r\n- 门禁必须能识别违规制品。\r\n\r\n## 目标 (Goal)\r\n\r\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\r\n\r\n## 场景 (Scenarios)\r\n\r\n### 场景 1\r\n\r\n**Given** 某个 Ready 制品\r\n**When** 跑字段门禁\r\n**Then** 退出码为 1\r\n\r\n## 不在范围内 (Out of Scope)\r\n\r\n- 不做界面。\r\n\r\n## 复审 (Review)\r\n\r\n> **评审人**: agent:sddctl\r\n> **评审日期**: 2026-11-22\r\n> **评审结论**: 通过\r\n> **评审方式**: 自动判据\r\n\r\n## 变更记录 (Change Log)\r\n\r\n- 2026-11-22 初版。\r\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-crlf-invalid-state-subject",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\r\n\r\n> **状态**: Ready\r\n> **状态主体**: bot:sddctl\r\n> **状态时间**: 2026-11-22T23:30:00+08:00\r\n> **状态依据**: criteria:PRD-READY-01\r\n\r\n## 为什么 (Why)\r\n\r\n- 门禁必须能识别违规制品。\r\n\r\n## 目标 (Goal)\r\n\r\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\r\n\r\n## 场景 (Scenarios)\r\n\r\n### 场景 1\r\n\r\n**Given** 某个 Ready 制品\r\n**When** 跑字段门禁\r\n**Then** 退出码为 1\r\n\r\n## 不在范围内 (Out of Scope)\r\n\r\n- 不做界面。\r\n\r\n## 复审 (Review)\r\n\r\n> **评审人**: agent:sddctl\r\n> **评审日期**: 2026-11-22\r\n> **评审结论**: 通过\r\n> **评审方式**: 自动判据\r\n\r\n## 变更记录 (Change Log)\r\n\r\n- 2026-11-22 初版。\r\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态主体非法: 'bot:sddctl' (应为 agent:<id> 或 human:<handle>)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-ready-crcrlf",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\r\r\n\r\r\n> **状态**: Ready\r\r\n> **状态主体**: agent:sddctl\r\r\n> **状态时间**: 2026-11-22T23:30:00+08:00\r\r\n> **状态依据**: criteria:PRD-READY-01\r\r\n\r\r\n## 为什么 (Why)\r\r\n\r\r\n- 门禁必须能识别违规制品。\r\r\n\r\r\n## 目标 (Goal)\r\r\n\r\r\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\r\r\n\r\r\n## 场景 (Scenarios)\r\r\n\r\r\n### 场景 1\r\r\n\r\r\n**Given** 某个 Ready 制品\r\r\n**When** 跑字段门禁\r\r\n**Then** 退出码为 1\r\r\n\r\r\n## 不在范围内 (Out of Scope)\r\r\n\r\r\n- 不做界面。\r\r\n\r\r\n## 复审 (Review)\r\r\n\r\r\n> **评审人**: agent:sddctl\r\r\n> **评审日期**: 2026-11-22\r\r\n> **评审结论**: 通过\r\r\n> **评审方式**: 自动判据\r\r\n\r\r\n## 变更记录 (Change Log)\r\r\n\r\r\n- 2026-11-22 初版。\r\r\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n✓ 字段校验通过 (检查 1 个制品)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "prd-crcrlf-invalid-state-subject",
+      "files": {
+        "prd/2026-11-22/demo-feature.md": "# PRD: demo-feature\r\r\n\r\r\n> **状态**: Ready\r\r\n> **状态主体**: bot:sddctl\r\r\n> **状态时间**: 2026-11-22T23:30:00+08:00\r\r\n> **状态依据**: criteria:PRD-READY-01\r\r\n\r\r\n## 为什么 (Why)\r\r\n\r\r\n- 门禁必须能识别违规制品。\r\r\n\r\r\n## 目标 (Goal)\r\r\n\r\r\n- [ ] AC-1 门禁能识别缺字段的 Ready 制品\r\r\n\r\r\n## 场景 (Scenarios)\r\r\n\r\r\n### 场景 1\r\r\n\r\r\n**Given** 某个 Ready 制品\r\r\n**When** 跑字段门禁\r\r\n**Then** 退出码为 1\r\r\n\r\r\n## 不在范围内 (Out of Scope)\r\r\n\r\r\n- 不做界面。\r\r\n\r\r\n## 复审 (Review)\r\r\n\r\r\n> **评审人**: agent:sddctl\r\r\n> **评审日期**: 2026-11-22\r\r\n> **评审结论**: 通过\r\r\n> **评审方式**: 自动判据\r\r\n\r\r\n## 变更记录 (Change Log)\r\r\n\r\r\n- 2026-11-22 初版。\r\r\n"
+      },
+      "args": [
+        "--root",
+        "."
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ prd/2026-11-22/demo-feature.md — 状态主体非法: 'bot:sddctl' (应为 agent:<id> 或 human:<handle>)\n· 层未启用或无制品(跳过 Tech Design 校验): tech_design/\n· 层未启用或无制品(跳过 Plan 校验): plan/\n· 层未启用或无制品(跳过 Test Case 校验): test_cases/\n",
+      "expect_stderr": ""
+    }
+  ]
+}

@@ -119,7 +119,7 @@ read_meta_state() {
 
 # --- 各层计数 ---
 # 状态分布覆盖契约 D1 的 4 个状态(Draft / Ready / Implemented / Deprecated);
-# `其他` 只用于状态值不在枚举内(由 check-md-schema.sh 负责报错)。
+# `其他` 只用于状态值不在枚举内(由 check-md-schema.py 负责报错)。
 prd_total=0; prd_draft=0; prd_ready=0; prd_impl=0; prd_dep=0; prd_other=0
 td_total=0;  td_draft=0;  td_ready=0;  td_impl=0;  td_dep=0;  td_other=0
 plan_total=0; plan_draft=0; plan_ready=0; plan_impl=0; plan_dep=0; plan_other=0

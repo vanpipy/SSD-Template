@@ -44,7 +44,7 @@
 
 **Given** `schema/plan.md` 新增了一个机器必填段
 **When** Plan 层自检清单在同一次提交中更新
-**Then** 清单项数与 `scripts/check-md-schema.sh` 实际校验的段数一致
+**Then** 清单项数与 `scripts/check-md-schema.py` 实际校验的段数一致
 
 ## 不在范围内 (Out of Scope)
 

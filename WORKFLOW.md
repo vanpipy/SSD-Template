@@ -316,9 +316,9 @@ bash scripts/ssdctl.sh advance <artifact> --to Ready          # 与 agent 完全
 
 | 脚本 | 什么时候跑 |
 |------|------------|
-| `scripts/check-naming.sh` | **每次都跑** |
-| `scripts/check-md-schema.sh` | **每次都跑** |
-| `scripts/check-traceability.sh` | **每次都跑** |
+| `scripts/check-naming.py` | **每次都跑** |
+| `scripts/check-md-schema.py` | **每次都跑** |
+| `scripts/check-traceability.py` | **每次都跑** |
 | `scripts/check-doc-links.py` | **每次都跑** |
 | `scripts/check-repo-baseline.sh` | 仅 Layer 2(且仓内登记了关联代码仓时) |
 | `scripts/sync-prd.sh` | **每次都跑**(写模式, 幂等) |
@@ -858,9 +858,9 @@ flowchart TB
 
 | 层 | 门禁清单位置 | 自动校验 |
 |----|-------------|---------|
-| PRD | [schema/prd.md](schema/prd.md) 全文 + `scripts/check-md-schema.sh` | ✓ |
-| Tech Design | [schema/tech_design/README.md](schema/tech_design/README.md) + 各子文件"门禁清单"段 + `scripts/check-md-schema.sh` | ✓ |
-| Plan | [schema/plan.md](schema/plan.md) 完成检查段 + `scripts/check-md-schema.sh` + `scripts/check-traceability.sh` | ✓ |
+| PRD | [schema/prd.md](schema/prd.md) 全文 + `scripts/check-md-schema.py` | ✓ |
+| Tech Design | [schema/tech_design/README.md](schema/tech_design/README.md) + 各子文件"门禁清单"段 + `scripts/check-md-schema.py` | ✓ |
+| Plan | [schema/plan.md](schema/plan.md) 完成检查段 + `scripts/check-md-schema.py` + `scripts/check-traceability.py` | ✓ |
 | 实现基线(可选) | Tech Design `## 实现基线` 段 + `scripts/check-repo-baseline.sh` | ✓(有关联代码仓时) |
 
 **调用方式**:§6 表中标「**每次都跑**」的脚本全部返回 0(按层 / 按条件启用的脚本按其条件额外跑)→ 「可评审」。此后由 **agent** 调 `bash scripts/ssdctl.sh advance <artifact> --to <状态>` 推进状态(机器判据驱动 + 留痕);人类需要介入时**新增素材**或**在制品的 `## 复审 (Review)` 段写署名**,然后跑**同一条** `advance`,**不**手工改状态行。

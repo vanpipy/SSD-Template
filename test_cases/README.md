@@ -3,7 +3,7 @@
 > **Layer 4**(可选质量层)。黑盒测试用例,来源 = `PRD + Tech Design`,作为 Plan V 用例的参考比照对象。
 >
 > 本层**默认不启用**。仅当项目需要独立测试用例管理时创建 `test_cases/` 目录并按本指南产出文件。
-> 目录创建后,`scripts/check-md-schema.sh` 自动启用 Test Case 校验(元信息 7 必填行 + 状态枚举 + 用例总览 + 要点伴生)。
+> 目录创建后,`scripts/check-md-schema.py` 自动启用 Test Case 校验(元信息 7 必填行 + 状态枚举 + 用例总览 + 要点伴生)。
 
 ## 文件夹结构
 
@@ -84,5 +84,5 @@ test_cases/
 # 生成用例(PRD + TD 都需 Ready)
 bash scripts/sync-test-index.sh           # 再生成 _index.md
 bash scripts/sync-test-index.sh --check   # 仅校验不写文件
-bash scripts/check-md-schema.sh test_cases/  # 单独跑 Test Case 校验
+"$PY" scripts/check-md-schema.py test_cases/  # 单独跑 Test Case 校验
 ```

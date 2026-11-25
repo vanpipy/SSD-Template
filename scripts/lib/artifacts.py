@@ -258,7 +258,7 @@ def parse_basis(basis: str | None) -> tuple[list[str], list[str]]:
     合法项保留原样; 非法项是既没有 `criteria:`/`external:` 前缀、
     又不是 `criteria:` 组延续(省略前缀的裸 id)的片段。
 
-    判定规则与 `scripts/check-md-schema.sh` 的 `check_status_meta` 一致 ——
+    判定规则与 `scripts/check-md-schema.py` 的 `check_status_meta` 一致 ——
     判据文件、门禁脚本、CLI 三处必须说同一件事, 否则会出现「advance 写出来的
     依据, verify 自己判非法」这种自相矛盾。
     """

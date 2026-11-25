@@ -14,7 +14,7 @@ v4 收敛为 4 个子文件(README 综合描述 / ards 架构决策 / apis 接�
 
 本目录**保留**这些模板, 因为:
 
-- 存量 TD 目录仍是 v3 结构, `scripts/check-md-schema.sh` 的 **v3 分支保留**(校验存量实例, 不强制迁移);
+- 存量 TD 目录仍是 v3 结构, `scripts/check-md-schema.py` 的 **v3 分支保留**(校验存量实例, 不强制迁移);
 - fork 项目可能仍在 v3 上维护增量 TD, 需要一份可复制的模板。
 
 ## 子文件清单
@@ -47,7 +47,7 @@ v4 收敛为 4 个子文件(README 综合描述 / ards 架构决策 / apis 接�
 
 ## 与校验脚本的关系
 
-`scripts/check-md-schema.sh` 按**子文件存在性**判定代际, 与本目录位置无关:
+`scripts/check-md-schema.py` 按**子文件存在性**判定代际, 与本目录位置无关:
 
 - TD 目录内存在 `ards.md` **或** `apis.md` → 按 **v4** 校验(4 子文件必填);
 - 否则 → 按 **v3** 校验(6 子文件必填 + `interactions.md` 条件必填)。

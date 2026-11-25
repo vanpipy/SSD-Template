@@ -209,6 +209,36 @@ class ScriptsIndexTest(unittest.TestCase):
             "工具数分层基线变了 —— 请同步需求集里的基线数字",
         )
 
+    # --- 断言 6:被端口的门禁只能有 Python 实现(Phase B · R-5) ----------------
+    def test_ported_gates_have_no_shell_implementation(self) -> None:
+        """被端口的三条门禁不得再以 `.sh` 出现在门禁清单里,原件也不得留在仓内。
+
+        Phase B 把「命名 / 字段 / 追溯」三条门禁从 bash 端口为 Python:
+        同一条规则只留一份实现 —— 旧的 `.sh` 原件与新的 `.py` 并存
+        就是**两份实现**,谁生效取决于谁先跑,正是 Phase A 要消灭的东西。
+        """
+        ported = ("check-naming", "check-md-schema", "check-traceability")
+        offenders = [
+            script
+            for script, _args in commands.GATE_SCRIPTS
+            if any(script.endswith(f"{name}.sh") for name in ported)
+        ]
+        self.assertEqual(
+            offenders,
+            [],
+            "被端口的门禁不得再以 .sh 出现在 GATE_SCRIPTS 里:\n  " + "\n  ".join(offenders),
+        )
+        leftovers = [
+            f"scripts/{name}.sh"
+            for name in ported
+            if (REPO_ROOT / "scripts" / f"{name}.sh").exists()
+        ]
+        self.assertEqual(
+            leftovers,
+            [],
+            "端口后的 bash 原件必须删除(同一条规则只留一份实现):\n  " + "\n  ".join(leftovers),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -316,6 +316,7 @@ def a8_dispatch(cwd: Path) -> None:
         "| 类型 | 标识 | 说明 |\n|---|---|---|\n"
         "| 来源 PRD | `prd/2026-11-22/layer-checklist.md` | 上游 |\n",
         encoding="utf-8",
+        newline="\n",
     )
     rc, out = py_run(["scripts/ssdctl.py", "scan", "--json"], cwd)
     if rc not in (0, 1):
@@ -330,7 +331,7 @@ def a8_dispatch(cwd: Path) -> None:
     prd_path = cwd / "prd/2026-11-22/layer-checklist.md"
     text = prd_path.read_text(encoding="utf-8")
     text = re.sub(r"^> \*\*状态\*\*: .*$", "> **状态**: Draft", text, count=1, flags=re.M)
-    prd_path.write_text(text, encoding="utf-8")
+    prd_path.write_text(text, encoding="utf-8", newline="\n")
     rc, out = py_run(["scripts/ssdctl.py", "scan", "--json"], cwd)
     data = json.loads(out)
     arts = {a.get("path"): a for a in data.get("artifacts", [])}
@@ -343,7 +344,7 @@ def a8_dispatch(cwd: Path) -> None:
     blocked_ok = td.get("dispatchable") is False and bool(td.get("missing"))
     # 把上游 PRD 推到 Ready 再扫
     text = prd_path.read_text(encoding="utf-8")
-    prd_path.write_text(re.sub(r"^> \*\*状态\*\*: .*$", "> **状态**: Ready", text, count=1, flags=re.M), encoding="utf-8")
+    prd_path.write_text(re.sub(r"^> \*\*状态\*\*: .*$", "> **状态**: Ready", text, count=1, flags=re.M), encoding="utf-8", newline="\n")
     rc, out = py_run(["scripts/ssdctl.py", "scan", "--json"], cwd)
     data2 = json.loads(out)
     arts2 = {a.get("path"): a for a in data2.get("artifacts", [])}
@@ -372,10 +373,10 @@ def a12_artifact_gate_counterexamples(cwd: Path) -> None:
     ready = re.sub(r"^> \*\*评审结论\*\*:.*$", "> **评审结论**: 通过", ready, count=1, flags=re.M)
     ready = re.sub(r"^> \*\*评审方式\*\*:.*$", "> **评审方式**: 自动判据", ready, count=1, flags=re.M)
 
-    prd.write_text(ready, encoding="utf-8")
-    rc, out = sh("bash scripts/check-md-schema.sh prd/2026-11-22/layer-checklist.md", cwd)
+    prd.write_text(ready, encoding="utf-8", newline="\n")
+    rc, out = py_run(["scripts/check-md-schema.py", "prd/2026-11-22/layer-checklist.md"], cwd)
     if rc != 0:
-        prd.write_text(original, encoding="utf-8")
+        prd.write_text(original, encoding="utf-8", newline="\n")
         record("A-12", False, f"Ready 且四行齐全却 rc={rc}: {out.strip()[:200]}")
         return
 
@@ -386,8 +387,8 @@ def a12_artifact_gate_counterexamples(cwd: Path) -> None:
     ]
     misses: list[str] = []
     for name, pattern, keyword in cases:
-        prd.write_text(re.sub(pattern, "", ready, count=1, flags=re.M), encoding="utf-8")
-        rc, out = sh("bash scripts/check-md-schema.sh prd/2026-11-22/layer-checklist.md", cwd)
+        prd.write_text(re.sub(pattern, "", ready, count=1, flags=re.M), encoding="utf-8", newline="\n")
+        rc, out = py_run(["scripts/check-md-schema.py", "prd/2026-11-22/layer-checklist.md"], cwd)
         if rc == 1 and keyword in out:
             continue
         misses.append(f"{name}(rc={rc},输出含关键字={keyword in out})")
@@ -404,13 +405,13 @@ def a12_artifact_gate_counterexamples(cwd: Path) -> None:
          re.sub(r"^> \*\*评审方式\*\*: .*$", "> **评审方式**: 随便", ready, count=1, flags=re.M),
          "评审方式"),
     ]:
-        prd.write_text(text, encoding="utf-8")
-        rc, out = sh("bash scripts/check-md-schema.sh prd/2026-11-22/layer-checklist.md", cwd)
+        prd.write_text(text, encoding="utf-8", newline="\n")
+        rc, out = py_run(["scripts/check-md-schema.py", "prd/2026-11-22/layer-checklist.md"], cwd)
         if rc == 1 and keyword in out:
             continue
         misses.append(f"{name}(rc={rc},输出含关键字={keyword in out})")
 
-    prd.write_text(original, encoding="utf-8")
+    prd.write_text(original, encoding="utf-8", newline="\n")
     if misses:
         record("A-12", False, "制品级门禁未拦截: " + "; ".join(misses))
     else:
