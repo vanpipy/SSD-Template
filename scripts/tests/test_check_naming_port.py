@@ -1,9 +1,9 @@
 """check-naming 门禁的 Python 端口 vs bash 原件 —— 等价性测试。
 
-契约(需求集 `.swarm/requirements/phase-b-gate-python-port.md` R-1):
+契约(端口等价口径 R-1:归一化后逐字节相同 + 同退出码):
 
 * 等价判据 = **归一化后逐字节相同 + 同退出码**,stdout 与 stderr 都要比;
-* 归一化规则(对两侧同时施加,与 `.swarm/tools/diff_gate.py` 一致):
+* 归一化规则(对两侧同时施加,本文件下方给出同规则实现):
   - 门禁 basename:`check-*.sh` / `check-*.py` 一律 → `{GATE}`(其它门禁同理);
   - 调用前缀:`bash scripts/` 与 `python scripts/` → `{RUN} scripts/`;
   - 临时根路径:Windows 形态、JSON 转义后的 Windows 形态、POSIX 形态 → `{ROOT}`;
@@ -35,7 +35,7 @@ ORIGINAL = REPO / "scripts" / "check-naming.sh"
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "naming-corpus.json"
 BASH = r"C:\Program Files\Git\bin\bash.exe"
 
-#: 归一化用的身份串(与 `.swarm/tools/diff_gate.py` 的 IDENT 保持一致)。
+#: 归一化用的身份串(两侧同规则,与本文件下方的实现保持一致)。
 IDENT = [
     ("check-naming.sh", "{GATE}"),
     ("check-naming.py", "{GATE}"),

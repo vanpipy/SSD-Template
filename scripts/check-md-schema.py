@@ -4,7 +4,7 @@
 这是 MD Schema 门禁的**单进程 Python 端口**(取代原 bash 实现):
   * stdout 与原实现逐字节相同, 退出码相同(0=通过 1=存在违规 2=调用/环境错误);
   * 运行期**不 fork 任何子进程** —— 原件里的 awk / grep / sed / tr / cut 由等价的
-    Python 实现取代。逐条对应关系见 .swarm/reports/port-check-md-schema.md。
+    Python 实现取代。逐条对应关系见本仓 scripts/tests/fixtures/md-schema-corpus.json 的 rules 字段。
 
 权威规则(契约 §1):
   M3 状态枚举统一 4 值 Draft | Ready | Implemented | Deprecated

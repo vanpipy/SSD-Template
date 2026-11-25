@@ -3,7 +3,7 @@
 corpus = `fixtures/md-schema-corpus.json`:
   * golden **只能由 bash 原件采集** —— `--collect` 模式现场跑原件采集, 不从新实现反推;
   * `source_sha1` 记录 bash 原件的 SHA-1, 防止 golden 与原件漂移;
-  * `expect_stdout` 存的是**归一化**后的 golden(与 `.swarm/tools/diff_gate.py` 的
+  * `expect_stdout` 存的是**归一化**后的 golden(与本文件下方的归一化段
     `canon()` 同规则: 临时根路径 → `{ROOT}`、调用前缀 → `{RUN} scripts/`、
     门禁身份名 → `{GATE-md}`); 归一化之外任何字节不同即失败。
 
@@ -65,7 +65,7 @@ def _bash() -> str | None:
 BASH = _bash()
 
 
-# --- 归一化(与 .swarm/tools/diff_gate.py 的 canon() 同规则) ---
+# --- 归一化(与仓内差分口径的 canon() 同规则) ---
 
 def canon(data: bytes, root: Path, posix_root: str) -> bytes:
     text = data.decode("utf-8", "replace")

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """check-traceability 门禁的 Python 端口 vs bash 原件 —— 等价性测试。
 
-契约：`.swarm/requirements/phase-b-gate-python-port.md`
+契约：端口等价口径 R-1(归一化后逐字节相同 + 同退出码)
 
 R-1(等价判据)：同一 corpus、同一 `--root` 下，端口与 bash 原件的
 stdout / stderr 归一化后逐字节相同、退出码相同。归一化三类：

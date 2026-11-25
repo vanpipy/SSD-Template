@@ -44,7 +44,7 @@ ROOT_DOCS = ("README.md", "_index.md")
 
 #: `--help` 的正文 —— 与 bash 原件**归一化后逐字节相同**(R-1:身份串归一为 {GATE} / {RUN})。
 #: 按 Phase B1 的 R-1,新实现一律用新名:`python scripts/` + `check-naming.py`;
-#: 归一化规则(basename → {GATE}、调用前缀 → {RUN} scripts/)由 .swarm/tools/diff_gate.py 对两侧同时施加。
+#: 归一化规则(basename → {GATE}、调用前缀 → {RUN} scripts/)由仓内差分口径对两侧同时施加。
 USAGE = (
     "用法: python scripts/check-naming.py [--json] [--root DIR] [TARGET]\n"
     "\n"

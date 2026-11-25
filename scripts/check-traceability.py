@@ -8,7 +8,7 @@
   - 逐字节相同的 stdout(含 ANSI 颜色、JSON 单行、错误文案与顺序)
 
 移植说明(语义对照、awk↔re 差异、路径呈现)见
-`.swarm/reports/port-check-traceability.md`。
+`scripts/tests/fixtures/traceability-corpus.json` 的 rules 字段。
 
 与原件的差别仅限实现方式:
   - 原件用 `$(...)` 命令替换 + 每行 grep/awk 子进程;本实现全程零 fork
@@ -37,7 +37,7 @@ DEFAULT_ROOT = os.path.dirname(SCRIPT_DIR)
 # --- 端口自指口径 ---
 # 端口一律用新身份自称: JSON 的 "script" 字段、--help 用法行、
 # --stage 拒绝前缀都用 .py 口径, 不再指向集成阶段会被删除的 .sh。
-# 差分器对两侧同时归一化 basename(见 .swarm/tools/diff_gate.py 的 IDENT),
+# 差分器对两侧同时归一化 basename(见本仓差分口径的 IDENT),
 # 因此身份切换不影响「归一化后逐字节相同」的判定。
 
 
