@@ -253,5 +253,26 @@ class SkillLayoutTests(unittest.TestCase):
         )
 
 
+    # --- 断言 7:安装器只做兜底, 不得把仓内路径当安装目标 -----------------
+    def test_installer_default_target_is_user_level(self) -> None:
+        installer = SKILLS_DIR / "install.sh"
+        self.assertTrue(installer.is_file(), f"缺少安装器: {installer}")
+        text = read_text(installer)
+        match = re.search(r'^\s*DEFAULT_TARGET="([^"]*)"', text, re.MULTILINE)
+        self.assertIsNotNone(match, "install.sh 里找不到 DEFAULT_TARGET 赋值")
+        target = match.group(1)
+        self.assertTrue(
+            "$HOME" in target or "~" in target,
+            f"安装器默认目标必须是**用户级**路径(当前: {target!r})。"
+            "用户级安装 = 全局生效(所有仓可见);"
+            "仓内 skill 目录由宿主按项目根自动发现, 不是安装目标",
+        )
+        self.assertIn(
+            "--target",
+            text,
+            "install.sh 必须支持 `--target` 覆盖安装目标(不同宿主的 skills 根不同)",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

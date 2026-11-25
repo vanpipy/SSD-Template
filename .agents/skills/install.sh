@@ -2,6 +2,16 @@
 #
 # install.sh: 把本目录下的 skill 注册到宿主的 skills 根目录。
 #
+# 定位(2026-11-26 迁移后):
+#   首选路径 = 零安装。支持 skill 目录的宿主(DSH 等)按**会话 cwd 所在项目根**
+#   (最近含 .git 的祖先)自动发现 `<root>/.agents/skills/<name>/SKILL.md`,
+#   仓内目录即真源, 本脚本无需参与。
+#   本脚本只服务**不支持自动发现**的宿主: 把 skill 链接/复制到该宿主的**用户级**
+#   skills 根。作用域提示: 用户级安装 = **全局生效(所有仓都可见)**, 与「按仓定向」
+#   相反; 按仓隔离的场景用仓内目录, 不做全局安装。
+#   默认目标 `~/.codex/skills` 是 Codex 的用户级约定(本机未核实该实例是否读它);
+#   其它宿主请显式 `--target <该宿主的 skills 根>`。
+#
 # 用法:
 #   bash .agents/skills/install.sh                  # 注册到 ~/.codex/skills/
 #   bash .agents/skills/install.sh --target <dir>   # 注册到指定目录

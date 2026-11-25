@@ -343,7 +343,10 @@ git -C <仓库本地路径> rev-parse --short HEAD
 skill 定义在 `.agents/skills/<name>/SKILL.md`,front matter 只有 `name` 与 `description`。
 **调用形态取决于宿主**:支持 skill 目录的宿主(DSH 等)按**会话工作目录所在项目根**(最近含 `.git` 的祖先)自动发现 `.agents/skills/<name>/SKILL.md` 并注册;不支持该约定的宿主里,agent 直接读该 SKILL.md 并按正文执行;宿主支持 slash 命令时可写成 `/to-prd`;本仓自主流水线里由 `WORKFLOW.md` 按 `ssdctl scan` 的调度结果驱动对应 skill。
 > 目录名用 `.agents/skills/`(宿主通用 skill 约定)而不是私有目录名:发现与否由宿主决定,约定由仓内决定。
-> 机器断言:`scripts/tests/test_skills_layout.py`(每个 skill 目录有 SKILL.md、front matter `name` == 目录名且唯一、`AGENTS.md` §3.7 清单 == 磁盘目录、旧目录名零残留)。
+
+> **发现优先,安装兜底**:支持该约定的宿主**零安装** —— 仓内 `.agents/skills/` 就是真源。`.agents/skills/install.sh` 只服务**不支持自动发现**的宿主:它把 skill 注册到**用户主目录**(默认 `~/.codex/skills`,Codex 用户级约定;其它宿主用 `--target <该宿主的 skills 根>`)。**用户级安装 = 全局生效(所有仓都看得到)**,与「按仓定向」相反 ⇒ 按仓隔离的场景用仓内目录,不做全局安装。
+
+> 机器断言:`scripts/tests/test_skills_layout.py`(每个 skill 目录有 SKILL.md、front matter `name` == 目录名且唯一、`AGENTS.md` §3.7 清单 == 磁盘目录、旧目录名零残留、安装器默认目标必须是用户级路径)。
 
 ```bash
 # Step 1: 原始素材 → PRD
