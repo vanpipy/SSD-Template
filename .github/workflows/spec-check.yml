@@ -13,8 +13,8 @@
 #   3. 每个门禁都断言「退出码为 0 且输出非空」—— 防止脚本静默空转被当成绿灯。
 #      (run-all-gates.sh 把「exit 0 且 stdout/stderr 全空」标成 WARN;本步骤把该 WARN 升级为错误。)
 #
-# 关于 sync-prd.sh:
-#   台账里存在「待分析 / 待抓取 / 孤儿」行时, sync-prd.sh 的退出码是 1, 那是**工作状态**
+# 关于 sync-prd.py:
+#   台账里存在「待分析 / 待抓取 / 孤儿」行时, sync-prd.py 的退出码是 1, 那是**工作状态**
 #   (material/README.md 的既定语义), 不是规格违规 —— 若直接按退出码判红, 台账一启用 CI 就会常年红。
 #   因此本步骤采用「写模式(幂等) + 漂移比对」: 只对「统计块/台账与实际制品不一致」判红。
 #   `git status --porcelain` 同时覆盖已跟踪文件的改动**与**新建的未跟踪台账文件
@@ -78,15 +78,16 @@ jobs:
       - name: PRD 台账登记 + 统计块核对(写模式幂等 + 漂移比对)
         run: |
           set -uo pipefail
+          PY="$(bash scripts/ssdctl.sh --python)"
           rc=0
-          out="$(bash scripts/sync-prd.sh 2>&1)" || rc=$?
+          out="$("$PY" scripts/sync-prd.py 2>&1)" || rc=$?
           printf '%s\n' "$out"
           # rc=1 = 台账存在待办行(工作状态, 不是规格违规, 见 material/README.md)
           [ "$rc" -le 1 ] || exit "$rc"
-          [ -n "$out" ] || { echo "::error::sync-prd.sh 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
+          [ -n "$out" ] || { echo "::error::sync-prd.py 退出码为 0 但无输出 — 防空转断言失败"; exit 1; }
           drift="$(git status --porcelain -- README.md material/)"
           if [ -n "$drift" ]; then
-            echo "::error::统计块/台账与提交态不一致 — 请在本地运行 \`bash scripts/sync-prd.sh\` 并把结果一起提交:"
+            echo "::error::统计块/台账与提交态不一致 — 请在本地运行 \"\$PY\" scripts/sync-prd.py(PY=\`bash scripts/ssdctl.sh --python\`)并把结果一起提交:"
             printf '%s\n' "$drift"
             exit 1
           fi

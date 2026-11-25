@@ -66,14 +66,14 @@ GATE_SCRIPTS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("scripts/check-naming.py", ()),
     ("scripts/check-md-schema.py", ()),
     ("scripts/check-traceability.py", ()),
-    ("scripts/check-repo-baseline.sh", ()),
+    ("scripts/check-repo-baseline.py", ()),
     ("scripts/check-doc-links.py", ()),
-    ("scripts/sync-prd.sh", ("--check",)),
-    ("scripts/sync-test-index.sh", ("--check",)),
+    ("scripts/sync-prd.py", ("--check",)),
+    ("scripts/sync-test-index.py", ("--check",)),
 )
 
-# `sync-*.sh --check` 的退出码 1 表示「台账有待办行」,属工作状态而非违规(与 CI 一致)
-SOFT_FAIL_CODES = {"scripts/sync-prd.sh": 1, "scripts/sync-test-index.sh": 1}
+# `sync-*.py --check` 的退出码 1 表示「台账有待办行」,属工作状态而非违规(与 CI 一致)
+SOFT_FAIL_CODES = {"scripts/sync-prd.py": 1, "scripts/sync-test-index.py": 1}
 
 REVIEW_METHODS = ("自动判据", "人工介入", "外部事实")
 REVIEW_CONCLUSIONS = ("通过", "有条件通过", "需返工")

@@ -383,7 +383,7 @@ bash <repo>/.agents/skills/install.sh --unregister        # 注销
 - <repo>/AGENTS.md §1.7（证据锚点约定）
 - <repo>/scripts/ssdctl.py（判据与门禁唯一入口）
 - <repo>/schema/criteria.json（判据机器权威）
-- <repo>/scripts/check-repo-baseline.sh（TD 实现基线段核对；由仓内门禁统一触发，skill 不单独手拼）
+- <repo>/scripts/check-repo-baseline.py（TD 实现基线段核对；由仓内门禁统一触发，skill 不单独手拼）
 - <repo>/.agents/skills/validate-spec/skills-integrity.sh（skill 目录自检）
 - <repo>/AGENTS.md §3.4（门禁清单）
 - <repo>/WORKFLOW.md（脚本使用方式）

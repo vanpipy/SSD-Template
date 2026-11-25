@@ -1,7 +1,7 @@
 ---
 name: sync-prd
 description: >-
-  可选层 · PRD 台账同步 (v2.0)。L1 跑 scripts/sync-prd.sh 做机械登记与统计 (确定性、幂等、无 LLM、无网络),
+  可选层 · PRD 台账同步 (v2.0)。L1 跑 scripts/sync-prd.py 做机械登记与统计 (确定性、幂等、无 LLM、无网络),
   L2 由 agent 读素材充实「待分析」行, L3 把「待抓取」行委派给项目自定义的外部来源 skill。
   Use when 项目启用了 material/ 素材区 + 批次台账, 需要巡检台账完整性、充实骨架行、或处理外部来源待抓取行。
   默认不启用; 台账状态列是派生索引 (由 ssdctl scan 从制品状态块生成), 状态权威在制品本身, 判定权归判据;
@@ -22,7 +22,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | Phase | agent 做什么 |
 |-------|--------------|
-| `scanning` | 跑 `scripts/sync-prd.sh`（L1）：机械登记 + 刷新 README 统计块 + 输出哨兵清单 |
+| `scanning` | 跑 `scripts/sync-prd.py`（L1）：机械登记 + 刷新 README 统计块 + 输出哨兵清单 |
 | `analyzing` | 读素材原文, 充实「待分析」行的 `优先级` / `验收要点` / `提出人` |
 | `delegating` | 把「待抓取」行委派给**项目自定义的外部来源 skill**, 回填 `创建时间` |
 | `reporting` | 输出统计与待办报告 |
@@ -49,7 +49,7 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 | 依赖 | 路径 | 用途 |
 |------|------|------|
-| L1 脚本 | `scripts/sync-prd.sh` | 机械登记 + 统计（幂等, 退出码表达待办）; 台账状态列是**派生索引**, 由 `bash scripts/ssdctl.sh scan` 生成 |
+| L1 脚本 | `scripts/sync-prd.py` | 机械登记 + 统计（幂等, 退出码表达待办）; 台账状态列是**派生索引**, 由 `bash scripts/ssdctl.sh scan` 生成 |
 | 台账模板 | `schema/prd-ledger.md` | 台账 11 列定义 + 哨兵定义 |
 | 素材区 | `material/{YYYY-MM-DD}/` | Layer 0 只读素材来源 |
 | 关联矩阵 | 根 `README.md`「PRD关联矩阵」章节 | 关系边提议的比对基准 |
@@ -113,7 +113,8 @@ agent 按下列 phase 顺序推进。每个 phase 开始时在汇报里写明 `p
 
 ```bash
 # 在仓根目录执行
-LC_ALL=C.UTF-8 bash scripts/sync-prd.sh
+PY="$(bash scripts/ssdctl.sh --python)"
+LC_ALL=C.UTF-8 "$PY" scripts/sync-prd.py
 ```
 
 | 项 | 约定 |
@@ -126,7 +127,7 @@ LC_ALL=C.UTF-8 bash scripts/sync-prd.sh
 | 退出码 1 | 存在待分析 / 待抓取 / 孤儿行 |
 | 退出码 2 | 环境错误（无法正常工作）|
 
-> **也可写成 `bash scripts/sync-prd.sh`**（与 `material/README.md` 的快速命令一致）。
+> **也可写成 `"$PY" scripts/sync-prd.py`**（与 `material/README.md` 的快速命令一致）。
 
 收集脚本输出里的哨兵清单, 作为后续 phase 的输入。
 
@@ -184,7 +185,7 @@ LC_ALL=C.UTF-8 bash scripts/sync-prd.sh
 | ❌ Don't | ✅ Do |
 |----------|-------|
 | 跳过 L1 直接手工补行 | 先跑脚本, 机械部分交给确定性代码 |
-| 跳过脚本手工改 README 统计块 | 统计块由 `scripts/sync-prd.sh` 幂等再生 |
+| 跳过脚本手工改 README 统计块 | 统计块由 `scripts/sync-prd.py` 幂等再生 |
 | 直写关系边进 README | 先提议, 确认后写入 |
 | 复抓无变化也回填更新时间 | 只有内容变化才回填 |
 | 把待抓取行的空创建时间手工填上 | `创建时间` 只由抓取成功事件回填 |
@@ -208,7 +209,7 @@ LC_ALL=C.UTF-8 bash scripts/sync-prd.sh
 
 ## Verification
 
-- `bash scripts/sync-prd.sh` 退出码为 0, 或退出码 1 且报告中已列出全部待办行
+- `"$PY" scripts/sync-prd.py` 退出码为 0, 或退出码 1 且报告中已列出全部待办行
 - 台账表格列数 = 11, 列名与 `schema/prd-ledger.md` 一致
 - 所有 `ID` 匹配 4 个前缀之一: `PRD-` / `TECH-` / `TEST-` / `PLAN-`
 - 所有 `来源` 值 ∈ {`local`, `external`, `internal`}
@@ -268,6 +269,6 @@ bash <repo>/.agents/skills/install.sh --unregister        # 注销
 - <repo>/schema/prd-ledger.md（台账 11 列 + 哨兵定义 + ID 前缀）
 - <repo>/schema/prd-matrix.md（8 类关系枚举, 关系边提议的取值范围）
 - <repo>/material/README.md（素材区与台账层说明）
-- <repo>/scripts/sync-prd.sh（L1 机械登记 + 统计）
+- <repo>/scripts/sync-prd.py（L1 机械登记 + 统计）
 - <repo>/README.md「PRD关联矩阵」（关系边实例）
 - <repo>/AGENTS.md §3.7（skill 清单与调用入口）

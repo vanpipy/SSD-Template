@@ -1,0 +1,749 @@
+{
+  "cases": [
+    {
+      "args": [],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "✗ 本仓没有任何规格产物,门禁无从校验\n✗ 实现基线校验: 1 项违规, 0 项警告, 共 0 行\n",
+      "files": {},
+      "git": null,
+      "name": "empty-repo",
+      "rules": [
+        "no-artifact-error"
+      ]
+    },
+    {
+      "args": [],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "✗ tech_design/2026-11-22-feature-a/README.md — 缺少 `## 实现基线` 段 (AGENTS.md §1.6 门禁)\n✗ 实现基线校验: 1 项违规, 0 项警告, 共 0 行\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design\n\n## 场景映射\n\n- 场景一\n"
+      },
+      "git": null,
+      "name": "td-missing-baseline-section",
+      "rules": [
+        "missing-section-error"
+      ]
+    },
+    {
+      "args": [],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "· tech_design/2026-11-22-feature-a/README.md — 实现基线不适用(已声明), 跳过\n✓ 实现基线校验: 0 行全部通过 (0 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n> 不适用: 本项目无关联代码仓\n"
+      },
+      "git": null,
+      "name": "td-baseline-not-applicable",
+      "rules": [
+        "not-applicable-note"
+      ]
+    },
+    {
+      "args": [],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "✗ tech_design/2026-11-22-feature-a/README.md — `## 实现基线` 段既无表格行也无「不适用」声明\n✗ 实现基线校验: 1 项违规, 0 项警告, 共 0 行\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n本项目暂时没有实现基线。\n\n"
+      },
+      "git": null,
+      "name": "td-baseline-no-table-no-declaration",
+      "rules": [
+        "no-table-no-declaration-error"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "✗ tech_design/2026-11-22-feature-a/README.md — `B` 缺分支或 SHA\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✗ 实现基线校验: 1 项违规, 0 项警告, 共 1 行\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main |  | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": null,
+      "name": "row-missing-sha",
+      "rules": [
+        "missing-branch-or-sha-error"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "✗ tech_design/2026-11-22-feature-a/README.md — `B` 缺分支或 SHA\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✗ 实现基线校验: 1 项违规, 0 项警告, 共 1 行\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B |  | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": null,
+      "name": "row-missing-branch",
+      "rules": [
+        "missing-branch-or-sha-error"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "✗ tech_design/2026-11-22-feature-a/README.md — `B` 缺「核对项」\n⚠ tech_design/2026-11-22-feature-a/README.md — 仓库 `B` 本地未检出 ({ROOT}/localrepo), 跳过存在性校验\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✗ 实现基线校验: 1 项违规, 1 项警告, 共 1 行\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-11-22 |  | ✓ |\n"
+      },
+      "git": null,
+      "name": "row-missing-items",
+      "rules": [
+        "missing-items-error"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "✗ tech_design/2026-11-22-feature-a/README.md — `B` 核对日期缺失或格式非 YYYY-MM-DD\n⚠ tech_design/2026-11-22-feature-a/README.md — 仓库 `B` 本地未检出 ({ROOT}/localrepo), 跳过存在性校验\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✗ 实现基线校验: 1 项违规, 1 项警告, 共 1 行\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 上上周 | 核对 service 层 | ✓ |\n"
+      },
+      "git": null,
+      "name": "row-bad-date",
+      "rules": [
+        "bad-date-error"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "✗ tech_design/2026-11-22-feature-a/README.md — `B` 状态为 `待补`, 基线未完结\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✗ 实现基线校验: 1 项违规, 0 项警告, 共 1 行\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | 待补 |\n"
+      },
+      "git": null,
+      "name": "row-incomplete-status",
+      "rules": [
+        "incomplete-status-error"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✓ 实现基线校验: 1 行全部通过 (0 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ○ |\n"
+      },
+      "git": null,
+      "name": "row-status-circle",
+      "rules": [
+        "circle-status-skip"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "⚠ tech_design/2026-11-22-feature-a/README.md — 仓库标识 `Z` 未在 AGENTS.md §1.1 登记, 跳过存在性校验\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✓ 实现基线校验: 1 行全部通过 (1 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| Z | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": null,
+      "name": "row-unregistered-repo",
+      "rules": [
+        "unregistered-repo-warning"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "⚠ tech_design/2026-11-22-feature-a/README.md — 仓库 `B` 本地未检出 ({ROOT}/missing-repo), 跳过存在性校验\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✓ 实现基线校验: 1 行全部通过 (1 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | missing-repo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": null,
+      "name": "row-repo-not-checked-out",
+      "rules": [
+        "not-checked-out-warning"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "✗ tech_design/2026-11-22-feature-a/README.md — `B@deadbeefdeadbeef` 在本地不存在\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✗ 实现基线校验: 1 项违规, 0 项警告, 共 1 行\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | deadbeefdeadbeef | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": {
+        "branch": "main",
+        "commits": [
+          {
+            "files": {
+              "a.txt": "a\n"
+            },
+            "message": "c1"
+          }
+        ],
+        "repo_dir": "localrepo"
+      },
+      "name": "row-sha-not-found",
+      "rules": [
+        "sha-not-found-error"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "⚠ tech_design/2026-11-22-feature-a/README.md — `B` 基线 `{SHA0}` 落后于 `{BRANCH}` 头 `{HEAD_SHA7}`(有意钉住请忽略)\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✓ 实现基线校验: 1 行全部通过 (1 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {SHA0} | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": {
+        "branch": "main",
+        "commits": [
+          {
+            "files": {
+              "a.txt": "a\n"
+            },
+            "message": "c1"
+          },
+          {
+            "files": {
+              "b.txt": "b\n"
+            },
+            "message": "c2"
+          }
+        ],
+        "repo_dir": "localrepo"
+      },
+      "name": "row-behind-branch-head",
+      "rules": [
+        "behind-branch-head-warning"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "7"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "⚠ tech_design/2026-11-22-feature-a/README.md — `B` 基线已 {AGE} 天未复核(阈值 7 天)\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✓ 实现基线校验: 1 行全部通过 (1 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2020-01-01 | 核对 service 层 | ✓ |\n"
+      },
+      "git": {
+        "branch": "main",
+        "commits": [
+          {
+            "files": {
+              "a.txt": "a\n"
+            },
+            "message": "c1"
+          }
+        ],
+        "repo_dir": "localrepo"
+      },
+      "name": "row-too-old",
+      "rules": [
+        "too-old-warning"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✓ 实现基线校验: 1 行全部通过 (0 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": {
+        "branch": "main",
+        "commits": [
+          {
+            "files": {
+              "a.txt": "a\n"
+            },
+            "message": "c1"
+          }
+        ],
+        "repo_dir": "localrepo"
+      },
+      "name": "row-valid-pass",
+      "rules": [
+        "baseline-ok"
+      ]
+    },
+    {
+      "args": [],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✓ 实现基线校验: 1 行全部通过 (0 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-02-30 | 核对 service 层 | ✓ |\n"
+      },
+      "git": {
+        "branch": "main",
+        "commits": [
+          {
+            "files": {
+              "a.txt": "a\n"
+            },
+            "message": "c1"
+          }
+        ],
+        "repo_dir": "localrepo"
+      },
+      "name": "row-impossible-date",
+      "rules": [
+        "posix-text-skips-expiry-check"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "⚠ tech_design/2026-11-22-feature-a/README.md — AGENTS.md §1.1 仓库清单不可解析, 跳过 `B` 存在性校验\n✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✓ 实现基线校验: 1 行全部通过 (1 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n本节没有表格, 只有文字说明。\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": null,
+      "name": "agenda-without-repo-map",
+      "rules": [
+        "unparsable-map-warning"
+      ]
+    },
+    {
+      "args": [
+        "tech_design/2026-11-22-feature-a/README.md",
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n✓ 实现基线校验: 1 行全部通过 (0 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": {
+        "branch": "main",
+        "commits": [
+          {
+            "files": {
+              "a.txt": "a\n"
+            },
+            "message": "c1"
+          }
+        ],
+        "repo_dir": "localrepo"
+      },
+      "name": "target-readme-file",
+      "rules": [
+        "baseline-ok"
+      ]
+    },
+    {
+      "args": [
+        "docs"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "· 未找到 tech_design/ 或 TD 目录, 跳过(无可校验的基线段)\n✓ 实现基线校验: 0 行全部通过 (0 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "docs/notes.txt": "no readme here\n"
+      },
+      "git": null,
+      "name": "target-dir-without-td",
+      "rules": [
+        "target-without-td-note"
+      ]
+    },
+    {
+      "args": [],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "· tech_design 层没有 Tech Design 制品, 跳过实现基线校验(该层无制品)\n✓ 实现基线校验: 0 行全部通过 (0 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "prd/2026-11-22/feature-a.md": "# PRD\n"
+      },
+      "git": null,
+      "name": "prd-only-no-td",
+      "rules": [
+        "no-td-artifact-note"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "✓ tech_design/2026-11-22-feature-a/README.md — 实现基线 1 行\n⚠ tech_design/2026-11-23-feature-b/README.md — 仓库标识 `Z` 未在 AGENTS.md §1.1 登记, 跳过存在性校验\n✓ tech_design/2026-11-23-feature-b/README.md — 实现基线 1 行\n✓ 实现基线校验: 2 行全部通过 (1 项警告)\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ✓ |\n",
+        "tech_design/2026-11-23-feature-b/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| Z | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": {
+        "branch": "main",
+        "commits": [
+          {
+            "files": {
+              "a.txt": "a\n"
+            },
+            "message": "c1"
+          }
+        ],
+        "repo_dir": "localrepo"
+      },
+      "name": "two-td-dirs",
+      "rules": [
+        "baseline-ok",
+        "unregistered-repo-warning"
+      ]
+    },
+    {
+      "args": [
+        "--stage"
+      ],
+      "expect_exit": 2,
+      "expect_stderr": "scripts/{GATE-base}: 本门禁与阶段无关;--stage 只对 scripts/check-md-schema.py 有效\n",
+      "expect_stdout": "",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "stage-flag",
+      "rules": [
+        "stage-rejected"
+      ]
+    },
+    {
+      "args": [
+        "--stage=ready"
+      ],
+      "expect_exit": 2,
+      "expect_stderr": "scripts/{GATE-base}: 本门禁与阶段无关;--stage 只对 scripts/check-md-schema.py 有效\n",
+      "expect_stdout": "",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "stage-flag-equals",
+      "rules": [
+        "stage-rejected"
+      ]
+    },
+    {
+      "args": [
+        "--nope"
+      ],
+      "expect_exit": 2,
+      "expect_stderr": "✗ 未知参数: --nope\n",
+      "expect_stdout": "",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "unknown-arg",
+      "rules": [
+        "unknown-arg-rejected"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days",
+        "abc"
+      ],
+      "expect_exit": 2,
+      "expect_stderr": "✗ --max-age-days 必须是整数: abc\n",
+      "expect_stdout": "",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "max-age-not-integer",
+      "rules": [
+        "max-age-not-integer-rejected"
+      ]
+    },
+    {
+      "args": [
+        "--max-age-days"
+      ],
+      "expect_exit": 2,
+      "expect_stderr": "✗ --max-age-days 需要数字参数\n",
+      "expect_stdout": "",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "max-age-missing-value",
+      "rules": [
+        "max-age-missing-value-rejected"
+      ]
+    },
+    {
+      "args": [
+        "--root",
+        "no-such-dir"
+      ],
+      "expect_exit": 2,
+      "expect_stderr": "✗ --root 目录不存在: no-such-dir\n",
+      "expect_stdout": "",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "root-missing-dir",
+      "rules": [
+        "root-missing-rejected"
+      ]
+    },
+    {
+      "args": [
+        "--root"
+      ],
+      "expect_exit": 2,
+      "expect_stderr": "✗ --root 需要目录参数\n",
+      "expect_stdout": "",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "root-missing-value",
+      "rules": [
+        "root-missing-value-rejected"
+      ]
+    },
+    {
+      "args": [
+        "no-such-target"
+      ],
+      "expect_exit": 2,
+      "expect_stderr": "✗ TARGET 不存在: {ROOT}/no-such-target\n",
+      "expect_stdout": "",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "target-missing",
+      "rules": [
+        "target-missing-rejected"
+      ]
+    },
+    {
+      "args": [
+        "one",
+        "two"
+      ],
+      "expect_exit": 2,
+      "expect_stderr": "✗ 只能指定一个 TARGET\n",
+      "expect_stdout": "",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "two-targets",
+      "rules": [
+        "two-targets-rejected"
+      ]
+    },
+    {
+      "args": [
+        "--help"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "用法: scripts/{GATE-base} [--json] [--root DIR] [--max-age-days N] [TARGET]\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n"
+      },
+      "git": null,
+      "name": "help",
+      "rules": [
+        "help-usage"
+      ]
+    },
+    {
+      "args": [
+        "--json",
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 1,
+      "expect_stderr": "",
+      "expect_stdout": "{\"script\":\"{GATE-base}\",\"root\":\"{ROOT}\",\"status\":\"violation\",\"exit_code\":1,\"error_count\":1,\"warning_count\":1,\"checked\":1,\"errors\":[\"tech_design/2026-11-22-feature-a/README.md — `B` 核对日期缺失或格式非 YYYY-MM-DD\"],\"warnings\":[\"tech_design/2026-11-22-feature-a/README.md — 仓库 `B` 本地未检出 ({ROOT}/localrepo), 跳过存在性校验\"],\"notes\":[]}\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 上上周 | 核对 service 层 | ✓ |\n"
+      },
+      "git": null,
+      "name": "json-violation",
+      "rules": [
+        "json-payload"
+      ]
+    },
+    {
+      "args": [
+        "--json",
+        "--max-age-days",
+        "999999"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "{\"script\":\"{GATE-base}\",\"root\":\"{ROOT}\",\"status\":\"pass\",\"exit_code\":0,\"error_count\":0,\"warning_count\":0,\"checked\":1,\"errors\":[],\"warnings\":[],\"notes\":[]}\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-11-22 | 核对 service 层 | ✓ |\n"
+      },
+      "git": {
+        "branch": "main",
+        "commits": [
+          {
+            "files": {
+              "a.txt": "a\n"
+            },
+            "message": "c1"
+          }
+        ],
+        "repo_dir": "localrepo"
+      },
+      "name": "json-ok",
+      "rules": [
+        "json-payload"
+      ]
+    },
+    {
+      "args": [
+        "--json"
+      ],
+      "expect_exit": 0,
+      "expect_stderr": "",
+      "expect_stdout": "{\"script\":\"{GATE-base}\",\"root\":\"{ROOT}\",\"status\":\"pass\",\"exit_code\":0,\"error_count\":0,\"warning_count\":1,\"checked\":1,\"errors\":[],\"warnings\":[\"tech_design/2026-11-22-feature-a/README.md — `B` 基线已 {AGE} 天未复核(阈值 7 天)\"],\"notes\":[]}\n",
+      "files": {
+        "AGENTS.md": "# 契约\n\n## 1.1 仓库清单\n\n| 标识 | 仓库 | Git URL | 本地路径 | 角色 | 主要语言 | 说明 |\n|------|------|---------|----------|------|----------|------|\n| **A** | (本仓库) | (本仓 remote) | `./` | Wiki / Spec | Markdown | 规格真源 |\n| **B** | backend | https://example.invalid/backend.git | localrepo | Code workspace | Java | 外部代码仓 |\n\n## 1.2 跨仓库引用约定\n",
+        "tech_design/2026-11-22-feature-a/README.md": "# Tech Design: feature-a\n\n## 场景映射\n\n- 场景一\n\n## 实现基线\n\n| 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |\n|------|------|-----|----------|--------|------|\n| B | main | {HEAD_SHA} | 2026-02-30 | 核对 service 层 | ✓ |\n"
+      },
+      "git": {
+        "branch": "main",
+        "commits": [
+          {
+            "files": {
+              "a.txt": "a\n"
+            },
+            "message": "c1"
+          }
+        ],
+        "repo_dir": "localrepo"
+      },
+      "name": "json-impossible-date",
+      "rules": [
+        "json-payload",
+        "posix-json-runs-expiry-check",
+        "too-old-warning"
+      ]
+    }
+  ],
+  "collected_by": "collect_baseline.py (bash original collected the golden)",
+  "gate": "scripts/check-repo-baseline.py",
+  "normalization": [
+    "temporary root (windows / json-escaped windows / posix) -> {ROOT}",
+    "bash scripts/ | python scripts/ -> {RUN} scripts/",
+    "check-repo-baseline.sh | check-repo-baseline.py -> {GATE-base}",
+    "baseline age digits -> {AGE}"
+  ],
+  "root_placeholder": "{ROOT}",
+  "rules": {
+    "bad-date-error": "核对日期缺失或格式非 YYYY-MM-DD",
+    "baseline-ok": "实现基线 1 行",
+    "behind-branch-head-warning": "落后于",
+    "circle-status-skip": "实现基线 1 行",
+    "help-usage": "[--json] [--root DIR] [--max-age-days N] [TARGET]",
+    "incomplete-status-error": "基线未完结",
+    "json-payload": "\"script\"",
+    "max-age-missing-value-rejected": "--max-age-days 需要数字参数",
+    "max-age-not-integer-rejected": "--max-age-days 必须是整数",
+    "missing-branch-or-sha-error": "缺分支或 SHA",
+    "missing-items-error": "缺「核对项」",
+    "missing-section-error": "缺少 `## 实现基线` 段 (AGENTS.md §1.6 门禁)",
+    "no-artifact-error": "本仓没有任何规格产物,门禁无从校验",
+    "no-table-no-declaration-error": "`## 实现基线` 段既无表格行也无「不适用」声明",
+    "no-td-artifact-note": "跳过实现基线校验(该层无制品)",
+    "not-applicable-note": "实现基线不适用(已声明), 跳过",
+    "not-checked-out-warning": "本地未检出",
+    "posix-json-runs-expiry-check": "基线已",
+    "posix-text-skips-expiry-check": "实现基线校验: 1 行全部通过 (0 项警告)",
+    "root-missing-rejected": "--root 目录不存在",
+    "root-missing-value-rejected": "--root 需要目录参数",
+    "sha-not-found-error": "在本地不存在",
+    "stage-rejected": "本门禁与阶段无关",
+    "target-missing-rejected": "TARGET 不存在",
+    "target-without-td-note": "跳过(无可校验的基线段)",
+    "too-old-warning": "天未复核",
+    "two-targets-rejected": "只能指定一个 TARGET",
+    "unknown-arg-rejected": "未知参数",
+    "unparsable-map-warning": "仓库清单不可解析",
+    "unregistered-repo-warning": "未在 AGENTS.md §1.1 登记, 跳过存在性校验"
+  },
+  "source_gate": "scripts/check-repo-baseline.sh",
+  "source_sha1": "7cfefbb47b2c52fa11544219713e5eca3338f172"
+}

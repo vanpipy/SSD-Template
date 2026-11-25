@@ -6,7 +6,7 @@
 
 ```
 test_cases/
-├── _index.md                     ← 全局索引（scripts/sync-test-index.sh 自动生成，勿手改）
+├── _index.md                     ← 全局索引（scripts/sync-test-index.py 自动生成，勿手改）
 ├── 2026-07-22/
 │   ├── login.md                  ← 主用例文档
 │   ├── login-key-points.md       ← 测试要点（伴生）
@@ -34,7 +34,8 @@ test_cases/
 写入用例后，**必须**运行：
 
 ```bash
-bash scripts/sync-test-index.sh
+PY="$(bash scripts/ssdctl.sh --python)"
+"$PY" scripts/sync-test-index.py
 ```
 
 脚本扫描全部主/冒烟文档元信息，在 `test_cases/_index.md` 标记块内再生成索引表（幂等）。**禁止手工增删索引行**。v2.0 的手工追加模式已废弃（曾导致幽灵批次与死链）。
@@ -124,7 +125,7 @@ bash scripts/ssdctl.sh gate                                     # 全仓门禁�
 📁 输出：test_cases/{date}/{topic}.md（状态 Draft）
 📝 测试要点：test_cases/{date}/{topic}-key-points.md
 📝 知识库回写：test-business/{product}/_rules.md（+N 条规则）
-🔄 索引：scripts/sync-test-index.sh 已再生成
+🔄 索引：scripts/sync-test-index.py 已再生成
 ```
 
 ## 版本管理

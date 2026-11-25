@@ -1,0 +1,662 @@
+{
+  "gate": "scripts/sync-prd.py",
+  "source_gate": "scripts/sync-prd.sh",
+  "source_sha1": "811b233aca6cc0667be5e7d7ec929e9e81c6cab4",
+  "collected_by": "bash 原件逐例采集(C:\\Program Files\\Git\\bin\\bash.exe,相对路径调用),未使用 Python 端口反推;golden 只替换临时根路径为 {ROOT}",
+  "root_placeholder": "{ROOT}",
+  "mode": "tree",
+  "normalization": "basename sync-prd.sh|sync-prd.py -> {SYNC-prd}; 调用前缀 bash scripts/|python scripts/ -> {RUN} scripts/; 临时根路径(Windows / JSON 转义 / POSIX) -> {ROOT}; 统计时间: YYYY-MM-DD HH:MM -> {STAMP}",
+  "rules": {
+    "cli-help": {
+      "desc": "--help 输出用法到 stdout 并 exit 0",
+      "require_fail_case": false
+    },
+    "cli-unknown-arg": {
+      "desc": "未知参数 ⇒ stderr ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-positional-arg": {
+      "desc": "位置参数 ⇒ stderr ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-root-missing-value": {
+      "desc": "--root 缺值 ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-root-missing-dir": {
+      "desc": "--root 目录不存在 ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-root-equals-form": {
+      "desc": "--root=DIR 与 --root DIR 等价",
+      "require_fail_case": false
+    },
+    "material-layer-absent": {
+      "desc": "material/ 不存在 ⇒ note 跳过台账检查,不算违规",
+      "require_fail_case": false
+    },
+    "stats-block-unchanged": {
+      "desc": "统计块与现状一致 ⇒ ok 不回写",
+      "require_fail_case": false
+    },
+    "stats-block-rewrite": {
+      "desc": "统计块陈旧 ⇒ 回写标记块(块外不触碰)",
+      "require_fail_case": false
+    },
+    "check-stats-drift": {
+      "desc": "--check 下统计块漂移 ⇒ err + 当前/期望对比",
+      "require_fail_case": true
+    },
+    "readme-missing-markers": {
+      "desc": "无标记块 ⇒ warn 跳过回写",
+      "require_fail_case": false
+    },
+    "readme-missing-markers-check": {
+      "desc": "无标记块 + --check ⇒ err",
+      "require_fail_case": true
+    },
+    "ledger-create": {
+      "desc": "批次台账缺失 ⇒ 写模式新建 PRDS.md",
+      "require_fail_case": false
+    },
+    "ledger-register-skeleton": {
+      "desc": "素材未登记 ⇒ 补登骨架行(序号取 num 列最大值+1)",
+      "require_fail_case": false
+    },
+    "ledger-orphan-row": {
+      "desc": "关联素材不存在 ⇒ 孤儿行 ⇒ 待分析",
+      "require_fail_case": true
+    },
+    "ledger-external-pending": {
+      "desc": "来源 external 且创建时间为空 ⇒ 待抓取",
+      "require_fail_case": true
+    },
+    "ledger-sentinel-row": {
+      "desc": "状态列已是待分析/待抓取 ⇒ 台账哨兵也算待办",
+      "require_fail_case": true
+    },
+    "ledger-missing-section": {
+      "desc": "台账缺 `## PRD台账` 段 ⇒ err",
+      "require_fail_case": true
+    },
+    "ledger-no-id-column": {
+      "desc": "台账表无 ID 列 ⇒ err",
+      "require_fail_case": true
+    },
+    "check-missing-ledger": {
+      "desc": "--check 下台账缺失 ⇒ err",
+      "require_fail_case": true
+    },
+    "check-missing-skeleton-rows": {
+      "desc": "--check 下骨架行不足 ⇒ err",
+      "require_fail_case": true
+    },
+    "check-unmarked-pending-row": {
+      "desc": "--check 下待办行未标记 ⇒ err",
+      "require_fail_case": true
+    },
+    "layer-counts": {
+      "desc": "四层产物计数(prd/td/plan/test)",
+      "require_fail_case": false
+    },
+    "distribution-order": {
+      "desc": "状态分布顺序 Draft→Ready→Implemented→Deprecated→其他",
+      "require_fail_case": false
+    },
+    "distribution-zero-omission": {
+      "desc": "计数为 0 的分布项整项省略",
+      "require_fail_case": false
+    },
+    "json-payload": {
+      "desc": "JSON 载荷键序固定,status 可为 pending/violation",
+      "require_fail_case": false
+    },
+    "root-level-ledger": {
+      "desc": "仓根 PRDS.md 也参与待办统计",
+      "require_fail_case": false
+    },
+    "material-non-date-dir": {
+      "desc": "material/ 下非日期目录:登记跳过但待办标记仍执行(原件怪癖)",
+      "require_fail_case": false
+    }
+  },
+  "cases": [
+    {
+      "name": "cli-help",
+      "files": {
+        "README.md": "# 仓\n"
+      },
+      "args": [
+        "--help"
+      ],
+      "rules": [
+        "cli-help"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "用法: scripts/sync-prd.sh [--json] [--root DIR] [--check]\n",
+      "expect_stderr": "",
+      "markers": [
+        "用法:"
+      ]
+    },
+    {
+      "name": "cli-unknown-arg",
+      "files": {
+        "README.md": "# 仓\n"
+      },
+      "args": [
+        "--nope"
+      ],
+      "rules": [
+        "cli-unknown-arg"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ 未知参数: --nope\n",
+      "markers": [
+        "未知参数"
+      ]
+    },
+    {
+      "name": "cli-positional-arg",
+      "files": {
+        "README.md": "# 仓\n"
+      },
+      "args": [
+        "material"
+      ],
+      "rules": [
+        "cli-positional-arg"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ 不接受位置参数: material\n",
+      "markers": [
+        "不接受位置参数"
+      ]
+    },
+    {
+      "name": "cli-root-missing-value",
+      "files": {
+        "README.md": "# 仓\n"
+      },
+      "args": [
+        "--root"
+      ],
+      "rules": [
+        "cli-root-missing-value"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ --root 需要目录参数\n",
+      "markers": [
+        "--root 需要目录参数"
+      ]
+    },
+    {
+      "name": "cli-root-missing-dir",
+      "files": {
+        "README.md": "# 仓\n"
+      },
+      "args": [
+        "--root",
+        "no-such-root"
+      ],
+      "rules": [
+        "cli-root-missing-dir"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ --root 目录不存在: no-such-root\n",
+      "markers": [
+        "--root 目录不存在"
+      ]
+    },
+    {
+      "name": "cli-root-equals-form",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n"
+      },
+      "args": [
+        "--root=."
+      ],
+      "rules": [
+        "cli-root-equals-form"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "规格统计无变化"
+      ]
+    },
+    {
+      "name": "no-material-dir",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n"
+      },
+      "args": [],
+      "rules": [
+        "material-layer-absent"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "素材层未启用",
+        "规格统计无变化"
+      ]
+    },
+    {
+      "name": "stats-nochange",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n"
+      },
+      "args": [],
+      "rules": [
+        "stats-block-unchanged"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "规格统计无变化"
+      ],
+      "absent_markers": [
+        "统计回写"
+      ]
+    },
+    {
+      "name": "stats-rewrite",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 99 | Draft 99 |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n"
+      },
+      "args": [],
+      "rules": [
+        "stats-block-rewrite"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n✓ 统计回写: README.md 规格统计已更新 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "统计回写"
+      ],
+      "absent_markers": [
+        "规格统计无变化"
+      ]
+    },
+    {
+      "name": "check-stats-drift",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 99 | Draft 99 |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n"
+      },
+      "args": [
+        "--check"
+      ],
+      "rules": [
+        "check-stats-drift"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n✗ README.md 规格统计块已过期 — 请运行 `scripts/sync-prd.sh` 重新生成\n    --- 当前 ---\n  \n  | 层 | 制品 | 数量 | 状态分布 |\n  |------|------|:---:|---------|\n  | Layer 1 | PRD | 99 | Draft 99 |\n  | Layer 2 | Tech Design | 0 |  |\n  | Layer 3 | Plan | 0 |  |\n  | Layer 4 | Test | 0 |  |\n  | 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n    --- 期望 ---\n  \n  | 层 | 制品 | 数量 | 状态分布 |\n  |------|------|:---:|---------|\n  | Layer 1 | PRD | 0 |  |\n  | Layer 2 | Tech Design | 0 |  |\n  | Layer 3 | Plan | 0 |  |\n  | Layer 4 | Test | 0 |  |\n  | 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n",
+      "expect_stderr": "",
+      "markers": [
+        "规格统计块已过期",
+        "--- 当前 ---",
+        "--- 期望 ---"
+      ]
+    },
+    {
+      "name": "readme-missing-markers",
+      "files": {
+        "README.md": "# 示例仓\n\n## 其它内容\n\n没有标记块。\n"
+      },
+      "args": [],
+      "rules": [
+        "readme-missing-markers"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n⚠ 统计回写跳过: README.md 未找到 prd-stats 标记\n",
+      "expect_stderr": "",
+      "markers": [
+        "未找到 prd-stats 标记"
+      ]
+    },
+    {
+      "name": "readme-missing-markers-check",
+      "files": {
+        "README.md": "# 示例仓\n\n## 其它内容\n\n没有标记块。\n"
+      },
+      "args": [
+        "--check"
+      ],
+      "rules": [
+        "readme-missing-markers-check"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n✗ README.md 缺少 prd-stats 标记块 — 统计块无法核对(违反契约 M12 的唯一写入点约定)\n",
+      "expect_stderr": "",
+      "markers": [
+        "缺少 prd-stats 标记块"
+      ]
+    },
+    {
+      "name": "material-batch-new-ledger",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/notes.md": "# 素材\n"
+      },
+      "args": [],
+      "rules": [
+        "ledger-create",
+        "ledger-register-skeleton"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 台账新建: material/2026-11-20/PRDS.md\n· 台账补登: material/2026-11-20/PRDS.md 追加 1 行骨架\n⚠ PRDS.md — 台账行 PRD-20261120-01 优先级/提出人未落实(待分析): 优先级=待定 提出人=[待补]\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "台账新建",
+        "追加 1 行骨架",
+        "优先级/提出人未落实"
+      ]
+    },
+    {
+      "name": "material-batch-register-existing",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/notes.md": "# 素材\n",
+        "material/2026-11-20/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n## PRD台账\n\n| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|\n| 1 | PRD-20261120-01 | 示例需求 | 高 | - | 已收敛 | local | notes.md | 2026-11-20 | 2026-11-20 | alice |\n"
+      },
+      "args": [],
+      "rules": [
+        "ledger-register-skeleton"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 素材区已启用, 台账无待办行\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "台账无待办行"
+      ],
+      "absent_markers": [
+        "台账新建"
+      ]
+    },
+    {
+      "name": "material-orphan-row",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n## PRD台账\n\n| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|\n| 1 | PRD-20261120-02 | 孤儿需求 | 中 | - | 待定 | local | missing.md | 2026-11-20 | 2026-11-20 | bob |\n"
+      },
+      "args": [],
+      "rules": [
+        "ledger-orphan-row"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "⚠ PRDS.md — 台账行 PRD-20261120-02 关联素材不存在(孤儿行): missing.md\n· 台账标记: PRDS.md 标记 1 行待办\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "孤儿行"
+      ]
+    },
+    {
+      "name": "material-external-pending",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n## PRD台账\n\n| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|\n| 1 | PRD-20261120-03 | 外链需求 | 中 | - | 待定 | external | https://example.com/a |  |  | bob |\n"
+      },
+      "args": [],
+      "rules": [
+        "ledger-external-pending"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "⚠ PRDS.md — 台账行 PRD-20261120-03 来源 external 但创建时间为空(待抓取)\n· 台账标记: PRDS.md 标记 1 行待办\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "待抓取"
+      ]
+    },
+    {
+      "name": "material-sentinel-row",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/notes.md": "# 素材\n",
+        "material/2026-11-20/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n## PRD台账\n\n| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|\n| 1 | PRD-20261120-04 | 哨兵需求 | 高 | - | 待分析 | local | notes.md | 2026-11-20 | 2026-11-20 | alice |\n"
+      },
+      "args": [],
+      "rules": [
+        "ledger-sentinel-row"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "⚠ PRDS.md — 台账行 PRD-20261120-04 状态为「待分析」(台账哨兵, 待办)\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "台账哨兵"
+      ]
+    },
+    {
+      "name": "ledger-missing-section",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/notes.md": "# 素材\n",
+        "material/2026-11-20/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n| # | ID |\n|---|---|\n"
+      },
+      "args": [],
+      "rules": [
+        "ledger-missing-section"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ material/2026-11-20/PRDS.md — 台账缺少 `## PRD台账` 段, 无法登记(请人工补上该段标题)\n· 素材区已启用, 台账无待办行\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "台账缺少"
+      ]
+    },
+    {
+      "name": "ledger-no-id-column",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/notes.md": "# 素材\n",
+        "material/2026-11-20/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n## PRD台账\n\n| 序号 | 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|---|---|---|---|---|---|---|---|---|\n| 1 | PRD-20261120-05 | 无 ID 列 | 待定 | - | 待定 | local | notes.md | 2026-11-20 | 2026-11-20 | alice |\n"
+      },
+      "args": [],
+      "rules": [
+        "ledger-no-id-column"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ material/2026-11-20/PRDS.md — 台账表未找到 `ID` 列, 无法登记\n· 素材区已启用, 台账无待办行\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "ID"
+      ]
+    },
+    {
+      "name": "check-missing-ledger",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/notes.md": "# 素材\n"
+      },
+      "args": [
+        "--check"
+      ],
+      "rules": [
+        "check-missing-ledger"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ material/2026-11-20/PRDS.md — 批次台账缺失(该批次 1 份素材未登记) — 请运行 `scripts/sync-prd.sh` 生成\n· 素材区已启用, 台账无待办行\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "批次台账缺失"
+      ]
+    },
+    {
+      "name": "check-missing-skeleton-rows",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/notes.md": "# 素材\n",
+        "material/2026-11-20/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n## PRD台账\n\n| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|\n| 1 | PRD-20261120-06 | 别的需求 | 高 | - | 已收敛 | local | other.md | 2026-11-20 | 2026-11-20 | bob |\n"
+      },
+      "args": [
+        "--check"
+      ],
+      "rules": [
+        "check-missing-skeleton-rows"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ material/2026-11-20/PRDS.md — 台账缺少 1 行素材骨架行 — 请运行 `scripts/sync-prd.sh` 补登\n⚠ PRDS.md — 台账行 PRD-20261120-06 关联素材不存在(孤儿行): other.md\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "骨架行"
+      ]
+    },
+    {
+      "name": "check-unmarked-pending-row",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n## PRD台账\n\n| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|\n| 1 | PRD-20261120-01 | 示例需求 | 待定 | - | 待定 | local | notes.md | 2026-11-20 | 2026-11-20 | alice |\n"
+      },
+      "args": [
+        "--check"
+      ],
+      "rules": [
+        "check-unmarked-pending-row"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "⚠ PRDS.md — 台账行 PRD-20261120-01 关联素材不存在(孤儿行): notes.md\n✗ PRDS.md — 台账有未标记的待办行 — 请运行 `scripts/sync-prd.sh` 标记\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "未标记的待办行"
+      ]
+    },
+    {
+      "name": "all-layers-counted",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 99 | Draft 99 |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "prd/2026-11-20/demo.md": "# PRD: demo\n\n> **状态**: Draft\n\n## 为什么 (Why)\n\n- 演示\n",
+        "tech_design/2026-11-20-demo/README.md": "# TD: demo\n\n> **状态**: Ready\n\n## 场景映射\n\n- S-1\n",
+        "plan/2026-11-20-demo/demo.md": "# Plan: demo\n\n> **状态**: Implemented\n\n## 变更清单\n\n### Change #1: x\n",
+        "test_cases/2026-11-20/demo.md": "# 用例: demo\n\n| 主题 | 业务产品 | 目标平台 | 来源 | 生成日期 | 状态 | 用例总数 |\n|---|---|---|---|---|---|---|\n| demo | demo | web | prd/2026-11-20/demo.md | 2026-11-20 | Ready | 1 |\n",
+        "test_cases/2026-11-20/demo2.md": "# 用例: demo2\n\n| 状态 | 业务产品 | 目标平台 | 来源 | 生成日期 | 用例总数 |\n|---|---|---|---|---|---|\n| Ready | demo | web | prd/2026-11-20/demo.md | 2026-11-20 | 1 |\n"
+      },
+      "args": [],
+      "rules": [
+        "layer-counts",
+        "distribution-order"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n✓ 统计回写: README.md 规格统计已更新 (PRD 1 / TD 1 / Plan 1 / Test 2)\n",
+      "expect_stderr": "",
+      "markers": [
+        "统计回写"
+      ]
+    },
+    {
+      "name": "distribution-zero-omission",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 99 | Draft 99 |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "prd/2026-11-20/a-draft.md": "# PRD: demo\n\n> **状态**: Draft\n\n## 为什么 (Why)\n\n- 演示\n",
+        "prd/2026-11-20/b-deprecated.md": "# PRD: demo\n\n> **状态**: Deprecated\n\n## 为什么 (Why)\n\n- 演示\n"
+      },
+      "args": [],
+      "rules": [
+        "distribution-zero-omission"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n✓ 统计回写: README.md 规格统计已更新 (PRD 2 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "统计回写"
+      ]
+    },
+    {
+      "name": "json-pass",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n"
+      },
+      "args": [
+        "--json"
+      ],
+      "rules": [
+        "json-payload"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "{\"script\":\"sync-prd.sh\",\"root\":\"{ROOT}\",\"mode\":\"write\",\"status\":\"pass\",\"exit_code\":0,\"error_count\":0,\"warning_count\":0,\"pending_count\":0,\"counts\":{\"prd\":0,\"tech_design\":0,\"plan\":0,\"test\":0,\"matrix_edges\":0},\"errors\":[],\"warnings\":[],\"notes\":[\"素材层未启用(material/ 不存在), 跳过台账登记与待办检查\"]}\n",
+      "expect_stderr": "",
+      "markers": [
+        "\"status\":\"pass\"",
+        "\"exit_code\":0"
+      ]
+    },
+    {
+      "name": "json-pending",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/2026-11-20/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n## PRD台账\n\n| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|\n| 1 | PRD-20261120-02 | 孤儿需求 | 中 | - | 待定 | local | missing.md | 2026-11-20 | 2026-11-20 | bob |\n"
+      },
+      "args": [
+        "--json"
+      ],
+      "rules": [
+        "json-payload"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "{\"script\":\"sync-prd.sh\",\"root\":\"{ROOT}\",\"mode\":\"write\",\"status\":\"pending\",\"exit_code\":1,\"error_count\":0,\"warning_count\":1,\"pending_count\":1,\"counts\":{\"prd\":0,\"tech_design\":0,\"plan\":0,\"test\":0,\"matrix_edges\":0},\"errors\":[],\"warnings\":[\"PRDS.md — 台账行 PRD-20261120-02 关联素材不存在(孤儿行): missing.md\"],\"notes\":[\"台账标记: PRDS.md 标记 1 行待办\"]}\n",
+      "expect_stderr": "",
+      "markers": [
+        "\"status\":\"pending\""
+      ]
+    },
+    {
+      "name": "json-check-drift",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 99 | Draft 99 |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n"
+      },
+      "args": [
+        "--json",
+        "--check"
+      ],
+      "rules": [
+        "json-payload",
+        "check-stats-drift"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "{\"script\":\"sync-prd.sh\",\"root\":\"{ROOT}\",\"mode\":\"check\",\"status\":\"violation\",\"exit_code\":1,\"error_count\":1,\"warning_count\":0,\"pending_count\":0,\"counts\":{\"prd\":0,\"tech_design\":0,\"plan\":0,\"test\":0,\"matrix_edges\":0},\"errors\":[\"README.md 规格统计块已过期 — 请运行 `scripts/sync-prd.sh` 重新生成\"],\"warnings\":[],\"notes\":[\"素材层未启用(material/ 不存在), 跳过台账登记与待办检查\"]}\n",
+      "expect_stderr": "",
+      "markers": [
+        "\"status\":\"violation\""
+      ]
+    },
+    {
+      "name": "root-prds-ledger",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "PRDS.md": "# PRD 台账 — material/2026-11-20\n\n> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n## PRD台账\n\n| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|\n| 1 | PRD-20261120-02 | 孤儿需求 | 中 | - | 待定 | local | missing.md | 2026-11-20 | 2026-11-20 | bob |\n"
+      },
+      "args": [],
+      "rules": [
+        "root-level-ledger"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "· 素材层未启用(material/ 不存在), 跳过台账登记与待办检查\n⚠ PRDS.md — 台账行 PRD-20261120-02 关联素材不存在(孤儿行): missing.md\n· 台账标记: PRDS.md 标记 1 行待办\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "孤儿行"
+      ]
+    },
+    {
+      "name": "material-non-date-dir",
+      "files": {
+        "README.md": "# 示例仓\n\n<!-- prd-stats:begin -->\n> 统计时间: 2020-01-01 00:00 · 由 `scripts/sync-prd.sh` 自动生成\n\n| 层 | 制品 | 数量 | 状态分布 |\n|------|------|:---:|---------|\n| Layer 1 | PRD | 0 |  |\n| Layer 2 | Tech Design | 0 |  |\n| Layer 3 | Plan | 0 |  |\n| Layer 4 | Test | 0 |  |\n| 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |\n<!-- prd-stats:end -->\n\n## 其它内容\n\n标记块外的内容永不被触碰。\n",
+        "material/other/PRDS.md": "# PRD 台账 — material/2026-11-20\n\n> 由 `scripts/sync-prd.sh` 维护(补登骨架行 / 标记待办行)。字段含义见 `schema/prd-ledger.md`。\n\n## PRD台账\n\n| # | ID | PRD 名称 | 优先级 | 验收要点 | 状态 | 来源 | 关联素材 | 创建时间 | 更新时间 | 提出人 |\n|---|----|---------|--------|----------|------|------|----------|----------|----------|--------|\n| 1 | PRD-20261120-02 | 孤儿需求 | 中 | - | 待定 | local | missing.md | 2026-11-20 | 2026-11-20 | bob |\n"
+      },
+      "args": [],
+      "rules": [
+        "material-non-date-dir"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "⚠ PRDS.md — 台账行 PRD-20261120-02 关联素材不存在(孤儿行): missing.md\n· 台账标记: PRDS.md 标记 1 行待办\n✓ 规格统计无变化 (PRD 0 / TD 0 / Plan 0 / Test 0)\n",
+      "expect_stderr": "",
+      "markers": [
+        "孤儿行"
+      ]
+    }
+  ]
+}

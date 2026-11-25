@@ -45,7 +45,7 @@ GATE_SCRIPT_NAMES = [Path(script).name for script, _args in commands.GATE_SCRIPT
 STAGE_IRRELEVANT = [
     "check-naming.py",
     "check-traceability.py",
-    "check-repo-baseline.sh",
+    "check-repo-baseline.py",
 ]
 
 # 允许出现「全部门禁名」的两处:真源,以及输出快照(golden)。
@@ -125,14 +125,14 @@ class ScriptsHygiene(unittest.TestCase):
     def test_ci_workflow_has_no_inlined_gate_list(self):
         """CI 工作流不得自带一份门禁清单 —— 真源只有 `lib/commands.py` 的 `GATE_SCRIPTS`。
 
-        允许的唯一例外:「PRD 台账登记」步骤直接调用 `sync-prd.sh` 的**写模式**
+        允许的唯一例外:「PRD 台账登记」步骤直接调用 `sync-prd.py` 的**写模式**
         (一次具体动作,不是清单);门禁一律由 `run-all-gates.sh` 从真源渲染。
         """
         path = REPO_ROOT / ".github" / "workflows" / "spec-check.yml"
         if not path.exists():
             self.skipTest("仓内没有 CI 工作流文件 —— 本条断言不适用")
         text = _read(path)
-        allowed = {"sync-prd.sh"}
+        allowed = {"sync-prd.py"}
         offenders = [name for name in GATE_SCRIPT_NAMES if name in text and name not in allowed]
         self.assertEqual(
             offenders,

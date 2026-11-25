@@ -1,0 +1,510 @@
+{
+  "gate": "scripts/sync-test-index.py",
+  "source_gate": "scripts/sync-test-index.sh",
+  "source_sha1": "277842e386f5f73d8b5c043bf84e3a4d371decde",
+  "collected_by": "bash 原件逐例采集(C:\\Program Files\\Git\\bin\\bash.exe,相对路径调用),未使用 Python 端口反推;golden 只替换临时根路径为 {ROOT}",
+  "root_placeholder": "{ROOT}",
+  "mode": "tree",
+  "normalization": "basename sync-test-index.sh|sync-test-index.py -> {SYNC-idx}; 调用前缀 bash scripts/|python scripts/ -> {RUN} scripts/; 临时根路径(Windows / JSON 转义 / POSIX) -> {ROOT}",
+  "rules": {
+    "cli-help": {
+      "desc": "--help 输出用法到 stdout 并 exit 0",
+      "require_fail_case": false
+    },
+    "cli-unknown-arg": {
+      "desc": "未知参数 ⇒ stderr ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-positional-arg": {
+      "desc": "位置参数 ⇒ stderr ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-root-missing-value": {
+      "desc": "--root 缺值 ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-root-missing-dir": {
+      "desc": "--root 目录不存在 ⇒ exit 2",
+      "require_fail_case": true
+    },
+    "cli-root-equals-form": {
+      "desc": "--root=DIR 与 --root DIR 等价",
+      "require_fail_case": false
+    },
+    "layer-not-enabled": {
+      "desc": "test_cases/ 不存在 ⇒ note + exit 0(层未启用不是违规)",
+      "require_fail_case": false
+    },
+    "layer-not-enabled-json": {
+      "desc": "跳过分支的 JSON 载荷带 skipped:true",
+      "require_fail_case": false
+    },
+    "empty-layer": {
+      "desc": "test_cases/ 为空 ⇒ 生成只有表头的索引",
+      "require_fail_case": false
+    },
+    "single-case": {
+      "desc": "单个用例 ⇒ 一行表格",
+      "require_fail_case": false
+    },
+    "multi-dir-multi-topic": {
+      "desc": "多目录多主题 ⇒ 按 key 排序",
+      "require_fail_case": false
+    },
+    "sort-key": {
+      "desc": "排序 key = ${date_dir}/${topic}/${is_smoke}",
+      "require_fail_case": false
+    },
+    "smoke-ordering": {
+      "desc": "同键冒烟排后(is_smoke=1 在 0 之后)",
+      "require_fail_case": false
+    },
+    "p0-all-p0": {
+      "desc": "P0 列解析「全部 P0」⇒ 取用例总数",
+      "require_fail_case": false
+    },
+    "p0-count": {
+      "desc": "P0 列解析「P0: N」",
+      "require_fail_case": false
+    },
+    "p0-absent": {
+      "desc": "无 P0 信息 ⇒ P0 列为 0",
+      "require_fail_case": false
+    },
+    "metadata-missing": {
+      "desc": "元信息缺字段 ⇒ 留空;主题缺失 ⇒ 回退为 topic",
+      "require_fail_case": false
+    },
+    "key-points-present": {
+      "desc": "要点文件存在 ⇒ 要点列给链接",
+      "require_fail_case": false
+    },
+    "key-points-absent": {
+      "desc": "要点文件不存在 ⇒ 要点列为 —",
+      "require_fail_case": false
+    },
+    "key-points-not-registered": {
+      "desc": "*-key-points.md 不单独登记成行",
+      "require_fail_case": false
+    },
+    "invalid-names-skipped": {
+      "desc": "非法日期目录 / 非法 topic / 隐藏文件 ⇒ 跳过",
+      "require_fail_case": false
+    },
+    "check-missing-index": {
+      "desc": "--check 且索引不存在 ⇒ err + exit 1",
+      "require_fail_case": true
+    },
+    "check-drift": {
+      "desc": "--check 且索引漂移 ⇒ err + exit 1",
+      "require_fail_case": true
+    },
+    "diff-output": {
+      "desc": "漂移时打印 diff -u(每行前缀两空格)",
+      "require_fail_case": true
+    },
+    "diff-output-json": {
+      "desc": "JSON 模式不打印 diff -u",
+      "require_fail_case": true
+    },
+    "json-payload": {
+      "desc": "JSON 载荷键序固定",
+      "require_fail_case": false
+    },
+    "write-mode": {
+      "desc": "写模式再生成 test_cases/_index.md",
+      "require_fail_case": false
+    },
+    "write-overwrites-index": {
+      "desc": "写模式覆盖已存在的索引",
+      "require_fail_case": false
+    }
+  },
+  "cases": [
+    {
+      "name": "cli-help",
+      "files": {},
+      "args": [
+        "--help"
+      ],
+      "rules": [
+        "cli-help"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "用法: scripts/sync-test-index.sh [--json] [--root DIR] [--check]\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "cli-unknown-arg",
+      "files": {},
+      "args": [
+        "--bogus"
+      ],
+      "rules": [
+        "cli-unknown-arg"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ 未知参数: --bogus\n"
+    },
+    {
+      "name": "cli-positional-arg",
+      "files": {},
+      "args": [
+        "extra"
+      ],
+      "rules": [
+        "cli-positional-arg"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ 不接受位置参数: extra\n"
+    },
+    {
+      "name": "cli-root-missing-value",
+      "files": {},
+      "args": [
+        "--root"
+      ],
+      "rules": [
+        "cli-root-missing-value"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ --root 需要目录参数\n"
+    },
+    {
+      "name": "cli-root-missing-dir",
+      "files": {},
+      "args": [
+        "--root",
+        "/nonexistent-root-xyz"
+      ],
+      "rules": [
+        "cli-root-missing-dir"
+      ],
+      "expect_exit": 2,
+      "expect_stdout": "",
+      "expect_stderr": "✗ --root 目录不存在: /nonexistent-root-xyz\n"
+    },
+    {
+      "name": "cli-root-equals-form",
+      "files": {
+        "test_cases/README.md": "# 说明\n"
+      },
+      "args": [
+        "--root=."
+      ],
+      "rules": [
+        "cli-root-equals-form"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (0 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "layer-not-enabled",
+      "files": {
+        "README.md": "# 仓\n"
+      },
+      "args": [],
+      "rules": [
+        "layer-not-enabled"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "· 测试用例层未启用(test_cases/ 不存在), 跳过索引同步\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "layer-not-enabled-json",
+      "files": {
+        "README.md": "# 仓\n"
+      },
+      "args": [
+        "--json"
+      ],
+      "rules": [
+        "layer-not-enabled",
+        "layer-not-enabled-json"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "{\"script\":\"sync-test-index.sh\",\"root\":\"{ROOT}\",\"status\":\"pass\",\"exit_code\":0,\"error_count\":0,\"warning_count\":0,\"rows\":0,\"skipped\":true,\"errors\":[],\"warnings\":[],\"notes\":[\"测试用例层未启用(test_cases/ 不存在), 跳过索引同步\"]}\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "empty-layer",
+      "files": {
+        "test_cases/README.md": "# 说明\n"
+      },
+      "args": [],
+      "rules": [
+        "empty-layer"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (0 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "single-case",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "single-case",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "single-case-json",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [
+        "--json"
+      ],
+      "rules": [
+        "single-case",
+        "json-payload"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "{\"script\":\"sync-test-index.sh\",\"root\":\"{ROOT}\",\"status\":\"pass\",\"exit_code\":0,\"error_count\":0,\"warning_count\":0,\"rows\":1,\"errors\":[],\"warnings\":[],\"notes\":[]}\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "multi-dir-multi-topic",
+      "files": {
+        "test_cases/2026-01-01/beta.md": "# Test Case: beta\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | beta | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/beta.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/2026-02-02/gamma.md": "# Test Case: gamma\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | gamma | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/gamma.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/2026-02-02/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "multi-dir-multi-topic",
+        "sort-key",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (4 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "smoke-ordering",
+      "files": {
+        "test_cases/2026-01-01/alpha-smoke.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "smoke-ordering",
+        "sort-key",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (2 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "p0-all-p0",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12(全部 P0) | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "p0-all-p0",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "p0-count",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 20(P0: 5) | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "p0-count",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "p0-absent",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 7 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "p0-absent",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "p0-count-no-digit",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 9(P0: ) | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "p0-count",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "metadata-missing",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "metadata-missing",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "metadata-empty-subject",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** |  | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "metadata-missing",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "key-points-present",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/2026-01-01/alpha-key-points.md": "# Key Points: alpha\n\n## 业务背景\n\n占位。\n\n## 核心测试点\n\n- 占位\n"
+      },
+      "args": [],
+      "rules": [
+        "key-points-present",
+        "key-points-not-registered",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "key-points-absent",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "key-points-absent",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "invalid-names-skipped",
+      "files": {
+        "test_cases/bad-dir/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/2026-01-01/BadTopic.md": "# Test Case: BadTopic\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | BadTopic | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/BadTopic.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/2026-01-01/alpha-key-points.md": "# Key Points: alpha\n\n## 业务背景\n\n占位。\n\n## 核心测试点\n\n- 占位\n",
+        "test_cases/2026-01-01/.hidden.md": "# Test Case: hidden\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | hidden | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/hidden.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/2026-01-01/ok.md": "# Test Case: ok\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | ok | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/ok.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [],
+      "rules": [
+        "invalid-names-skipped",
+        "write-mode"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "check-missing-index",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n"
+      },
+      "args": [
+        "--check"
+      ],
+      "rules": [
+        "check-missing-index"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ test_cases/_index.md 不存在 — 运行 `scripts/sync-test-index.sh` 生成\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "check-drift",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/_index.md": "# 旧版索引(格式已废弃)\n这一行与新生成的索引完全不同,用于制造漂移。\n"
+      },
+      "args": [
+        "--check"
+      ],
+      "rules": [
+        "check-drift",
+        "diff-output"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "✗ test_cases/_index.md 与文档元信息不一致 — 运行 `scripts/sync-test-index.sh` 再生成\n  --- {ROOT}/test_cases/_index.md\t2026-11-26 04:45:02.071132000 +0800\n  +++ {ROOT}/test_cases/.index.tmp\t2026-11-26 04:45:02.918694200 +0800\n  @@ -1,2 +1,10 @@\n  -# 旧版索引(格式已废弃)\n  -这一行与新生成的索引完全不同,用于制造漂移。\n  +# 测试用例索引\n  +\n  +> 由 `scripts/sync-test-index.sh` 自动生成（标记块内勿手改）。数据源：各用例文档元信息表。\n  +> 伴生要点文件不单独登记。\n  +\n  +<!-- test-index:begin — 由 scripts/sync-test-index.sh 自动生成，勿手改 -->\n  +| 日期 | 主题 | 业务产品 | 平台 | 用例数 | P0 | 状态 | 用例文件 | 要点文件 |\n  +|------|------|---------|------|--------|----|----|---------|--------|\n  +| 2026-01-01 | alpha | POS | Web | 12 | 0 | Draft | [alpha.md](2026-01-01/alpha.md) | — |\n  +<!-- test-index:end -->\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "check-drift-json",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/_index.md": "# 旧版索引(格式已废弃)\n这一行与新生成的索引完全不同,用于制造漂移。\n"
+      },
+      "args": [
+        "--check",
+        "--json"
+      ],
+      "rules": [
+        "check-drift",
+        "json-payload",
+        "diff-output-json"
+      ],
+      "expect_exit": 1,
+      "expect_stdout": "{\"script\":\"sync-test-index.sh\",\"root\":\"{ROOT}\",\"status\":\"violation\",\"exit_code\":1,\"error_count\":1,\"warning_count\":0,\"rows\":1,\"errors\":[\"test_cases/_index.md 与文档元信息不一致 — 运行 `scripts/sync-test-index.sh` 再生成\"],\"warnings\":[],\"notes\":[]}\n",
+      "expect_stderr": ""
+    },
+    {
+      "name": "write-overwrites-index",
+      "files": {
+        "test_cases/2026-01-01/alpha.md": "# Test Case: alpha\n\n## 元信息 (Metadata)\n\n| 字段 | 值 | 必填 | 说明 |\n|------|-----|------|------|\n| **主题** | alpha | ✓ | 说明 |\n| **业务产品** | POS | ✓ | 说明 |\n| **目标平台** | Web | ✓ | 说明 |\n| **来源** | prd/2026-01-01/alpha.md | ✓ | 说明 |\n| **生成日期** | 2026-01-01 | ✓ | 说明 |\n| **状态** | Draft | ✓ | 说明 |\n| **用例总数** | 12 | ✓ | 说明 |\n\n## 用例总览 (Test Suite Overview)\n\n占位正文。\n",
+        "test_cases/_index.md": "# 旧版索引(格式已废弃)\n这一行与新生成的索引完全不同,用于制造漂移。\n"
+      },
+      "args": [],
+      "rules": [
+        "write-mode",
+        "write-overwrites-index"
+      ],
+      "expect_exit": 0,
+      "expect_stdout": "✓ test_cases/_index.md 已再生成 (1 行)\n",
+      "expect_stderr": ""
+    }
+  ]
+}

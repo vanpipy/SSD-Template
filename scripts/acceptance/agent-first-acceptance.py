@@ -658,7 +658,7 @@ def main() -> int:
             print(f"(kept: {clone})")
 
     if "--write" in args:
-        rc, out = sh("bash scripts/sync-prd.sh", ROOT)
+        rc, out = py_run(["scripts/sync-prd.py"], ROOT)
         rc2, out2 = sh(f'"{GIT}" status --porcelain -- README.md material/', ROOT)
         record(
             "A-1w",

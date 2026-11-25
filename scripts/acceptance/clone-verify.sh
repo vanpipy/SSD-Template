@@ -150,7 +150,7 @@ rm -f "$gate_json"
 echo "ssdctl gate rc=$gate_rc"
 [ "$gate_rc" -ne 0 ] && fail=1
 bash scripts/ssdctl.sh scan --check >/dev/null 2>&1 || { echo "scan --check FAILED"; fail=1; }
-bash scripts/sync-prd.sh >/dev/null 2>&1
+"$PY" scripts/sync-prd.py >/dev/null 2>&1
 drift=$(git status --porcelain -- README.md material/)
 echo "drift after sync-prd: ${drift:-<none>}"
 [ -n "$drift" ] && fail=1
