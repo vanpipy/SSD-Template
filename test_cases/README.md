@@ -10,7 +10,7 @@
 ```text
 test_cases/
 ├── README.md                   ← 本文件(手动维护的层概览)
-├── _index.md                   ← 由 scripts/sync-test-index.sh 自动生成(勿手改)
+├── _index.md                   ← 由 scripts/sync-test-index.py 自动生成(勿手改)
 └── {YYYY-MM-DD}/               ← 按生成日期分桶(可与来源 PRD 批次日期不同)
     ├── {topic}.md              ← 主用例集
     ├── {topic}-smoke.md        ← 冒烟子集(仅 P0 + 关键 P1;可选)
@@ -25,7 +25,7 @@ test_cases/
 | 文件 | 职责 | 必填 |
 |------|------|------|
 | `README.md` | 层概览(本文件)+ 结构 + 命名约定 + 状态机 | 是 |
-| `_index.md` | 机器再生成的用例文件清单(由 `sync-test-index.sh` 维护) | 自动 |
+| `_index.md` | 机器再生成的用例文件清单(由 `sync-test-index.py` 维护) | 自动 |
 | `{topic}.md` | 主用例集(按优先级 P0/P1/P2 分层) | 是 |
 | `{topic}-smoke.md` | 冒烟子集(仅 P0 主路径) | 可选 |
 | `{topic}-key-points.md` | 业务背景 + 核心测试点 + 已知陷阱(Ready 起必填) | Ready/Implemented 时 |
@@ -54,9 +54,9 @@ test_cases/
 | 文件 | 类型 | 来源 | 何时改 |
 |------|------|------|--------|
 | `README.md` | **手动维护**的层概览 | 人工编辑 | 命名约定 / 状态机变更时 |
-| `_index.md` | **自动生成**的文件清单 | `scripts/sync-test-index.sh` 扫描元信息表 | 任何用例文档元信息变化时跑一次 |
+| `_index.md` | **自动生成**的文件清单 | `scripts/sync-test-index.py` 扫描元信息表 | 任何用例文档元信息变化时跑一次 |
 
-> 标记块 `<!-- test-index:begin --> ... <!-- test-index:end -->` 内的内容由 `sync-test-index.sh` 覆盖生成,**勿手改**。
+> 标记块 `<!-- test-index:begin --> ... <!-- test-index:end -->` 内的内容由 `sync-test-index.py` 覆盖生成,**勿手改**。
 
 ## 模板
 
@@ -73,7 +73,7 @@ test_cases/
 ## 下一步
 
 - **启用本层**:运行 `/to-test-cases <prd-path> <tech-design-dir>` 生成 Draft
-- **维护索引**:用例文档元信息变化后,跑 `bash scripts/sync-test-index.sh`
+- **维护索引**:用例文档元信息变化后,跑 `"$PY" scripts/sync-test-index.py`
 - **校验门禁**:Ready 前跑 `/validate-spec`(自动启用 Test Case 校验)
 - **生命周期编排**:`/sync-status implement / deprecate / rollback / test-done`
 - **Plan 引用**:Plan 元信息「参考 Test Cases」行填入用例路径(check-traceability T11 校验)
@@ -81,8 +81,9 @@ test_cases/
 ## 快速命令
 
 ```bash
+PY="$(bash scripts/ssdctl.sh --python)"
 # 生成用例(PRD + TD 都需 Ready)
-bash scripts/sync-test-index.sh           # 再生成 _index.md
-bash scripts/sync-test-index.sh --check   # 仅校验不写文件
+"$PY" scripts/sync-test-index.py           # 再生成 _index.md
+"$PY" scripts/sync-test-index.py --check   # 仅校验不写文件
 "$PY" scripts/check-md-schema.py test_cases/  # 单独跑 Test Case 校验
 ```

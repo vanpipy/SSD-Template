@@ -65,7 +65,7 @@ Tech Design 的 `## 实现基线` 段记录设计所基于的代码现状快照�
 - **仓库**列填 [AGENTS.md](../AGENTS.md) §1.1 登记的标识。脚本据此解析本地路径
 - **状态**列 `✓` 一致 / `⚠` 不一致或未登记 / `○` 不适用或跳过
 - 0 代码仓项目写单行 `> 不适用: 本项目无关联代码仓` 即可,脚本按 `○` 跳过
-- 校验脚本: `scripts/check-repo-baseline.sh`
+- 校验脚本: `scripts/check-repo-baseline.py`
 
 ## 证据锚点
 

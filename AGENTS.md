@@ -157,7 +157,7 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用外部代�
 > **本节用途**:Tech Design 的 `## 实现基线` 段记录「设计所基于的代码现状快照」。
 > **目的**:防止设计与当前实现脱节。基线是**快照**不是承诺。核对不一致时,应更新基线或更新设计,二者必居其一。
 
-**表格格式**(固定 6 列,`scripts/check-repo-baseline.sh` 按此解析):
+**表格格式**(固定 6 列,`scripts/check-repo-baseline.py` 按此解析):
 
 ```markdown
 ## 实现基线
@@ -178,7 +178,7 @@ A 中的 spec 文件现在可通过 §1.2 `{标识}/path` 语法引用外部代�
 
 **0 代码仓项目**:删除表格,改写单行 `> 不适用: 本项目无关联代码仓`(脚本按 `○` 跳过)。
 
-**脚本**:`scripts/check-repo-baseline.sh`。仓库 → 本地路径的映射**从 §1.1「本地路径」列解析**,脚本内不硬编码任何仓名。未登记的仓库记 `⚠` 并跳过存在性校验。
+**脚本**:`scripts/check-repo-baseline.py`。仓库 → 本地路径的映射**从 §1.1「本地路径」列解析**,脚本内不硬编码任何仓名。未登记的仓库记 `⚠` 并跳过存在性校验。
 
 ### 1.7 证据锚点 (Evidence Anchors)
 
@@ -319,8 +319,8 @@ git -C <仓库本地路径> rev-parse --short HEAD
 | Tech Design | `schema/tech_design/README.md` + `ards.md` + `apis.md` + `data-model.md` (v4 默认 4 子文件) | `validate-spec` |
 | Plan | `schema/plan.md` 完成检查段 | `validate-spec` |
 | Test Cases(可选) | `schema/test_case.md` 全文 | `validate-spec`(目录存在时才校验) |
-| 实现基线(可选) | Tech Design `## 实现基线` 段 | `scripts/check-repo-baseline.sh`(有关联代码仓时才校验) |
-| PRD 台账 / 关联矩阵(可选) | `schema/prd-ledger.md` / `schema/prd-matrix.md` | `scripts/sync-prd.sh` / `scripts/check-traceability.py`(层存在时才校验) |
+| 实现基线(可选) | Tech Design `## 实现基线` 段 | `scripts/check-repo-baseline.py`(有关联代码仓时才校验) |
+| PRD 台账 / 关联矩阵(可选) | `schema/prd-ledger.md` / `schema/prd-matrix.md` | `scripts/sync-prd.py` / `scripts/check-traceability.py`(层存在时才校验) |
 | 仓库层(全仓) | `schema/criteria.json` 的仓库层判据(`REPO-NO-CR` 行尾 CR / `REPO-NO-PLACEHOLDER` 冲突标记) | `bash scripts/ssdctl.sh criteria --repo`(随 `bash scripts/ssdctl.sh gate` 执行) |
 
 **调用方式**:用 `validate-spec` skill(它按层跑全部校验脚本),不要手拼脚本命令。脚本退出码是唯一判定依据:全部 `✓` 只说明**格式与追溯**合规;**能否进 `Ready` 由 `schema/criteria.json` 的判据决定**,由 `bash scripts/ssdctl.sh advance` 代写状态块与复审块(见 §3.3),既不由「✓ 的数量」决定,也不是人工敲状态行。
@@ -456,9 +456,9 @@ skill 定义放在仓内 `.agents/skills/<name>/SKILL.md`,随仓库一起分发;
 | 命名校验 | `scripts/check-naming.py` |
 | 字段校验 | `scripts/check-md-schema.py` |
 | 追溯校验 | `scripts/check-traceability.py` |
-| 实现基线校验(可选) | `scripts/check-repo-baseline.sh` |
-| PRD 台账同步(可选) | `scripts/sync-prd.sh` |
-| 用例索引再生 | `scripts/sync-test-index.sh` |
+| 实现基线校验(可选) | `scripts/check-repo-baseline.py` |
+| PRD 台账同步(可选) | `scripts/sync-prd.py` |
+| 用例索引再生 | `scripts/sync-test-index.py` |
 | 文档死链校验 | `scripts/check-doc-links.py` |
 | 仓内脚本清单与职责(全部脚本 / 调用形态 / 退出码) | `scripts/README.md` ★ |
 | 历史代际 | `git log --all -- <path>`(仓内不再保留归档目录) |

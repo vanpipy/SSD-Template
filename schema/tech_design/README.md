@@ -29,7 +29,7 @@
 ## 实现基线 (Implementation Baseline)
 
 > 记录「设计所基于的代码现状快照」, 防止设计与当前实现脱节。基线是**快照**不是承诺。
-> 口径见 AGENTS.md §1.6, 校验由 `scripts/check-repo-baseline.sh` 按本表解析。
+> 口径见 AGENTS.md §1.6, 校验由 `scripts/check-repo-baseline.py` 按本表解析。
 
 | 仓库 | 分支 | SHA | 核对日期 | 核对项 | 状态 |
 |------|------|-----|----------|--------|------|

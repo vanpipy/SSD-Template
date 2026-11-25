@@ -320,11 +320,11 @@ bash scripts/ssdctl.sh advance <artifact> --to Ready          # 与 agent 完全
 | `scripts/check-md-schema.py` | **每次都跑** |
 | `scripts/check-traceability.py` | **每次都跑** |
 | `scripts/check-doc-links.py` | **每次都跑** |
-| `scripts/check-repo-baseline.sh` | 仅 Layer 2(且仓内登记了关联代码仓时) |
-| `scripts/sync-prd.sh` | **每次都跑**(写模式, 幂等) |
-| `scripts/sync-prd.sh --check` | 只读复查 |
-| `scripts/sync-test-index.sh` | 启用 Layer 4 时跑(写模式, 幂等) |
-| `scripts/sync-test-index.sh --check` | 只读复查 |
+| `scripts/check-repo-baseline.py` | 仅 Layer 2(且仓内登记了关联代码仓时) |
+| `scripts/sync-prd.py` | **每次都跑**(写模式, 幂等) |
+| `scripts/sync-prd.py --check` | 只读复查 |
+| `scripts/sync-test-index.py` | 启用 Layer 4 时跑(写模式, 幂等) |
+| `scripts/sync-test-index.py --check` | 只读复查 |
 | `scripts/deep-scan.py` | 仅当仓内启用 `deep/` 底座时 |
 | `bash scripts/ssdctl.sh gate` | **每次都跑** |
 | `bash scripts/ssdctl.sh scan --check` | **每次都跑** |
@@ -348,8 +348,9 @@ bash scripts/ssdctl.sh advance <artifact> --to Ready          # 与 agent 完全
 - **`ssdctl` 的退出码同样是 0 / 1 / 2**(0=通过,1=不通过,2=用法 / 内部错误,实施契约 INV-7);
   `gate` 与 `scan --check` 必须**有非空 stdout**(防空转断言,实施契约 §8)。
   解释器名按本机实际(`python` 或 `python3`),但**子命令名与参数一字不改**(实施契约 §5)。
-- **统计块 / 台账 / 用例索引不一致**(`sync-prd.sh --check` 或 `sync-test-index.sh --check` 退出 1,提示「已过期」)→
-  跑**写模式** `bash scripts/sync-prd.sh`(或 `bash scripts/sync-test-index.sh`)重新生成, 再 `--check` 复查。
+- **统计块 / 台账 / 用例索引不一致**(`sync-prd.py --check` 或 `sync-test-index.py --check` 退出 1,提示「已过期」)→
+  跑**写模式** `"$PY" scripts/sync-prd.py`(或 `"$PY" scripts/sync-test-index.py`)重新生成, 再 `--check` 复查。
+  (`PY="$(bash scripts/ssdctl.sh --python)"` —— 与本文件 §6 的调用约定一致, 不要直接写 `python`/`python3`.)
   写模式是**幂等**的:同一份制品跑两次结果一致。**不得手改**统计块 / `_index.md` / 台账内容 —— 那是再生块,手改会被下一次写覆盖。
 - 修不动就**如实报告 exit 1 / exit 2 的原始输出**,不要伪造「已通过」。
 
@@ -861,7 +862,7 @@ flowchart TB
 | PRD | [schema/prd.md](schema/prd.md) 全文 + `scripts/check-md-schema.py` | ✓ |
 | Tech Design | [schema/tech_design/README.md](schema/tech_design/README.md) + 各子文件"门禁清单"段 + `scripts/check-md-schema.py` | ✓ |
 | Plan | [schema/plan.md](schema/plan.md) 完成检查段 + `scripts/check-md-schema.py` + `scripts/check-traceability.py` | ✓ |
-| 实现基线(可选) | Tech Design `## 实现基线` 段 + `scripts/check-repo-baseline.sh` | ✓(有关联代码仓时) |
+| 实现基线(可选) | Tech Design `## 实现基线` 段 + `scripts/check-repo-baseline.py` | ✓(有关联代码仓时) |
 
 **调用方式**:§6 表中标「**每次都跑**」的脚本全部返回 0(按层 / 按条件启用的脚本按其条件额外跑)→ 「可评审」。此后由 **agent** 调 `bash scripts/ssdctl.sh advance <artifact> --to <状态>` 推进状态(机器判据驱动 + 留痕);人类需要介入时**新增素材**或**在制品的 `## 复审 (Review)` 段写署名**,然后跑**同一条** `advance`,**不**手工改状态行。
 `bash scripts/ssdctl.sh` 的子命令全集:`scan` / `criteria` / `gate` / `advance` / `queue` / `verify`;`advance` 常用参数:`--to <Ready|Implemented|Deprecated>` / `--external <ref>` / `--actor agent:<id>` / `--dry-run`;退出码统一 `0` = 通过 / `1` = 存在违规 / `2` = 调用或环境错误。
@@ -966,7 +967,7 @@ flowchart TB
 
 **理由 (Rationale)**: 本仓读写比高,乐观锁冲突率低,不必引入锁等待
 
-**如何强制 (Enforced by)**: `scripts/check-repo-baseline.sh`(设计所基于的代码现状快照)
+**如何强制 (Enforced by)**: `scripts/check-repo-baseline.py`(设计所基于的代码现状快照)
 ```
 
 > 决策落到「必须留痕并可回读」时,载体是**制品本身**:制品的 `## 复审 (Review)` 段(署名 + 日期 + 结论)或正文里的 `external:` / `criteria:` 依据,加上 git 历史(见 §5、§11.9)。

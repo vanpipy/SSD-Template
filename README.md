@@ -71,7 +71,7 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 ## 规格统计
 
 <!-- prd-stats:begin -->
-> 统计时间: 2026-11-22 18:44 · 由 `scripts/sync-prd.sh` 自动生成
+> 统计时间: 2026-11-22 18:44 · 由 `scripts/sync-prd.py` 自动生成
 
 | 层 | 制品 | 数量 | 状态分布 |
 |------|------|:---:|---------|
@@ -82,7 +82,7 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 | 全局 | PRD关联矩阵 | 0 条边 | 演进链 0 条 |
 <!-- prd-stats:end -->
 
-> 标记块内的内容由 `scripts/sync-prd.sh` 幂等再生成,**勿手改**。标记外的内容永不触碰。
+> 标记块内的内容由 `scripts/sync-prd.py` 幂等再生成,**勿手改**。标记外的内容永不触碰。
 
 ## PRD关联矩阵
 
@@ -120,7 +120,7 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 | 层 | 位置 | 用途 | 启用方式 |
 |----|------|------|----------|
 | 原始素材 | [material/](material/README.md) | 需求原文暂存 + 批次 PRD 台账 | 建 `material/` 目录 |
-| PRD 台账 | `material/{YYYY-MM-DD}/PRDS.md` | 11 列台账,追踪素材到 PRD 的流转 | 建台账文件,跑 `scripts/sync-prd.sh` |
+| PRD 台账 | `material/{YYYY-MM-DD}/PRDS.md` | 11 列台账,追踪素材到 PRD 的流转 | 建台账文件,跑 `scripts/sync-prd.py` |
 | 关联矩阵 | 根 [README.md](#prd关联矩阵) 章节 | 8 类 PRD 关系边 | 在本文件「关系边表」追加行 |
 | 测试用例 | [test_cases/](test_cases/README.md) | Layer 4 黑盒用例 | 建 `test_cases/` 目录,用 `to-test-cases` skill |
 | 理解底座 | `deep/` | 主题模型 / 消歧 / 时间线 | 建 `deep/` 目录,用 `to-deep-understand` skill |
