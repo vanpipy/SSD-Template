@@ -24,8 +24,8 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 
 ```bash
 # 1. 读仓内 skill 定义(.agents/skills/<name>/SKILL.md,随仓库分发)
-#    8 个 skill:to-prd / to-tech-design / to-plan / validate-spec
-#                to-test-cases / sync-status / sync-prd / to-deep-understand
+#    9 个 skill:to-prd / to-tech-design / to-plan / validate-spec
+#                to-test-cases / sync-status / sync-prd / to-deep-understand / commit
 
 # 2. 走 5 步工作流(每个 skill 的调用签名见其 SKILL.md)
 /to-prd <date>                              # 原始素材 → PRD
@@ -66,7 +66,6 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 - **每次转换留痕**:留痕 = **制品本身**(状态块 + 复审段)+ git 历史;台账状态列与 `scan` 打印的派生视图是派生数据,机器再生成。
 
 > 状态块与复审块的完整字段、转换触发表见 [WORKFLOW.md](WORKFLOW.md) §5 状态推进规则。
-> **(历史)**:2026-11-24 之前仓内另有一个 `control/` 控制平面(决定记录 / 状态快照 / 证据链),F9 裁决已整体删除;历史事实见 git 历史。
 
 ## 规格统计
 
@@ -150,9 +149,8 @@ SSD-Template 是**文档/规格仓库**,不是代码仓库。它提供 3 层规�
 |------|------|
 | [WORKFLOW.md](WORKFLOW.md) | 契约唯一真源:编排配置 + agent 工作契约(§1–§10)+ 使用指南(§11)+ 概念参考(§12)+ 与编排层(DSH swarm)的协作分工(§13) |
 | [AGENTS.md](AGENTS.md) | 仓库操作契约(仓库清单 / 跨仓引用 / 多仓 Plan / 基线 / 证据锚点) |
-| 编排目录 `.swarm`(不入库) | 过程与契约补充文档(实施契约 / 需求集 / 决策记录 / 证据 / 报告)—— 2026-11-24 自 `docs/` 整体迁入;仓内不再留过程文档 |
+| 编排目录 `.swarm`(不入库) | 过程与契约补充文档(实施契约 / 需求集 / 决策记录 / 证据 / 报告)—— 仓内不再留过程文档 |
 | 历史代际(不再留档) | `git log --all -- <path>` / `git show <commit>:<path>`(历史代际仅存于 git 历史) |
 | `schema/criteria.json` | **判据唯一权威**:每个判据的 id / kind / 阈值 / 是否 blocking |
 | `scripts/ssdctl.py` | 判据与状态推进 CLI(`scan` / `criteria` / `criteria --repo` / `gate` / `advance` / `queue` / `verify`) |
 | `scripts/README.md` | **仓内脚本清单唯一真源**:每个脚本的职责 / 调用形态 / 退出码 / 谁调用它 |
-| **(历史)** `control/` 控制平面 | **(历史)** 决定记录 / 状态快照 / 证据链 —— 已于 2026-11-24 的 F9 裁决整体删除;现行载体是**制品本身**(状态块 + 复审段)+ git 历史 |
